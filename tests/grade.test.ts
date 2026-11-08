@@ -1,0 +1,70 @@
+import { describe, expect, it } from 'vitest';
+import { gradeEnum, gradeName, gradeNumber, gradeText } from '../src/lib/grade';
+import { gradeAttr } from '../src/lib/attributes';
+import type { Card } from '../src/lib/types';
+
+const leeroy: Card = {
+  id: 'EX1_116', dbfId: 559, name: 'Leeroy Jenkins', type: 'MINION', cardClass: 'NEUTRAL',
+  cost: 5, attack: 6, health: 2, rarity: 'LEGENDARY', set: 'EXPERT1',
+  text: 'Charge. Battlecry: Summon two 1/1 Whelps for your opponent.',
+};
+const fireball: Card = {
+  id: 'CS2_029', dbfId: 315, name: 'Fireball', type: 'SPELL', cardClass: 'MAGE', cost: 4,
+  rarity: 'FREE', set: 'LEGACY', spellSchool: 'FIRE', text: 'Deal 6 damage.',
+};
+
+describe('numbers', () => {
+  it('exact, close, wrong with arrows', () => {
+    expect(gradeNumber(5, 5).verdict).toBe('correct');
+    expect(gradeNumber(4, 5)).toEqual({ verdict: 'close', arrow: 'up' });
+    expect(gradeNumber(9, 5)).toEqual({ verdict: 'wrong', arrow: 'down' });
+    expect(gradeNumber(null, null).verdict).toBe('correct');
+    expect(gradeNumber(3, null).verdict).toBe('wrong');
+  });
+  it('blank number field means none', () => {
+    expect(gradeAttr('attack', '', fireball).verdict).toBe('correct');
+    expect(gradeAttr('attack', '0', fireball).verdict).toBe('wrong');
+    expect(gradeAttr('attack', '6', leeroy).verdict).toBe('correct');
+  });
+});
+
+describe('enums', () => {
+  it('exact and overlap', () => {
+    expect(gradeEnum('BEAST', 'BEAST').verdict).toBe('correct');
+    expect(gradeEnum('BEAST', 'BEAST + UNDEAD').verdict).toBe('close');
+    expect(gradeEnum('NONE', 'BEAST').verdict).toBe('wrong');
+  });
+  it('set from the same year is close', () => {
+    expect(gradeAttr('set', 'NAXX', leeroy).verdict).toBe('close');
+    expect(gradeAttr('set', 'TITANS', leeroy).verdict).toBe('wrong');
+  });
+});
+
+describe('names', () => {
+  it('allows small typos', () => {
+    expect(gradeName('Leroy Jenkins', 'Leeroy Jenkins').verdict).toBe('correct');
+    expect(gradeName('leeroy jenkins', 'Leeroy Jenkins').verdict).toBe('correct');
+    expect(gradeName('Fireblast', 'Fireball').verdict).toBe('wrong');
+    expect(gradeName('Ice', 'Imp').verdict).toBe('wrong');
+  });
+});
+
+describe('text', () => {
+  it('ignores case and punctuation', () => {
+    expect(gradeText('deal 6 damage', 'Deal 6 damage.').verdict).toBe('correct');
+  });
+  it('wrong number fails', () => {
+    const g = gradeText('deal 7 damage', 'Deal 6 damage.');
+    expect(g.verdict).not.toBe('correct');
+  });
+  it('paraphrase gets partial credit', () => {
+    const g = gradeText('Charge. Battlecry: give your opponent two 1/1 whelps.', leeroy.text!);
+    expect(g.verdict).toBe('close');
+    expect(g.score).toBeGreaterThan(0.4);
+    expect(g.score).toBeLessThan(0.85);
+  });
+  it('blank matches a card with no text', () => {
+    expect(gradeText('', '').verdict).toBe('correct');
+    expect(gradeText('taunt', '').verdict).toBe('wrong');
+  });
+});

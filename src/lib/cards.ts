@@ -1,0 +1,56 @@
+import type { Card } from './types';
+import { ATTRS, type AttrKey } from './attributes';
+
+export async function loadCards(): Promise<Card[]> {
+  const res = await fetch(`${import.meta.env.BASE_URL}cards.json`);
+  if (!res.ok) throw new Error(`Could not load cards (${res.status})`);
+  return res.json();
+}
+
+export const artUrl = (c: Card) => `https://art.hearthstonejson.com/v1/512x/${c.id}.jpg`;
+
+/** Small seeded PRNG. */
+export function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function hashString(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/** Local date as YYYY-MM-DD. */
+export function today(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+export function cardOfTheDay(cards: Card[], date: string): Card {
+  const rng = mulberry32(hashString(`hs-quiz:${date}`));
+  return cards[Math.floor(rng() * cards.length)];
+}
+
+export function randomCard(cards: Card[], rng = Math.random): Card {
+  return cards[Math.floor(rng() * cards.length)];
+}
+
+/** Pick one attribute Gauntlet can hide on this card, weighted. */
+export function pickHidden(card: Card, allowed: AttrKey[], rng = Math.random): AttrKey | null {
+  const opts = ATTRS.filter((a) => allowed.includes(a.key) && a.hideable(card));
+  const total = opts.reduce((s, a) => s + a.weight, 0);
+  if (!total) return null;
+  let r = rng() * total;
+  for (const a of opts) {
+    r -= a.weight;
+    if (r <= 0) return a.key;
+  }
+  return opts[opts.length - 1].key;
+}

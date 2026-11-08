@@ -1,0 +1,108 @@
+import type { Card } from '../src/lib/types';
+
+/** Raw record from HearthstoneJSON (only the fields we read). */
+export interface RawCard {
+  id: string;
+  dbfId: number;
+  name: string;
+  type: string;
+  set: string;
+  rarity?: string;
+  cardClass?: string;
+  classes?: string[];
+  cost?: number;
+  attack?: number;
+  health?: number;
+  durability?: number;
+  armor?: number;
+  races?: string[];
+  race?: string;
+  spellSchool?: string;
+  text?: string;
+  flavor?: string;
+  countAsCopyOfDbfId?: number;
+  collectible?: boolean;
+}
+
+const TYPES = new Set(['MINION', 'SPELL', 'WEAPON', 'HERO', 'LOCATION']);
+/** Sets that only hold copies of other cards (or skins). */
+const EXCLUDED_SETS = new Set(['VANILLA', 'CORE_HIDDEN', 'HERO_SKINS']);
+/** Sets that mostly reprint older cards; a copy elsewhere wins. */
+const REPRINT_SETS = new Set(['CORE']);
+
+/** Turn card markup into plain text the player can type. */
+export function cleanText(raw: string | undefined): string {
+  if (!raw) return '';
+  return raw
+    .replace(/\[x\]/gi, '')
+    .replace(/<\/?[a-z]+>/gi, '')
+    .replace(/\$?\{\d+\}/g, 'X')
+    .replace(/[$#](\d)/g, '$1')
+    .replace(/@/g, '')
+    .replace(/~[A-Z].*$/s, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&/g, ' ')
+    .replace(/[ _\n\r\t]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([.,:;!?)])/g, '$1')
+    .replace(/\(\s*\)/g, '')
+    .trim();
+}
+
+function slim(r: RawCard): Card {
+  const c: Card = {
+    id: r.id,
+    dbfId: r.dbfId,
+    name: r.name,
+    type: r.type as Card['type'],
+    cardClass: r.cardClass ?? 'NEUTRAL',
+    cost: r.cost ?? 0,
+    rarity: r.rarity ?? 'FREE',
+    set: r.set,
+  };
+  if (r.classes && r.classes.length > 1) c.classes = [...r.classes].sort();
+  if (r.attack != null) c.attack = r.attack;
+  if (r.health != null) c.health = r.health;
+  if (r.durability) c.durability = r.durability;
+  if (r.armor != null) c.armor = r.armor;
+  const races = r.races ?? (r.race ? [r.race] : undefined);
+  if (races && races.length) c.races = [...races].sort();
+  if (r.spellSchool) c.spellSchool = r.spellSchool;
+  const text = cleanText(r.text);
+  if (text) c.text = text;
+  const flavor = cleanText(r.flavor);
+  if (flavor) c.flavor = flavor;
+  return c;
+}
+
+/** Filter to playable collectible cards and keep one copy of each. */
+export function buildCards(raw: RawCard[]): Card[] {
+  const keep = raw.filter(
+    (r) =>
+      r.collectible !== false &&
+      TYPES.has(r.type) &&
+      !EXCLUDED_SETS.has(r.set) &&
+      r.cost != null &&
+      !(r.type === 'HERO' && !r.text),
+  );
+  const byDbf = new Set(keep.map((r) => r.dbfId));
+  const groups = new Map<string, RawCard[]>();
+  for (const r of keep) {
+    if (r.countAsCopyOfDbfId && byDbf.has(r.countAsCopyOfDbfId)) continue;
+    const key = `${r.type}|${r.name.toLowerCase()}`;
+    const g = groups.get(key);
+    if (g) g.push(r);
+    else groups.set(key, [r]);
+  }
+  const out: Card[] = [];
+  for (const g of groups.values()) {
+    g.sort(
+      (a, b) =>
+        Number(REPRINT_SETS.has(a.set)) - Number(REPRINT_SETS.has(b.set)) ||
+        a.dbfId - b.dbfId,
+    );
+    out.push(slim(g[0]));
+  }
+  out.sort((a, b) => a.dbfId - b.dbfId);
+  return out;
+}
