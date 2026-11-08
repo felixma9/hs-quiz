@@ -7,7 +7,7 @@ import { pretty } from './attributes';
  * column by column: green = same, yellow = partly the same, red = different,
  * with an arrow on ordered columns pointing toward the answer.
  */
-export type ColumnKey = 'cost' | 'health' | 'attack' | 'keywords' | 'set' | 'rarity' | 'tribe' | 'class';
+export type ColumnKey = 'cost' | 'attack' | 'health' | 'keywords' | 'set' | 'rarity' | 'tribe' | 'class';
 export type TileVerdict = 'correct' | 'close' | 'wrong';
 
 export interface Tile {
@@ -19,13 +19,13 @@ export interface Tile {
 
 export const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'cost', label: 'Mana' },
-  { key: 'health', label: 'Health' },
   { key: 'attack', label: 'Attack' },
-  { key: 'keywords', label: 'Keywords' },
-  { key: 'set', label: 'Set' },
+  { key: 'health', label: 'Health' },
   { key: 'rarity', label: 'Rarity' },
   { key: 'tribe', label: 'Tribe' },
+  { key: 'keywords', label: 'Keywords' },
   { key: 'class', label: 'Class' },
+  { key: 'set', label: 'Set' },
 ];
 
 const RARITY_ORDER = ['FREE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY'];

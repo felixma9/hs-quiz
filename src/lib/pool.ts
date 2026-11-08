@@ -14,7 +14,12 @@ export function drawable(cards: Card[]): Card[] {
   return cards.filter((c) => DRAWABLE.has(c.type));
 }
 
-export function filterPool(cards: Card[], excluded: string[]): Card[] {
-  const ex = new Set(excluded);
-  return cards.filter((c) => !ex.has(c.set));
+const RARITY_KEY = 'hsq:excludedRarities';
+export const loadExcludedRarities = (): string[] => load<string[]>(RARITY_KEY, []);
+export const saveExcludedRarities = (r: string[]) => save(RARITY_KEY, r);
+
+export function filterPool(cards: Card[], excludedSets: string[], excludedRarities: string[] = []): Card[] {
+  const ex = new Set(excludedSets);
+  const exR = new Set(excludedRarities);
+  return cards.filter((c) => !ex.has(c.set) && !exR.has(c.rarity));
 }

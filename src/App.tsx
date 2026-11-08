@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Card } from './lib/types';
 import { loadCards } from './lib/cards';
-import { drawable, filterPool, loadExcluded, saveExcluded } from './lib/pool';
+import { drawable, filterPool, loadExcluded, loadExcludedRarities, saveExcluded, saveExcludedRarities } from './lib/pool';
+import { RarityPicker } from './components/RarityPicker';
 import { Gauntlet } from './modes/Gauntlet';
 import { Cardle } from './modes/Cardle';
 import { SetPicker } from './components/SetPicker';
@@ -20,7 +21,13 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [excluded, setExcluded] = useState<string[]>(loadExcluded);
   const decor = useDecor();
-  const pool = useMemo(() => (cards ? filterPool(cards, excluded) : []), [cards, excluded]);
+  const [excludedRarities, setExcludedRarities] = useState<string[]>(loadExcludedRarities);
+  const setPool = useMemo(() => (cards ? filterPool(cards, excluded) : []), [cards, excluded]);
+  const pool = useMemo(() => (cards ? filterPool(cards, excluded, excludedRarities) : []), [cards, excluded, excludedRarities]);
+  const updateRarities = (r: string[]) => {
+    setExcludedRarities(r);
+    saveExcludedRarities(r);
+  };
   const updateExcluded = (ex: string[]) => {
     setExcluded(ex);
     saveExcluded(ex);
@@ -59,12 +66,13 @@ export function App() {
         {!cards && !error && <div className="panel center muted">Loading cards…</div>}
         {cards && route === 'menu' && (
           <Menu count={pool.length}>
+            <RarityPicker cards={setPool} excluded={excludedRarities} onChange={updateRarities} />
             <SetPicker cards={cards} excluded={excluded} onChange={updateExcluded} />
           </Menu>
         )}
         {cards && route !== 'menu' && pool.length === 0 && (
           <div className="panel center">
-            No card sets selected. <a href="#/">Pick some on the menu.</a>
+            No cards match your sets and rarities. <a href="#/">Change them on the menu.</a>
           </div>
         )}
         {cards && pool.length > 0 && route === 'gauntlet' && <Gauntlet cards={pool} />}

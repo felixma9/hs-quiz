@@ -27,6 +27,37 @@ const GEM: Partial<Record<string, string>> = {
 };
 const gemUrl = (key: string) => `${import.meta.env.BASE_URL}sunwell/${GEM[key]}.webp`;
 
+/**
+ * Per-card art crop (fraction cut from each side), measured by
+ * scripts/measure-art.py: some art is padded with light bars.
+ */
+let artCrop: Promise<Record<string, number>> | null = null;
+function useArtCrop() {
+  const [crop, setCrop] = useState<Record<string, number>>({});
+  useEffect(() => {
+    artCrop ??= fetch(`${import.meta.env.BASE_URL}art-crop.json`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+    let live = true;
+    artCrop.then((c) => live && setCrop(c));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return crop;
+}
+
+/** The zoom that hides a card's padding, plus a little margin. */
+function Art({ card, crop, alt = '', className = '' }: { card: Card; crop: Record<string, number>; alt?: string; className?: string }) {
+  const cut = Math.min(crop[card.id] ?? 0, 0.3);
+  const scale = cut ? 1.04 / (1 - 2 * cut) : 1.08;
+  return (
+    <span className={`art-crop ${className}`}>
+      <img src={thumb(card)} alt={alt} loading="lazy" style={{ transform: `scale(${scale.toFixed(3)})` }} />
+    </span>
+  );
+}
+
 const thumb = (c: Card) => `https://art.hearthstonejson.com/v1/256x/${c.id}.jpg`;
 
 export function Cardle({ cards }: { cards: Card[] }) {
@@ -166,6 +197,7 @@ export function Cardle({ cards }: { cards: Card[] }) {
 }
 
 function Search({ minions, exclude, onPick }: { minions: Card[]; exclude: string[]; onPick(c: Card): void }) {
+  const crop = useArtCrop();
   const [q, setQ] = useState('');
   const [hi, setHi] = useState(0);
   const input = useRef<HTMLInputElement>(null);
@@ -221,7 +253,7 @@ function Search({ minions, exclude, onPick }: { minions: Card[]; exclude: string
                 onMouseEnter={() => setHi(i)}
                 onClick={() => pick(c)}
               >
-                <img src={thumb(c)} alt="" loading="lazy" />
+                <Art card={c} crop={crop} className="thumb" />
                 <span>{c.name}</span>
               </button>
             </li>
@@ -233,6 +265,7 @@ function Search({ minions, exclude, onPick }: { minions: Card[]; exclude: string
 }
 
 function Clue({ label, left, answer, kind }: { label: string; left: number; answer: Card; kind: 'art' | 'text' }) {
+  const crop = useArtCrop();
   const [open, setOpen] = useState(false);
   const unlocked = left <= 0;
   useEffect(() => setOpen(false), [answer.id]);
@@ -245,7 +278,7 @@ function Clue({ label, left, answer, kind }: { label: string; left: number; answ
       {open && unlocked && (
         <div className="clue-body">
           {kind === 'art' ? (
-            <img className="clue-art" src={thumb(answer)} alt="The mystery minion's art" />
+            <Art card={answer} crop={crop} className="clue-art" alt="The mystery minion's art" />
           ) : (
             <p>{answer.text ? plainText(answer.text).split(answer.name).join('???') : 'This minion has no card text.'}</p>
           )}
@@ -256,6 +289,7 @@ function Clue({ label, left, answer, kind }: { label: string; left: number; answ
 }
 
 function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
+  const crop = useArtCrop();
   // Newest guess first, like the original game.
   const rows = [...guesses].reverse();
   return (
@@ -277,7 +311,7 @@ function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
           return (
             <div key={g.id} className={`board-row ${r === 0 ? 'newest' : ''}`} role="row">
               <div className="board-cell name-cell" role="cell" title={g.name}>
-                <img src={thumb(g)} alt="" />
+                <Art card={g} crop={crop} className="thumb" />
                 <span>{g.name}</span>
               </div>
               {COLUMNS.map((c, i) => (

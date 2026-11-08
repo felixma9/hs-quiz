@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { compare } from '../src/lib/cardle';
+import { filterPool } from '../src/lib/pool';
 import type { Card } from '../src/lib/types';
 
 const base: Card = {
@@ -36,5 +37,17 @@ describe('cardle compare', () => {
   });
   it('rarity arrow points to rarer/commoner', () => {
     expect(compare({ ...base, rarity: 'RARE' }, base).rarity).toMatchObject({ verdict: 'wrong', arrow: 'up' });
+  });
+});
+
+describe('card pool filter', () => {
+  it('filters by set and rarity', () => {
+    const cards = [
+      { ...base, id: 'a', rarity: 'COMMON', set: 'EXPERT1' },
+      { ...base, id: 'b', rarity: 'LEGENDARY', set: 'EXPERT1' },
+      { ...base, id: 'c', rarity: 'LEGENDARY', set: 'NAXX' },
+    ];
+    expect(filterPool(cards, [], ['COMMON']).map((c) => c.id)).toEqual(['b', 'c']);
+    expect(filterPool(cards, ['NAXX'], ['COMMON']).map((c) => c.id)).toEqual(['b']);
   });
 });
