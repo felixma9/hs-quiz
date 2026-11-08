@@ -58,6 +58,9 @@ function Art({ card, crop, alt = '', className = '' }: { card: Card; crop: Recor
   );
 }
 
+const RARITY_COLOR: Record<string, string> = { Free: '#b5b5b5', Common: '#f2f2f2', Rare: '#3a7cf0', Epic: '#a640d8', Legendary: '#f29f1c' };
+const RARITY_SHORT: Record<string, string> = { Free: 'Free', Common: 'Com.', Rare: 'Rare', Epic: 'Epic', Legendary: 'Leg.' };
+
 const thumb = (c: Card) => `https://art.hearthstonejson.com/v1/256x/${c.id}.jpg`;
 
 export function Hsdle({ cards }: { cards: Card[] }) {
@@ -304,44 +307,64 @@ function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
   const crop = useArtCrop();
   // Newest guess first, like the original game.
   const rows = [...guesses].reverse();
+  // Tapping a tile shows its full value (tiles are small on phones).
+  const [detail, setDetail] = useState<{ id: string; col: string } | null>(null);
+  const detailCard = detail && guesses.find((g) => g.id === detail.id);
+  const detailText = (() => {
+    if (!detail || !detailCard) return null;
+    if (detail.col === 'name') return detailCard.name;
+    const col = COLUMNS.find((c) => c.key === detail.col)!;
+    return `${detailCard.name} · ${col.label}: ${compare(detailCard, answer)[col.key].label}`;
+  })();
+  const tap = (id: string, col: string) => setDetail((d) => (d && d.id === id && d.col === col ? null : { id, col }));
+
   return (
     <div className="board-wrap">
       <div className="board" role="table">
         <div className="board-row board-head" role="row">
           <div className="board-cell name-cell" role="columnheader">
-            Minion
+            <span className="head-label">Minion</span>
           </div>
           {COLUMNS.map((c) => (
-            <div key={c.key} className="board-cell" role="columnheader">
-              {GEM[c.key] && <img className="head-gem" src={gemUrl(c.key)} alt="" />}
-              {c.label}
+            <div key={c.key} className={`board-cell ${GEM[c.key] ? 'gem-head' : ''}`} role="columnheader" title={c.label}>
+              {GEM[c.key] && <img className="head-gem" src={gemUrl(c.key)} alt={c.label} />}
+              <span className="head-label">{c.label}</span>
             </div>
           ))}
         </div>
         {rows.map((g, r) => {
           const t = compare(g, answer);
+          const on = (col: string) => detail?.id === g.id && detail.col === col;
           return (
             <div key={g.id} className={`board-row ${r === 0 ? 'newest' : ''}`} role="row">
-              <div className="board-cell name-cell" role="cell" title={g.name}>
+              <button type="button" className={`board-cell name-cell ${on('name') ? 'selected' : ''}`} role="cell" title={g.name} onClick={() => tap(g.id, 'name')}>
                 <Art card={g} crop={crop} className="thumb" />
-                <span>{g.name}</span>
-              </div>
+                <span className="name-text">{g.name}</span>
+              </button>
               {COLUMNS.map((c, i) => (
-                <TileCell key={c.key} col={c.key} tile={t[c.key]} delay={r === 0 ? i * 120 : 0} />
+                <TileCell
+                  key={c.key}
+                  col={c.key}
+                  tile={t[c.key]}
+                  delay={r === 0 ? i * 120 : 0}
+                  selected={on(c.key)}
+                  onTap={() => tap(g.id, c.key)}
+                />
               ))}
             </div>
           );
         })}
       </div>
+      {detailText && <div className="board-detail">{detailText}</div>}
     </div>
   );
 }
 
-function TileCell({ col, tile, delay }: { col: string; tile: Tile; delay: number }) {
+function TileCell({ col, tile, delay, selected, onTap }: { col: string; tile: Tile; delay: number; selected: boolean; onTap(): void }) {
   const arrowLabel = tile.arrow === 'up' ? 'higher' : 'lower';
   if (GEM[col]) {
     return (
-      <div className={`board-cell tile stat-tile t-${tile.verdict}`} style={{ animationDelay: `${delay}ms` }} role="cell">
+      <div className={`board-cell tile stat-tile t-${tile.verdict} ${selected ? 'selected' : ''}`} style={{ animationDelay: `${delay}ms` }} role="cell" onClick={onTap}>
         <span className={`stat-gem gem-${col}`}>
           <img src={gemUrl(col)} alt="" />
           <span className="stat-num">{tile.label}</span>
@@ -355,9 +378,17 @@ function TileCell({ col, tile, delay }: { col: string; tile: Tile; delay: number
     );
   }
   return (
-    <div className={`board-cell tile t-${tile.verdict}`} style={{ animationDelay: `${delay}ms` }} role="cell">
+    <div className={`board-cell tile t-${tile.verdict} ${selected ? 'selected' : ''}`} style={{ animationDelay: `${delay}ms` }} role="cell" onClick={onTap}>
       {tile.arrow && <span className={`tile-arrow ${tile.arrow}`} aria-label={arrowLabel} />}
-      <span className="tile-label">{tile.label}</span>
+      {col === 'rarity' ? (
+        <span className="tile-label rarity-label">
+          <span className="rarity-gem" style={{ background: RARITY_COLOR[tile.label] ?? '#999' }} />
+          <span className="full">{tile.label}</span>
+          <span className="short">{RARITY_SHORT[tile.label] ?? tile.label}</span>
+        </span>
+      ) : (
+        <span className="tile-label">{tile.label}</span>
+      )}
     </div>
   );
 }

@@ -329,3 +329,60 @@ body.has-decor-bg { background: linear-gradient(rgba(18,18,19,0.86), rgba(18,18,
 
 /* Custom class icon images (public/class-icons/<CLASS>.png) */
 .class-icon.custom { background: none; border: 0; box-shadow: none; object-fit: contain; padding: 0; }
+
+/* Board details + tap */
+.board-cell.name-cell { background: none; border: 0; color: var(--text); font: inherit; font-size: 0.72rem; font-weight: 700; text-align: left; padding: 0; cursor: pointer; }
+.tile { cursor: pointer; }
+.tile.selected { outline: 2px solid #fff; outline-offset: -2px; }
+.name-cell.selected .thumb { outline: 2px solid #fff; }
+.board-detail {
+  margin-top: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem;
+  text-align: center; background: var(--surface-2);
+}
+
+/* Phones: fit the whole board on screen, Loldle-style */
+@media (max-width: 600px) {
+  .top-inner { height: 48px; padding: 0 8px; }
+  .top-title { font-size: 1.35rem; }
+  .app { padding: 10px 10px 24px; }
+  .mode { gap: 12px; }
+  .ask { font-size: 0.9rem; }
+  .search .in { padding: 12px 14px; }
+  .clue-btn { min-width: 0; flex: 1; padding: 6px 10px; }
+  .clues { gap: 8px; }
+  .clue { flex: 1; }
+
+  .board-wrap { margin: 0; padding: 0; overflow: visible; }
+  .board { min-width: 0; gap: 4px; }
+  .board-row {
+    grid-template-columns: 38px 0.85fr 0.85fr 0.85fr 1fr 1fr 1.5fr 1fr 1.1fr;
+    gap: 3px;
+  }
+  .board-head .board-cell { font-size: 0.5rem; letter-spacing: 0.02em; padding-bottom: 3px; }
+  .board-head .name-cell .head-label { display: none; }
+  .gem-head .head-label { display: none; }
+  .head-gem { width: 20px; height: 20px; margin: 0 auto; }
+  .board-row .name-cell { position: static; box-shadow: none; justify-content: center; }
+  .name-cell .name-text { display: none; }
+  .name-cell .thumb { width: 36px; height: 36px; }
+  .tile { height: 46px; font-size: 0.5rem; line-height: 1.12; padding: 2px; border-radius: 2px; }
+  .tile-label { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .tile-arrow { inset: 4px; }
+  .stat-gem { width: 30px; height: 32px; }
+  .stat-num { font-size: 0.8rem; -webkit-text-stroke: 2.5px #000; }
+  .arrow-badge { top: 1px; right: 1px; font-size: 0.45rem; padding: 1px 2px; }
+}
+
+/* Rarity tile: gem + label (short label on phones) */
+.rarity-label { display: grid; justify-items: center; gap: 3px; }
+.rarity-gem { width: 12px; height: 12px; transform: rotate(45deg); border-radius: 2px; border: 1px solid rgba(0,0,0,0.5); box-shadow: 0 0 0 1px rgba(255,255,255,0.35); }
+.rarity-label .short { display: none; }
+@media (max-width: 600px) {
+  .rarity-label .full { display: none; }
+  .rarity-label .short { display: inline; }
+  .rarity-gem { width: 10px; height: 10px; }
+  .clues { flex-wrap: nowrap; }
+  .clue { flex: 1 1 0; min-width: 0; }
+  .clue-btn { width: 100%; }
+  .tile-label.rarity-label { display: grid; -webkit-line-clamp: unset; }
+}
