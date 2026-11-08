@@ -35,6 +35,10 @@ Much of the art is padded with light bars. `python3 -I scripts/measure-art.py` d
 
 The Hearthstone touches (mana-gem mark, gold accent) are original. To use your own logo or background, put `logo.png` and/or `background.jpg` in `public/decor/`; only add images you have the right to use on a public site.
 
+## Class icons
+
+The class picker uses simple original badges. To use your own icons, add `public/class-icons/<CLASS>.png` (e.g. `DRUID.png`); classes without a file keep the badge. Only add images you have the right to use on a public site.
+
 ## Card rendering
 
 Cards are drawn on a canvas by HearthSim's [Sunwell](https://github.com/HearthSim/Sunwell) (MIT, archived in 2022). Its frame images are in `public/sunwell/`, converted to WebP (15 MB down to 2 MB).

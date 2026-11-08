@@ -6,6 +6,7 @@ import type { Verdict } from '../lib/grade';
 import { artUrl } from '../lib/cards';
 import { normalizeName } from '../lib/fuzzy';
 import { badge } from '../data/classes';
+import { ClassIcon } from './ClassIcon';
 import { boxStyle, layoutFor } from './cardLayout';
 import { fitText } from './fitText';
 
@@ -349,9 +350,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
                   setActive(null);
                 }}
               >
-                <span className="class-icon" style={{ background: badge(o.value).color }}>
-                  {badge(o.value).symbol}
-                </span>
+                <ClassIcon cls={o.value} />
                 <span>{o.label}</span>
               </button>
             ))}
@@ -373,9 +372,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
                       }}
                     >
                       {o.value.split(' + ').map((c) => (
-                        <span key={c} className="class-icon small" style={{ background: badge(c).color }}>
-                          {badge(c).symbol}
-                        </span>
+                        <ClassIcon key={c} cls={c} small />
                       ))}
                       {o.label}
                     </button>

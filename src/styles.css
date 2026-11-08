@@ -326,3 +326,6 @@ body.has-decor-bg { background: linear-gradient(rgba(18,18,19,0.86), rgba(18,18,
 /* Card art: zoom in a little so the light strips at the image edges don't show. */
 .art-crop { display: block; flex: none; border-radius: 50%; overflow: hidden; background: #000; }
 .art-crop img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Custom class icon images (public/class-icons/<CLASS>.png) */
+.class-icon.custom { background: none; border: 0; box-shadow: none; object-fit: contain; padding: 0; }
