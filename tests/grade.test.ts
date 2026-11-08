@@ -6,7 +6,7 @@ import type { Card } from '../src/lib/types';
 const leeroy: Card = {
   id: 'EX1_116', dbfId: 559, name: 'Leeroy Jenkins', type: 'MINION', cardClass: 'NEUTRAL',
   cost: 5, attack: 6, health: 2, rarity: 'LEGENDARY', set: 'EXPERT1',
-  text: 'Charge. Battlecry: Summon two 1/1 Whelps for your opponent.',
+  text: '<b>Charge</b>. <b>Battlecry:</b> Summon two 1/1 Whelps for your opponent.',
 };
 const fireball: Card = {
   id: 'CS2_029', dbfId: 315, name: 'Fireball', type: 'SPELL', cardClass: 'MAGE', cost: 4,
@@ -34,9 +34,8 @@ describe('enums', () => {
     expect(gradeEnum('BEAST', 'BEAST + UNDEAD').verdict).toBe('close');
     expect(gradeEnum('NONE', 'BEAST').verdict).toBe('wrong');
   });
-  it('set from the same year is close', () => {
-    expect(gradeAttr('set', 'NAXX', leeroy).verdict).toBe('close');
-    expect(gradeAttr('set', 'TITANS', leeroy).verdict).toBe('wrong');
+  it('class overlap is close for multiclass cards', () => {
+    expect(gradeAttr('class', 'MAGE', { ...fireball, classes: ['MAGE', 'ROGUE'] }).verdict).toBe('close');
   });
 });
 
@@ -58,7 +57,7 @@ describe('text', () => {
     expect(g.verdict).not.toBe('correct');
   });
   it('paraphrase gets partial credit', () => {
-    const g = gradeText('Charge. Battlecry: give your opponent two 1/1 whelps.', leeroy.text!);
+    const g = gradeAttr('text', 'Charge. Battlecry: give your opponent two 1/1 whelps.', leeroy);
     expect(g.verdict).toBe('close');
     expect(g.score).toBeGreaterThan(0.4);
     expect(g.score).toBeLessThan(0.85);
@@ -66,5 +65,11 @@ describe('text', () => {
   it('blank matches a card with no text', () => {
     expect(gradeText('', '').verdict).toBe('correct');
     expect(gradeText('taunt', '').verdict).toBe('wrong');
+  });
+});
+
+describe('card text tags', () => {
+  it('grades against the text without <b> tags', () => {
+    expect(gradeAttr('text', 'Charge. Battlecry: Summon two 1/1 Whelps for your opponent.', leeroy).verdict).toBe('correct');
   });
 });

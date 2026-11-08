@@ -5,8 +5,9 @@ const base = { collectible: true, rarity: 'FREE', cardClass: 'MAGE', cost: 4 };
 
 describe('cleanText', () => {
   it('strips markup and placeholders', () => {
-    expect(cleanText('<b>Battlecry:</b> Deal $2 damage.')).toBe('Battlecry: Deal 2 damage.');
-    expect(cleanText('[x]<b>Taunt</b>\nGain #3 Armor.')).toBe('Taunt Gain 3 Armor.');
+    expect(cleanText('<b>Battlecry:</b> Deal $2 damage.')).toBe('<b>Battlecry:</b> Deal 2 damage.');
+    expect(cleanText('<b>Battlecry:</b> Deal $2 damage.', false)).toBe('Battlecry: Deal 2 damage.');
+    expect(cleanText('[x]<b>Taunt</b>\nGain #3 Armor.', false)).toBe('Taunt Gain 3 Armor.');
     expect(cleanText('Battlecry:& Equip a 3/8 Blood Fury.~GAMEPLAY ASPROXY EX1 323')).toBe('Battlecry: Equip a 3/8 Blood Fury.');
   });
 });

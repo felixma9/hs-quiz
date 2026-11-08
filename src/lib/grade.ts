@@ -23,12 +23,11 @@ export function gradeNumber(guess: number | null, truth: number | null): Grade {
 }
 
 /** Enum values may be combos like "BEAST + UNDEAD"; overlap counts as close. */
-export function gradeEnum(guess: string, truth: string, sameGroup?: (a: string, b: string) => boolean): Grade {
+export function gradeEnum(guess: string, truth: string): Grade {
   if (guess === truth) return { verdict: 'correct' };
   const g = guess.split(' + ');
   const t = truth.split(' + ');
   if (g.some((x) => x !== 'NONE' && t.includes(x))) return { verdict: 'close' };
-  if (sameGroup && guess && sameGroup(guess, truth)) return { verdict: 'close' };
   return { verdict: 'wrong' };
 }
 

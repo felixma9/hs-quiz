@@ -30,12 +30,15 @@ const EXCLUDED_SETS = new Set(['VANILLA', 'CORE_HIDDEN', 'HERO_SKINS']);
 /** Sets that mostly reprint older cards; a copy elsewhere wins. */
 const REPRINT_SETS = new Set(['CORE']);
 
-/** Turn card markup into plain text the player can type. */
-export function cleanText(raw: string | undefined): string {
+/**
+ * Turn card markup into clean text. Keeps <b>/<i> (for drawing the card)
+ * unless keepTags is false; grading strips them with plainText().
+ */
+export function cleanText(raw: string | undefined, keepTags = true): string {
   if (!raw) return '';
-  return raw
-    .replace(/\[x\]/gi, '')
-    .replace(/<\/?[a-z]+>/gi, '')
+  let s = raw.replace(/\[x\]/gi, '');
+  s = keepTags ? s.replace(/<(?!\/?[bi]>)[^>]*>/gi, '').replace(/<(\/?)I>/g, '<$1i>') : s.replace(/<\/?[a-z]+>/gi, '');
+  return s
     .replace(/\$?\{\d+\}/g, 'X')
     .replace(/[$#](\d)/g, '$1')
     .replace(/@/g, '')
@@ -70,7 +73,7 @@ function slim(r: RawCard): Card {
   if (r.spellSchool) c.spellSchool = r.spellSchool;
   const text = cleanText(r.text);
   if (text) c.text = text;
-  const flavor = cleanText(r.flavor);
+  const flavor = cleanText(r.flavor, false);
   if (flavor) c.flavor = flavor;
   return c;
 }

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { Card } from '../lib/types';
-import { ATTR, ATTRS, gradeAttr, pretty, type AttrKey } from '../lib/attributes';
+import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type Attr, type AttrKey } from '../lib/attributes';
 import { cardOfTheDay, randomCard, today } from '../lib/cards';
 import type { Grade } from '../lib/grade';
 import { load, save } from '../lib/storage';
-import { CardView } from '../components/CardView';
+import { GameCard } from '../components/GameCard';
 import { AnswerInput } from '../components/AnswerInput';
 import { TextDiff } from '../components/TextDiff';
 
@@ -28,10 +28,12 @@ interface Stats {
 }
 
 const emptyGuess = (): Guess => Object.fromEntries(ATTRS.map((a) => [a.key, ''])) as Guess;
+/** The attributes this card has (a spell has no attack, etc). */
+const fieldsFor = (card: Card): Attr[] => ATTRS.filter((a) => a.applies(card));
 const EMOJI = { correct: '🟩', close: '🟨', wrong: '⬛' } as const;
 
-function gradeAll(g: Guess, card: Card): Record<AttrKey, Grade> {
-  return Object.fromEntries(ATTRS.map((a) => [a.key, gradeAttr(a.key, g[a.key], card)])) as Record<AttrKey, Grade>;
+function gradeAll(g: Guess, card: Card): Partial<Record<AttrKey, Grade>> {
+  return Object.fromEntries(fieldsFor(card).map((a) => [a.key, gradeAttr(a.key, g[a.key] ?? '', card)]));
 }
 
 export function Cardle({ cards }: { cards: Card[] }) {
@@ -56,13 +58,14 @@ export function Cardle({ cards }: { cards: Card[] }) {
   const [draft, setDraft] = useState<Guess>(() => game.guesses.at(-1) ?? emptyGuess());
   const [copied, setCopied] = useState(false);
 
+  const fields = useMemo(() => fieldsFor(card), [card]);
   const grades = useMemo(() => game.guesses.map((g) => gradeAll(g, card)), [game.guesses, card]);
   const locked = useMemo(() => {
     const s = new Set<AttrKey>();
-    for (const g of grades) for (const a of ATTRS) if (g[a.key].verdict === 'correct') s.add(a.key);
+    for (const g of grades) for (const a of fields) if (g[a.key]?.verdict === 'correct') s.add(a.key);
     return s;
-  }, [grades]);
-  const won = locked.size === ATTRS.length;
+  }, [grades, fields]);
+  const won = locked.size === fields.length;
   const done = won || game.guesses.length >= MAX_GUESSES;
 
   const persist = (g: Saved, m = mode) => save(m === 'daily' ? DAILY_KEY : UNLIMITED_KEY, g);
@@ -92,18 +95,17 @@ export function Cardle({ cards }: { cards: Card[] }) {
     const g = { ...game, guesses: [...game.guesses, guess] };
     setGame(g);
     persist(g);
-    const finishedNow = g.guesses.length >= MAX_GUESSES || ATTRS.every((a) => locked.has(a.key) || gradeAttr(a.key, guess[a.key], card).verdict === 'correct');
-    if (finishedNow) {
+    const w = fields.every((a) => locked.has(a.key) || gradeAttr(a.key, guess[a.key], card).verdict === 'correct');
+    if (w || g.guesses.length >= MAX_GUESSES) {
       const stats = load<Stats>(STATS_KEY, { played: 0, won: 0 });
       if (mode !== 'daily' || stats.lastDaily !== date) {
-        const w = ATTRS.every((a) => locked.has(a.key) || gradeAttr(a.key, guess[a.key], card).verdict === 'correct');
         save(STATS_KEY, { played: stats.played + 1, won: stats.won + (w ? 1 : 0), lastDaily: mode === 'daily' ? date : stats.lastDaily });
       }
     }
   };
 
   const share = async () => {
-    const rows = grades.map((g) => ATTRS.map((a) => EMOJI[g[a.key].verdict]).join('')).join('\n');
+    const rows = grades.map((g) => fields.map((a) => EMOJI[g[a.key]!.verdict]).join('')).join('\n');
     const head = `HS Cardle ${mode === 'daily' ? date : '(unlimited)'} ${won ? game.guesses.length : 'X'}/${MAX_GUESSES}`;
     const text = `${head}\n${rows}`;
     try {
@@ -119,8 +121,6 @@ export function Cardle({ cards }: { cards: Card[] }) {
 
   const hidden = useMemo(() => new Set<AttrKey>(done ? [] : ATTRS.map((a) => a.key).filter((k) => !locked.has(k))), [done, locked]);
   const left = MAX_GUESSES - game.guesses.length;
-  const typeKnown = locked.has('type');
-  const notApplicable = (k: AttrKey) => typeKnown && ATTR[k].value(card) === null;
 
   return (
     <div className="mode">
@@ -138,11 +138,11 @@ export function Cardle({ cards }: { cards: Card[] }) {
           Guesses left <b>{left}</b>
         </span>
         <span className="muted">
-          {locked.size}/{ATTRS.length} 🟩
+          {locked.size}/{fields.length} 🟩
         </span>
       </div>
 
-      <CardView card={card} hidden={hidden} />
+      <GameCard card={card} hidden={hidden} />
 
       {done && (
         <div className={`panel center feedback ${won ? 'ok' : 'bad'}`}>
@@ -178,36 +178,32 @@ export function Cardle({ cards }: { cards: Card[] }) {
       >
         {!done && game.guesses.length === 0 && (
           <p className="muted small">
-            Fill in every attribute from the art alone. After each guess: 🟩 right, 🟨 close (numbers ±1, same-year set, overlapping
-            tribe/class, text ≥50%), ⬛ wrong. Leave a number blank if the card has none.
+            Fill in the blank card. After each guess: 🟩 right (it appears on the card), 🟨 close (numbers ±1, overlapping tribe or class,
+            text at least 50% right), ⬛ wrong. Leave the text blank if you think the card has none.
           </p>
         )}
-        {ATTRS.map((a) => {
+        {fields.map((a) => {
           const isLocked = locked.has(a.key) || done;
-          const na = notApplicable(a.key);
           return (
-            <div key={a.key} className={`field ${locked.has(a.key) ? 'locked' : ''} ${na ? 'na' : ''}`}>
+            <div key={a.key} className={`field ${locked.has(a.key) ? 'locked' : ''}`}>
               <div className="field-head">
-                <label>{a.key === 'health' ? 'Health / Durability / Armor' : a.label}</label>
+                <label>{labelFor(a, card)}</label>
                 <History attr={a.key} guesses={game.guesses} grades={grades} />
               </div>
               {isLocked ? (
                 <div className="locked-value">
                   {a.key === 'text' ? (
-                    <TextDiff truth={card.text ?? ''} matched={done ? grades.at(-1)?.text.truthMatched : undefined} />
+                    <TextDiff truth={plainText(card.text)} matched={done ? grades.at(-1)?.text?.truthMatched : undefined} />
                   ) : (
                     pretty(a.key, ATTR[a.key].value(card))
                   )}
                 </div>
-              ) : na ? (
-                <div className="muted small">Doesn't apply to this card type (leave blank)</div>
               ) : (
                 <AnswerInput
                   attr={a.key}
                   value={draft[a.key]}
                   onChange={(v) => setDraft((d) => ({ ...d, [a.key]: v }))}
                   cards={cards}
-                  numberHint="blank = none"
                 />
               )}
             </div>
@@ -223,12 +219,13 @@ export function Cardle({ cards }: { cards: Card[] }) {
   );
 }
 
-function History({ attr, guesses, grades }: { attr: AttrKey; guesses: Guess[]; grades: Record<AttrKey, Grade>[] }) {
+function History({ attr, guesses, grades }: { attr: AttrKey; guesses: Guess[]; grades: Partial<Record<AttrKey, Grade>>[] }) {
   if (!guesses.length) return null;
   return (
     <div className="history">
       {guesses.map((g, i) => {
         const gr = grades[i][attr];
+        if (!gr) return null;
         const kind = ATTR[attr].kind;
         let label: string;
         if (kind === 'text') label = `${Math.round((gr.score ?? 0) * 100)}%`;

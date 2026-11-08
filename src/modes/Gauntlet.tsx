@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { Card } from '../lib/types';
-import { ATTR, ATTRS, gradeAttr, labelFor, pretty, type AttrKey } from '../lib/attributes';
+import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type AttrKey } from '../lib/attributes';
 import { pickHidden, randomCard } from '../lib/cards';
 import type { Grade } from '../lib/grade';
 import { load, save } from '../lib/storage';
-import { CardView } from '../components/CardView';
+import { GameCard } from '../components/GameCard';
 import { AnswerInput } from '../components/AnswerInput';
 import { TextDiff } from '../components/TextDiff';
 
@@ -34,7 +34,11 @@ function newRound(pool: Card[], allowed: AttrKey[]): Round {
 }
 
 export function Gauntlet({ cards }: { cards: Card[] }) {
-  const [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULT_SETTINGS, ...load(SETTINGS_KEY, {}) }));
+  const [settings, setSettings] = useState<Settings>(() => {
+    const s = { ...DEFAULT_SETTINGS, ...load<Partial<Settings>>(SETTINGS_KEY, {}) };
+    const allowed = s.allowed.filter((k) => k in ATTR);
+    return { ...s, allowed: allowed.length ? allowed : DEFAULT_SETTINGS.allowed };
+  });
   const pool = useMemo(() => (settings.minionsOnly ? cards.filter((c) => c.type === 'MINION') : cards), [cards, settings.minionsOnly]);
   const [round, setRound] = useState<Round>(() => newRound(pool, settings.allowed));
   const [answer, setAnswer] = useState('');
@@ -115,7 +119,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
             />
             Minions only
           </label>
-          <div className="muted small">Attributes that can be hidden (changing restarts):</div>
+          <div className="muted small">What can be left blank (changing restarts):</div>
           <div className="chips">
             {ATTRS.map((a) => (
               <label key={a.key} className="check">
@@ -136,7 +140,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
         </div>
       )}
 
-      <CardView card={round.card} hidden={hidden} focus={round.hidden} />
+      <GameCard card={round.card} hidden={hidden} />
 
       {over && result ? (
         <div className="panel center">
@@ -190,7 +194,7 @@ function Feedback({ result, attrKey, card, truthPretty, answer }: { result: Grad
         <>
           <div className="small">Match: {Math.round((result.score ?? 0) * 100)}% (need 85% and the right numbers)</div>
           <div className="truth">
-            <TextDiff truth={card.text ?? ''} matched={result.truthMatched} />
+            <TextDiff truth={plainText(card.text)} matched={result.truthMatched} />
           </div>
         </>
       ) : (
