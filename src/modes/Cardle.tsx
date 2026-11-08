@@ -1,133 +1,87 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../lib/types';
-import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type Attr, type AttrKey } from '../lib/attributes';
 import { cardOfTheDay, randomCard, today } from '../lib/cards';
-import type { Grade } from '../lib/grade';
+import { CLUES, COLUMNS, EMOJI, compare, type Tile } from '../lib/cardle';
+import { normalizeName } from '../lib/fuzzy';
+import { plainText } from '../lib/attributes';
 import { load, save } from '../lib/storage';
 import { GameCard } from '../components/GameCard';
-import { TextDiff } from '../components/TextDiff';
 
-export const MAX_GUESSES = 6;
-type Guess = Record<AttrKey, string>;
+/** Guess the mystery minion, Loldle-style: each guess shows how its stats compare. */
 
 interface Saved {
-  key: string; // date for daily, card id for unlimited
-  cardId: string;
-  guesses: Guess[];
+  key: string; // date (daily) or 'unlimited'
+  answerId: string;
+  guesses: string[]; // card ids, oldest first
+  gaveUp?: boolean;
 }
 
-const DAILY_KEY = 'hsq:cardle:daily';
-const UNLIMITED_KEY = 'hsq:cardle:unlimited';
-const STATS_KEY = 'hsq:cardle:stats';
+const KEY = { daily: 'hsq:cardle2:daily', unlimited: 'hsq:cardle2:unlimited' } as const;
+type Mode = keyof typeof KEY;
 
-interface Stats {
-  played: number;
-  won: number;
-  lastDaily?: string;
-}
-
-const emptyGuess = (): Guess => Object.fromEntries(ATTRS.map((a) => [a.key, ''])) as Guess;
-/** The attributes this card has (a spell has no attack, etc). */
-const fieldsFor = (card: Card): Attr[] => ATTRS.filter((a) => a.applies(card));
-const EMOJI = { correct: '🟩', close: '🟨', wrong: '⬛' } as const;
-
-function gradeAll(g: Guess, card: Card): Partial<Record<AttrKey, Grade>> {
-  return Object.fromEntries(fieldsFor(card).map((a) => [a.key, gradeAttr(a.key, g[a.key] ?? '', card)]));
-}
+const thumb = (c: Card) => `https://art.hearthstonejson.com/v1/256x/${c.id}.jpg`;
 
 export function Cardle({ cards }: { cards: Card[] }) {
-  const byId = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
+  const minions = useMemo(() => cards.filter((c) => c.type === 'MINION'), [cards]);
+  const byId = useMemo(() => new Map(minions.map((c) => [c.id, c])), [minions]);
   const date = today();
-  const [mode, setMode] = useState<'daily' | 'unlimited'>('daily');
+  const [mode, setMode] = useState<Mode>('daily');
 
-  const initial = (m: 'daily' | 'unlimited'): Saved => {
+  const fresh = (m: Mode): Saved => {
+    const answer = m === 'daily' ? cardOfTheDay(minions, date) : randomCard(minions);
+    return { key: m === 'daily' ? date : 'unlimited', answerId: answer.id, guesses: [] };
+  };
+  const restore = (m: Mode): Saved => {
+    const s = load<Saved | null>(KEY[m], null);
+    const ok = s && byId.has(s.answerId) && s.guesses.every((g) => byId.has(g));
     if (m === 'daily') {
-      const s = load<Saved | null>(DAILY_KEY, null);
-      const card = cardOfTheDay(cards, date);
-      return s && s.key === date && s.cardId === card.id ? s : { key: date, cardId: card.id, guesses: [] };
+      const answer = cardOfTheDay(minions, date);
+      return ok && s.key === date && s.answerId === answer.id ? s : fresh(m);
     }
-    const s = load<Saved | null>(UNLIMITED_KEY, null);
-    if (s && byId.has(s.cardId)) return s;
-    const card = randomCard(cards);
-    return { key: card.id, cardId: card.id, guesses: [] };
+    return ok ? s : fresh(m);
   };
 
-  const [game, setGame] = useState<Saved>(() => initial('daily'));
-  const card = byId.get(game.cardId)!;
-  const [draft, setDraft] = useState<Guess>(() => game.guesses.at(-1) ?? emptyGuess());
-  const [copied, setCopied] = useState(false);
-
-  const fields = useMemo(() => fieldsFor(card), [card]);
-  const grades = useMemo(() => game.guesses.map((g) => gradeAll(g, card)), [game.guesses, card]);
-  const locked = useMemo(() => {
-    const s = new Set<AttrKey>();
-    for (const g of grades) for (const a of fields) if (g[a.key]?.verdict === 'correct') s.add(a.key);
-    return s;
-  }, [grades, fields]);
-  const won = locked.size === fields.length;
-  const done = won || game.guesses.length >= MAX_GUESSES;
-
-  const persist = (g: Saved, m = mode) => save(m === 'daily' ? DAILY_KEY : UNLIMITED_KEY, g);
-
-  const switchMode = (m: 'daily' | 'unlimited') => {
-    const g = initial(m);
+  const [game, setGame] = useState<Saved>(() => restore('daily'));
+  const update = (g: Saved, m = mode) => {
+    setGame(g);
+    save(KEY[m], g);
+  };
+  const switchMode = (m: Mode) => {
     setMode(m);
-    setGame(g);
-    setDraft(g.guesses.at(-1) ?? emptyGuess());
-    setCopied(false);
+    setGame(restore(m));
   };
 
-  const newUnlimited = () => {
-    const c = randomCard(cards);
-    const g = { key: c.id, cardId: c.id, guesses: [] };
-    setGame(g);
-    persist(g, 'unlimited');
-    setDraft(emptyGuess());
-    setCopied(false);
+  const answer = byId.get(game.answerId)!;
+  const guesses = game.guesses.map((id) => byId.get(id)!);
+  const won = game.guesses.includes(answer.id);
+  const done = won || !!game.gaveUp;
+  const wrong = guesses.filter((g) => g.id !== answer.id).length;
+
+  const guess = (c: Card) => {
+    if (done || game.guesses.includes(c.id)) return;
+    update({ ...game, guesses: [...game.guesses, c.id] });
   };
 
-  const submit = () => {
-    if (done) return;
-    // Locked fields keep their correct answer.
-    const guess = { ...draft };
-    for (const k of locked) guess[k] = game.guesses.at(-1)![k];
-    const g = { ...game, guesses: [...game.guesses, guess] };
-    setGame(g);
-    persist(g);
-    const w = fields.every((a) => locked.has(a.key) || gradeAttr(a.key, guess[a.key], card).verdict === 'correct');
-    if (w || g.guesses.length >= MAX_GUESSES) {
-      const stats = load<Stats>(STATS_KEY, { played: 0, won: 0 });
-      if (mode !== 'daily' || stats.lastDaily !== date) {
-        save(STATS_KEY, { played: stats.played + 1, won: stats.won + (w ? 1 : 0), lastDaily: mode === 'daily' ? date : stats.lastDaily });
-      }
-    }
-  };
-
+  const [shared, setShared] = useState(false);
   const share = async () => {
-    const rows = grades.map((g) => fields.map((a) => EMOJI[g[a.key]!.verdict]).join('')).join('\n');
-    const head = `HS Cardle ${mode === 'daily' ? date : '(unlimited)'} ${won ? game.guesses.length : 'X'}/${MAX_GUESSES}`;
-    const text = `${head}\n${rows}`;
+    const rows = guesses.map((g) => {
+      const t = compare(g, answer);
+      return COLUMNS.map((col) => EMOJI[t[col.key].verdict]).join('');
+    });
+    const text = `HS Cardle ${mode === 'daily' ? date : '(unlimited)'}: ${won ? `${guesses.length} guess${guesses.length === 1 ? '' : 'es'}` : 'gave up'}\n${rows.join('\n')}`;
     try {
       if (navigator.share) await navigator.share({ text });
       else {
         await navigator.clipboard.writeText(text);
-        setCopied(true);
+        setShared(true);
       }
     } catch {
-      /* user cancelled */
+      /* cancelled */
     }
   };
 
-  const hidden = useMemo(() => new Set<AttrKey>(done ? [] : ATTRS.map((a) => a.key).filter((k) => !locked.has(k))), [done, locked]);
-  const left = MAX_GUESSES - game.guesses.length;
-  const lastVerdicts = useMemo(() => {
-    const g = grades.at(-1);
-    if (!g || done) return {};
-    return Object.fromEntries(fields.filter((a) => !locked.has(a.key)).map((a) => [a.key, g[a.key]!.verdict]));
-  }, [grades, fields, locked, done]);
-
   return (
-    <div className="mode">
+    <div className="mode cardle">
       <div className="tabs">
         <button className={mode === 'daily' ? 'on' : ''} onClick={() => switchMode('daily')}>
           Daily
@@ -136,41 +90,45 @@ export function Cardle({ cards }: { cards: Card[] }) {
           Unlimited
         </button>
       </div>
-      <div className="hud">
-        <span>{mode === 'daily' ? date : 'Unlimited'}</span>
-        <span>
-          Guesses left <b>{left}</b>
-        </span>
-        <span className="muted">
-          {locked.size}/{fields.length} 🟩
-        </span>
-      </div>
 
-      <GameCard
-        card={card}
-        hidden={hidden}
-        draft={draft}
-        editable={done ? new Set() : new Set(fields.map((a) => a.key).filter((k) => !locked.has(k)))}
-        onChange={(k, v) => setDraft((d) => ({ ...d, [k]: v }))}
-        verdicts={lastVerdicts}
-        pool={cards}
-      />
+      {!done && (
+        <p className="ask">
+          {mode === 'daily' ? "Guess today's Hearthstone minion." : 'Guess the mystery minion.'} Type any minion's name to start.
+        </p>
+      )}
+
+      {!done && <Search minions={minions} exclude={game.guesses} onPick={guess} />}
+
+      {!done && (
+        <div className="clues">
+          {CLUES.map((clue) => (
+            <Clue key={clue.key} label={clue.label} left={clue.after - wrong} answer={answer} kind={clue.key} />
+          ))}
+        </div>
+      )}
 
       {done && (
-        <div className={`panel center feedback ${won ? 'ok' : 'bad'}`}>
-          <h2>{won ? `Solved in ${game.guesses.length}!` : 'Out of guesses'}</h2>
-          {!won && (
-            <p>
-              It was <b>{card.name}</b>.
-            </p>
-          )}
+        <div className="cardle-result">
+          <div className={`feedback ${won ? 'ok' : 'bad'}`}>
+            <div className="feedback-head">{won ? 'You got it!' : 'The answer was'}</div>
+            <div>
+              <b>{answer.name}</b>
+              {won && (
+                <>
+                  {' '}
+                  in {guesses.length} guess{guesses.length === 1 ? '' : 'es'}
+                </>
+              )}
+            </div>
+          </div>
+          <GameCard card={answer} hidden={new Set()} pool={cards} />
           <div className="row">
             <button className="btn" onClick={share}>
-              {copied ? 'Copied!' : 'Share'}
+              {shared ? 'Copied!' : 'Share'}
             </button>
             {mode === 'unlimited' ? (
-              <button className="btn primary" onClick={newUnlimited}>
-                New card
+              <button className="btn primary" onClick={() => update(fresh('unlimited'))}>
+                New minion
               </button>
             ) : (
               <button className="btn primary" onClick={() => switchMode('unlimited')}>
@@ -181,66 +139,154 @@ export function Cardle({ cards }: { cards: Card[] }) {
         </div>
       )}
 
-      <form
-        className="panel"
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit();
-        }}
-      >
-        {!done && game.guesses.length === 0 && (
-          <p className="muted small">
-            Fill in the card by tapping it: the frame cycles classes, the banner at the bottom cycles tribes / spell schools, the gem under
-            the name cycles rarity, and the cost, attack, health, name and text open a box to type in. After each guess: 🟩 right (locked in), 🟨 close (numbers ±1,
-            overlapping tribe or class, text at least 40% right), ⬛ wrong.
-          </p>
-        )}
-        {game.guesses.length > 0 && (
-          <div className="history-table">
-            {fields.map((a) => (
-              <div key={a.key} className={`hist-row ${locked.has(a.key) ? 'locked' : ''}`}>
-                <span className="hist-label">{labelFor(a, card)}</span>
-                <History attr={a.key} guesses={game.guesses} grades={grades} />
-              </div>
-            ))}
-          </div>
-        )}
-        {done && (
-          <div className="truth">
-            <b>Card text:</b> <TextDiff truth={plainText(card.text)} matched={grades.at(-1)?.text?.truthMatched} />
-          </div>
-        )}
-        {!done && (
-          <button className="btn primary sticky" type="submit">
-            Submit guess ({game.guesses.length + 1}/{MAX_GUESSES})
-          </button>
-        )}
-      </form>
+      {guesses.length > 0 && <Board guesses={guesses} answer={answer} />}
+
+      {!done && mode === 'unlimited' && guesses.length >= 3 && (
+        <button className="link give-up" onClick={() => update({ ...game, gaveUp: true })}>
+          Give up and show the answer
+        </button>
+      )}
+
+      {guesses.length === 0 && !done && (
+        <p className="muted small center">
+          Each guess shows how close it is: 🟩 same, 🟨 partly the same (shares a keyword, tribe or class; set from the same year),
+          🟥 different. Arrows point toward the answer: higher stats, a newer set, a rarer card.
+        </p>
+      )}
     </div>
   );
 }
 
-function History({ attr, guesses, grades }: { attr: AttrKey; guesses: Guess[]; grades: Partial<Record<AttrKey, Grade>>[] }) {
-  if (!guesses.length) return null;
+function Search({ minions, exclude, onPick }: { minions: Card[]; exclude: string[]; onPick(c: Card): void }) {
+  const [q, setQ] = useState('');
+  const [hi, setHi] = useState(0);
+  const input = useRef<HTMLInputElement>(null);
+  const matches = useMemo(() => {
+    const n = normalizeName(q);
+    if (!n) return [];
+    const ex = new Set(exclude);
+    const pool = minions.filter((c) => !ex.has(c.id));
+    const starts = pool.filter((c) => normalizeName(c.name).startsWith(n));
+    const inside = pool.filter((c) => !normalizeName(c.name).startsWith(n) && normalizeName(c.name).includes(n));
+    return [...starts, ...inside].slice(0, 8);
+  }, [q, minions, exclude]);
+  useEffect(() => setHi(0), [q]);
+
+  const pick = (c: Card) => {
+    onPick(c);
+    setQ('');
+    input.current?.focus();
+  };
+
   return (
-    <div className="history">
-      {guesses.map((g, i) => {
-        const gr = grades[i][attr];
-        if (!gr) return null;
-        const kind = ATTR[attr].kind;
-        let label: string;
-        if (kind === 'text') label = `${Math.round((gr.score ?? 0) * 100)}%`;
-        else if (kind === 'number') label = g[attr] === '' ? '—' : g[attr];
-        else if (kind === 'name') label = g[attr] || '—';
-        else label = g[attr] ? pretty(attr, g[attr]) : '—';
-        const arrow = gr.verdict !== 'correct' && gr.arrow ? (gr.arrow === 'up' ? '↑' : '↓') : '';
-        return (
-          <span key={i} className={`pill v-${gr.verdict}`} title={kind === 'text' ? g[attr] : undefined}>
-            {label}
-            {arrow}
-          </span>
-        );
-      })}
+    <div className="search">
+      <input
+        ref={input}
+        className="in"
+        placeholder="Type a minion name…"
+        value={q}
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck={false}
+        onChange={(e) => setQ(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setHi((h) => Math.min(h + 1, matches.length - 1));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setHi((h) => Math.max(h - 1, 0));
+          } else if (e.key === 'Enter' && matches[hi]) {
+            e.preventDefault();
+            pick(matches[hi]);
+          }
+        }}
+      />
+      {matches.length > 0 && (
+        <ul className="search-list">
+          {matches.map((c, i) => (
+            <li key={c.id}>
+              <button
+                type="button"
+                className={i === hi ? 'hi' : ''}
+                onMouseDown={(e) => e.preventDefault()}
+                onMouseEnter={() => setHi(i)}
+                onClick={() => pick(c)}
+              >
+                <img src={thumb(c)} alt="" loading="lazy" />
+                <span>{c.name}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function Clue({ label, left, answer, kind }: { label: string; left: number; answer: Card; kind: 'art' | 'text' }) {
+  const [open, setOpen] = useState(false);
+  const unlocked = left <= 0;
+  useEffect(() => setOpen(false), [answer.id]);
+  return (
+    <div className="clue">
+      <button className={`clue-btn ${unlocked ? 'unlocked' : ''} ${open ? 'on' : ''}`} disabled={!unlocked} onClick={() => setOpen((o) => !o)}>
+        {label}
+        <span className="small">{unlocked ? (open ? 'Hide' : 'Show') : `in ${left} ${left === 1 ? 'try' : 'tries'}`}</span>
+      </button>
+      {open && unlocked && (
+        <div className="clue-body">
+          {kind === 'art' ? (
+            <img className="clue-art" src={thumb(answer)} alt="The mystery minion's art" />
+          ) : (
+            <p>{answer.text ? plainText(answer.text).split(answer.name).join('???') : 'This minion has no card text.'}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
+  // Newest guess first, like the original game.
+  const rows = [...guesses].reverse();
+  return (
+    <div className="board-wrap">
+      <div className="board" role="table">
+        <div className="board-row board-head" role="row">
+          <div className="board-cell name-cell" role="columnheader">
+            Minion
+          </div>
+          {COLUMNS.map((c) => (
+            <div key={c.key} className="board-cell" role="columnheader">
+              {c.label}
+            </div>
+          ))}
+        </div>
+        {rows.map((g, r) => {
+          const t = compare(g, answer);
+          return (
+            <div key={g.id} className={`board-row ${r === 0 ? 'newest' : ''}`} role="row">
+              <div className="board-cell name-cell" role="cell" title={g.name}>
+                <img src={thumb(g)} alt="" />
+                <span>{g.name}</span>
+              </div>
+              {COLUMNS.map((c, i) => (
+                <TileCell key={c.key} tile={t[c.key]} delay={r === 0 ? i * 120 : 0} />
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TileCell({ tile, delay }: { tile: Tile; delay: number }) {
+  return (
+    <div className={`board-cell tile t-${tile.verdict}`} style={{ animationDelay: `${delay}ms` }} role="cell">
+      {tile.arrow && <span className={`tile-arrow ${tile.arrow}`} aria-label={tile.arrow === 'up' ? 'higher' : 'lower'} />}
+      <span className="tile-label">{tile.label}</span>
     </div>
   );
 }

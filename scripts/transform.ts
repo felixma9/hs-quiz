@@ -21,7 +21,54 @@ export interface RawCard {
   text?: string;
   flavor?: string;
   countAsCopyOfDbfId?: number;
+  mechanics?: string[];
   collectible?: boolean;
+}
+
+/** Player-facing keywords, keyed by how they're written in bold card text (lowercase). */
+const KEYWORDS: Record<string, string> = Object.fromEntries(
+  [
+    'Battlecry', 'Deathrattle', 'Taunt', 'Rush', 'Charge', 'Discover', 'Divine Shield', 'Lifesteal', 'Stealth', 'Combo',
+    'Dormant', 'Reborn', 'Poisonous', 'Venomous', 'Spellburst', 'Elusive', 'Spell Damage', 'Windfury', 'Mega-Windfury',
+    'Overload', 'Choose One', 'Immune', 'Freeze', 'Magnetic', 'Tradeable', 'Outcast', 'Kindred', 'Corrupt', 'Silence',
+    'Inspire', 'Miniaturize', 'Starship Piece', 'Frenzy', 'Start of Game', 'Adapt', 'Forge', 'Dredge', 'Titan',
+    'Rewind', 'Honorable Kill', 'Colossal', 'Finale', 'Imbue', 'Echo', 'Overkill', 'Excavate', 'Herald', 'Recruit',
+    'Assemble', 'Overheal', 'Quickdraw', 'Gigantify', 'Infuse', 'Manathirst', 'Secret', 'Corpse', 'Jade Golem', 'Lackey',
+    'Dark Gift', 'Bonus Effect', 'Spare Part', 'Invoke', 'Prepare', 'Temporary', 'Enrage', 'Sidequest', 'Questline',
+    'Twinspell', 'Cleave', 'Shatter', 'Paired', 'Spellcraft', 'Tourist', 'Threat', 'Tradeable', 'Trinket',
+  ].map((k) => [k.toLowerCase(), k]),
+);
+/** Other spellings in bold text -> keyword. */
+const KEYWORD_ALIASES: Record<string, string> = {
+  battlecries: 'Battlecry', deathrattles: 'Deathrattle', secrets: 'Secret', corpses: 'Corpse', frozen: 'Freeze',
+  overloaded: 'Overload', excavated: 'Excavate', 'bonus effects': 'Bonus Effect', 'jade golems': 'Jade Golem',
+  lackeys: 'Lackey', 'spare parts': 'Spare Part', 'starship pieces': 'Starship Piece', starship: 'Starship Piece',
+  silenced: 'Silence', 'divine shields': 'Divine Shield', 'dark gifts': 'Dark Gift', imbued: 'Imbue', forged: 'Forge',
+  infused: 'Infuse', corrupted: 'Corrupt', dredged: 'Dredge', 'mega windfury': 'Mega-Windfury',
+};
+/** Keywords only present as mechanic tags on older cards. */
+const KEYWORD_MECHANICS: Record<string, string> = { ENRAGED: 'Enrage', INSPIRE: 'Inspire', JADE_GOLEM: 'Jade Golem' };
+
+/** The card's keywords, from its bold text (plus a few mechanic tags). */
+export function keywordsOf(rawText: string | undefined, mechanics: string[] = []): string[] {
+  const out = new Set<string>();
+  const text = (rawText ?? '').split('@')[0];
+  for (const m of text.matchAll(/<b>(.*?)<\/b>/g)) {
+    const bold = m[1].replace(/<\/?[bi]>/g, '');
+    // "Battlecry and Deathrattle", "Battlecry: Discover", "Spell Damage +1", "Infuse (3)", "Choose One -"
+    for (const part of bold.split(/\s+and\s+|:|,/)) {
+      const k = part
+        .replace(/\(.*?\)/g, '')
+        .replace(/[+-]?\$?\d+/g, '')
+        .replace(/[\s\-–.!]+$/g, '')
+        .trim()
+        .toLowerCase();
+      const name = KEYWORDS[k] ?? KEYWORD_ALIASES[k];
+      if (name) out.add(name);
+    }
+  }
+  for (const mech of mechanics) if (KEYWORD_MECHANICS[mech]) out.add(KEYWORD_MECHANICS[mech]);
+  return [...out].sort();
 }
 
 const TYPES = new Set(['MINION', 'SPELL', 'WEAPON', 'HERO', 'LOCATION']);
@@ -78,6 +125,8 @@ function slim(r: RawCard): Card {
   if (r.spellSchool) c.spellSchool = r.spellSchool;
   const text = cleanText(r.text);
   if (text) c.text = text;
+  const keywords = keywordsOf(r.text, r.mechanics);
+  if (keywords.length) c.keywords = keywords;
   const flavor = cleanText(r.flavor, false);
   if (flavor) c.flavor = flavor;
   return c;

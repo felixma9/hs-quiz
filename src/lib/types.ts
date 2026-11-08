@@ -15,5 +15,7 @@ export interface Card {
   races?: string[];
   spellSchool?: string;
   text?: string;
+  /** Player-facing keywords (Taunt, Battlecry...). */
+  keywords?: string[];
   flavor?: string;
 }

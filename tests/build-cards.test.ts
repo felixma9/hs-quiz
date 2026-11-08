@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCards, cleanText, type RawCard } from '../scripts/transform';
+import { buildCards, cleanText, keywordsOf, type RawCard } from '../scripts/transform';
 
 const base = { collectible: true, rarity: 'FREE', cardClass: 'MAGE', cost: 4 };
 
@@ -33,5 +33,19 @@ describe('buildCards', () => {
     expect(cards).toHaveLength(1);
     expect(cards[0].id).toBe('CS2_029');
     expect(cards[0].text).toBe('Deal 6 damage.');
+  });
+});
+
+describe('keywordsOf', () => {
+  it('reads keywords from bold text', () => {
+    expect(keywordsOf('<b>Charge</b>. <b>Battlecry:</b> Summon two 1/1 Whelps.')).toEqual(['Battlecry', 'Charge']);
+    expect(keywordsOf('<b>Battlecry and Deathrattle:</b> Deal 2.')).toEqual(['Battlecry', 'Deathrattle']);
+    expect(keywordsOf('<b>Spell Damage +1</b>. <b>Infuse (3):</b> Gain <b>Taunt</b>.')).toEqual(['Infuse', 'Spell Damage', 'Taunt']);
+  });
+  it('ignores bold card names and Legendary', () => {
+    expect(keywordsOf("Add a <b>Legendary</b> minion and a <b>Fireball</b>.")).toEqual([]);
+  });
+  it('adds keywords from old mechanic tags', () => {
+    expect(keywordsOf('<b>Enrage:</b> +3 Attack', ['ENRAGED'])).toEqual(['Enrage']);
   });
 });
