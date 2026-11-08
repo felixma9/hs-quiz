@@ -8,6 +8,7 @@ describe('fuzzy', () => {
   });
   it('splits words', () => {
     expect(words('Deal 6 damage. Summon a 1/1!')).toEqual(['deal', '6', 'damage', 'summon', 'a', '1', '1']);
+    expect(words('Draw two cards twice')).toEqual(['draw', '2', 'cards', '2']);
   });
   it('levenshtein', () => {
     expect(levenshtein('kitten', 'sitting')).toBe(3);

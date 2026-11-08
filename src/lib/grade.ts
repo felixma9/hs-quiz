@@ -12,7 +12,7 @@ export interface Grade {
   truthMatched?: boolean[];
 }
 
-export const TEXT_PASS = 0.85;
+export const TEXT_PASS = 0.8;
 export const TEXT_CLOSE = 0.5;
 
 export function gradeNumber(guess: number | null, truth: number | null): Grade {

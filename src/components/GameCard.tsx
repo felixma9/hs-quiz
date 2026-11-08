@@ -12,7 +12,7 @@ import { boxStyle, layoutFor } from './cardLayout';
 const BLANK = '?';
 const RENDER_WIDTH = 500;
 /** Sunwell's default (124) is sized for the Belwe font; Merriweather is wider. */
-const GEM_TEXT_SIZE = 96;
+const GEM_TEXT_SIZE = 80;
 
 const ASSETS = `${import.meta.env.BASE_URL}sunwell/`;
 let sunwell: Sunwell | null = null;

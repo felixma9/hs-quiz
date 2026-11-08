@@ -73,3 +73,16 @@ describe('card text tags', () => {
     expect(gradeAttr('text', 'Charge. Battlecry: Summon two 1/1 Whelps for your opponent.', leeroy).verdict).toBe('correct');
   });
 });
+
+describe('forgiving text', () => {
+  it('number words count as digits', () => {
+    expect(gradeText('Charge. Battlecry: Summon 2 1/1 Whelps for your opponent.', 'Charge. Battlecry: Summon two 1/1 Whelps for your opponent.').verdict).toBe('correct');
+    expect(gradeText('Deal six damage', 'Deal 6 damage.').verdict).toBe('correct');
+  });
+  it('small typos in longer words are fine', () => {
+    expect(gradeText('Battlecyr: Summon two 1/1 Whelps for your oponent.', 'Battlecry: Summon two 1/1 Whelps for your opponent.').verdict).toBe('correct');
+  });
+  it('a wrong number still fails', () => {
+    expect(gradeText('Deal seven damage', 'Deal 6 damage.').verdict).not.toBe('correct');
+  });
+});

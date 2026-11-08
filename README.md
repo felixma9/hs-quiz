@@ -8,7 +8,7 @@ Cards are drawn with in-game frames, with the fields you have to guess left blan
 - **Cardle:** a daily, Wordle-style puzzle. You see the art and the frame, and fill in the rest of the card in 6 tries. After each guess: 🟩 right (it appears on the card), 🟨 close (numbers ±1, overlapping tribe/class, text ≥50% similar), ⬛ wrong. There is also an unlimited mode.
 - **Card sets:** choose which sets cards come from on the main menu (saved on your device; new expansions start switched on).
 
-Card text is free-typed and fuzzy graded. It counts as right when at least 85% of the words match in order **and** the numbers are exactly right. Names allow a typo or two.
+Card text is free-typed and fuzzy graded. It counts as right when at least 80% of the words match in order **and** the numbers are exactly right. Number words count as digits ("two" = "2"), and a one-letter typo in a word of 5+ letters still matches. Names allow a typo or two.
 
 Play it at https://felixma9.github.io/hs-quiz/ (the `gh-pages` branch holds the built site; run `npm run deploy` to update it).
 
