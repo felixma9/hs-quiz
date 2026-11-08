@@ -24,7 +24,7 @@ const HOW: Record<string, string> = {
   text: 'tap the text box and type (leave it blank if the card has none).',
   class: 'tap the card frame to cycle classes, or pick from the list.',
   rarity: 'tap the gem under the name to cycle rarities.',
-  tribe: 'tap the tribe banner (or the school chip on spells) to cycle, or pick from the list.',
+  tribe: 'tap the banner at the bottom of the card to cycle, or pick from the list.',
 };
 
 interface Round {

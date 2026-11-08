@@ -4,6 +4,9 @@ declare module 'sunwell/dist/sunwell.web.js' {
   }
   interface SunwellCard {
     raceText: string;
+    raceBannerAsset: string;
+    raceBannerCoords: Record<string, number>;
+    raceTextCoords: Record<string, number>;
     target: unknown;
     costGem?: Gem;
     attackGem?: Gem;
@@ -13,6 +16,7 @@ declare module 'sunwell/dist/sunwell.web.js' {
     constructor(options: Record<string, unknown>);
     options: Record<string, unknown>;
     getAssetPath(key: string): string;
+    fetchAsset(path: string): Promise<unknown>;
     createCard(
       props: Record<string, unknown>,
       width: number,

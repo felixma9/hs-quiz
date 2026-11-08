@@ -190,7 +190,7 @@ export function Cardle({ cards }: { cards: Card[] }) {
       >
         {!done && game.guesses.length === 0 && (
           <p className="muted small">
-            Fill in the card by tapping it: the frame cycles classes, the tribe banner (or school chip) cycles tribes, the gem under
+            Fill in the card by tapping it: the frame cycles classes, the banner at the bottom cycles tribes / spell schools, the gem under
             the name cycles rarity, and the cost, attack, health, name and text open a box to type in. After each guess: 🟩 right (locked in), 🟨 close (numbers ±1,
             overlapping tribe or class, text at least 40% right), ⬛ wrong.
           </p>

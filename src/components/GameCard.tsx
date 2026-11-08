@@ -38,6 +38,14 @@ function getSunwell(): Sunwell {
   return sunwell;
 }
 
+/** The tribe banner image, loaded up front so spells can use it too. */
+let banner: Promise<unknown> | null = null;
+function loadBanner() {
+  const sw = getSunwell();
+  banner ??= sw.fetchAsset(sw.getAssetPath('race-banner'));
+  return banner;
+}
+
 let fontsReady: Promise<unknown> | null = null;
 function loadFonts() {
   fontsReady ??= Promise.all(
@@ -91,9 +99,16 @@ function sunwellProps(card: Card, v: Shown, texture: HTMLImageElement | null) {
   } else if (card.type === 'HERO') {
     p.armor = gem('health');
   }
-  // Sunwell only knows the races that existed in 2022, so we set the banner text ourselves.
+  // Sunwell only knows the races that existed in 2022 and has no spell-school banner,
+  // so we set the banner text ourselves (for spells, it shows the school).
   const raceText =
-    card.type !== 'MINION' ? '' : !v.tribe ? BLANK : v.tribe === 'NONE' ? '' : v.tribe.split(' + ').map((r) => (r === 'ALL' ? 'All' : pretty('tribe', r))).join(' ');
+    card.type !== 'MINION' && card.type !== 'SPELL'
+      ? ''
+      : !v.tribe
+        ? BLANK
+        : v.tribe === 'NONE'
+          ? ''
+          : v.tribe.split(' + ').map((r) => (r === 'ALL' ? 'All' : pretty('tribe', r))).join(' ');
   return { props: p, raceText };
 }
 
@@ -142,7 +157,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
   useEffect(() => {
     let live = true;
     const t = setTimeout(() => {
-      Promise.all([loadArt(card), loadFonts()]).then(([texture]) => {
+      Promise.all([loadArt(card), loadFonts(), loadBanner()]).then(([texture]) => {
         if (!live || !canvas.current) return;
         const { props, raceText } = sunwellProps(card, shown, texture);
         try {
@@ -150,6 +165,12 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
           Object.assign(getSunwell().options, fitText(String(props.text ?? ''), card.type, BODY_FONT));
           const sw = getSunwell().createCard(props, RENDER_WIDTH, false, canvas.current, () => live && setReady(true));
           sw.raceText = raceText;
+          if (card.type === 'SPELL') {
+            // Reuse the minion tribe banner as the spell-school banner, at the bottom of the card.
+            sw.raceBannerAsset = 'race-banner';
+            sw.raceBannerCoords = { dx: 131, dy: 806, dWidth: 408, dHeight: 69, sWidth: 408, sHeight: 69 };
+            sw.raceTextCoords = { dx: 335, dy: 843 };
+          }
           for (const g of [sw.costGem, sw.attackGem, sw.healthGem]) if (g) g.textSize = GEM_TEXT_SIZE;
           // We draw straight onto our canvas. Without this Sunwell also copies it into an image,
           // which fails because the art is cross-origin.
@@ -236,7 +257,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
         )}
         {hotspot('name', 'Name')}
         {hotspot('text', 'Card text')}
-        {card.type === 'MINION' && hotspot('tribe', 'Tribe')}
+        {(card.type === 'MINION' || card.type === 'SPELL') && hotspot('tribe', card.type === 'SPELL' ? 'Spell school' : 'Tribe')}
         {hotspot('rarity', 'Rarity (tap to cycle)')}
         {hotspot('cost', 'Cost')}
         {hotspot('attack', 'Attack')}

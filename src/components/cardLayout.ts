@@ -23,7 +23,8 @@ const LAYOUT: Record<string, Partial<Record<AttrKey, Box>>> = {
     cost: COST,
     rarity: [272, 541, 116, 77],
     name: [80, 457, 507, 84],
-    text: [150, 630, 366, 168],
+    text: [150, 630, 366, 160],
+    tribe: [180, 800, 310, 72],
   },
   WEAPON: {
     cost: COST,
