@@ -33,13 +33,23 @@ export function App() {
   }, []);
 
   return (
-    <div className="app">
+    <>
       <header className="top">
-        <a href="#/" className="logo">
-          HS Quiz
-        </a>
-        {route !== 'menu' && <span className="muted">{route === 'gauntlet' ? 'Gauntlet' : 'Cardle'}</span>}
+        <div className="top-inner">
+          {route !== 'menu' ? (
+            <a href="#/" className="top-back" aria-label="Back to menu">
+              ←
+            </a>
+          ) : (
+            <span />
+          )}
+          <a href="#/" className="top-title">
+            {route === 'gauntlet' ? 'Gauntlet' : route === 'cardle' ? 'Cardle' : 'HS Quiz'}
+          </a>
+          <span />
+        </div>
       </header>
+      <div className="app">
       <main>
         {error && <div className="panel feedback bad">{error}</div>}
         {!cards && !error && <div className="panel center muted">Loading cards…</div>}
@@ -60,22 +70,25 @@ export function App() {
         Card data from <a href="https://hearthstonejson.com">HearthstoneJSON</a>. Hearthstone is © Blizzard Entertainment; this is an
         unofficial fan quiz.
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
 
 function Menu({ count, children }: { count: number; children: React.ReactNode }) {
   return (
     <div className="menu">
-      <p className="muted">How well do you know {count.toLocaleString()} Hearthstone cards?</p>
+      <div className="menu-intro">
+        <p>How well do you know {count.toLocaleString()} Hearthstone cards?</p>
+      </div>
       {children}
       <a className="mode-card" href="#/gauntlet">
         <h2>Gauntlet</h2>
-        <p>One attribute is hidden on each card. Fill it in. Three lives, so see how far you get.</p>
+        <p>One blank per card. Three lives. How far can you get?</p>
       </a>
       <a className="mode-card" href="#/cardle">
         <h2>Cardle</h2>
-        <p>Daily puzzle: you get the art and the card frame. Fill in everything else in 6 tries, with clues after each guess.</p>
+        <p>A new card every day. Fill in the blank card in 6 tries.</p>
       </a>
     </div>
   );
