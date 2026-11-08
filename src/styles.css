@@ -104,7 +104,7 @@ h2 { margin: 0.2em 0; font-size: 1.15rem; font-weight: 700; }
 .check input { width: 18px; height: 18px; }
 
 /* Card (drawn on a canvas by Sunwell) */
-.game-card { display: grid; gap: 8px; justify-items: center; }
+.game-card { display: grid; gap: 8px; justify-items: center; align-content: start; }
 .game-card-frame { position: relative; width: min(300px, 78vw); aspect-ratio: 500 / 746; }
 .game-card canvas { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.2s; }
 .game-card canvas.ready { opacity: 1; }
@@ -200,3 +200,13 @@ h2 { margin: 0.2em 0; font-size: 1.15rem; font-weight: 700; }
 .hist-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .hist-label { font-size: 0.9rem; font-weight: 600; }
 .hist-row.locked .hist-label::before { content: '✓ '; color: var(--ok); }
+
+/* Wide screens: open pickers beside the card instead of under it. */
+.game-card { position: relative; }
+@media (min-width: 1000px) {
+  .game-card .picker {
+    position: absolute; top: 0; width: 300px; max-height: 100%; overflow-y: auto;
+    left: calc(50% + 150px + 28px);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 14px;
+  }
+}

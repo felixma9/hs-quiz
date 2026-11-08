@@ -91,7 +91,7 @@ function sunwellProps(card: Card, v: Shown, texture: HTMLImageElement | null) {
   }
   // Sunwell only knows the races that existed in 2022, so we set the banner text ourselves.
   const raceText =
-    card.type !== 'MINION' ? '' : !v.tribe ? BLANK : v.tribe === 'NONE' ? '' : v.tribe.split(' + ').map((r) => pretty('tribe', r)).join(' ');
+    card.type !== 'MINION' ? '' : !v.tribe ? BLANK : v.tribe === 'NONE' ? '' : v.tribe.split(' + ').map((r) => (r === 'ALL' ? 'All' : pretty('tribe', r))).join(' ');
   return { props: p, raceText };
 }
 
@@ -172,6 +172,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
   const singleClasses = classOpts.filter((o) => !o.value.includes('+'));
   const rarityOpts = useMemo(() => enumOptions('rarity', typePool), [typePool]);
   const tribeOpts = useMemo(() => enumOptions('tribe', typePool), [typePool]);
+  const singleTribes = tribeOpts.filter((o) => !o.value.includes('+'));
 
   const cycle = (k: AttrKey, opts: { value: string }[]) => {
     const vals = opts.map((o) => o.value);
@@ -184,6 +185,9 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
     if (k === 'class') {
       cycle('class', singleClasses);
       setActive('class');
+    } else if (k === 'tribe') {
+      cycle('tribe', singleTribes);
+      setActive('tribe');
     } else if (k === 'rarity') {
       cycle('rarity', rarityOpts);
       setActive(null);
@@ -300,7 +304,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
             type="button"
             className={`chip ${outline('tribe')}`}
             disabled={!canEdit('tribe') && !verdicts.tribe}
-            onClick={() => canEdit('tribe') && setActive(active === 'tribe' ? null : 'tribe')}
+            onClick={() => tap('tribe')}
           >
             School: {schoolLabel}
           </button>
@@ -360,7 +364,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
       {active === 'tribe' && canEdit('tribe') && (
         <Picker title={card.type === 'SPELL' ? 'Spell school' : 'Tribe'} onClose={() => setActive(null)}>
           <div className="option-list">
-            {tribeOpts.map((o) => (
+            {singleTribes.map((o) => (
               <button
                 key={o.value}
                 type="button"
@@ -374,6 +378,28 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
               </button>
             ))}
           </div>
+          {tribeOpts.length > singleTribes.length && (
+            <details className="dual">
+              <summary>Dual-tribe minions</summary>
+              <div className="option-list">
+                {tribeOpts
+                  .filter((o) => o.value.includes('+'))
+                  .map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      className={draft.tribe === o.value ? 'on' : ''}
+                      onClick={() => {
+                        set('tribe', o.value);
+                        setActive(null);
+                      }}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+              </div>
+            </details>
+          )}
         </Picker>
       )}
     </div>

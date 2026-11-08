@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Card } from '../lib/types';
 import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type AttrKey } from '../lib/attributes';
 import { pickHidden, randomCard } from '../lib/cards';
@@ -24,7 +24,7 @@ const HOW: Record<string, string> = {
   text: 'tap the text box and type (leave it blank if the card has none).',
   class: 'tap the card frame to cycle classes, or pick from the list.',
   rarity: 'tap the gem under the name to cycle rarities.',
-  tribe: 'tap the tribe banner or school chip and pick one.',
+  tribe: 'tap the tribe banner (or the school chip on spells) to cycle, or pick from the list.',
 };
 
 interface Round {
@@ -98,6 +98,21 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     save(SETTINGS_KEY, s);
     restart(s);
   };
+
+  // Once a card is answered, Enter moves on (or starts a new game after the last life).
+  useEffect(() => {
+    if (!result) return;
+    // Ignore the Enter press that submitted the answer (it may still be bubbling).
+    const shownAt = performance.now();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.repeat || e.timeStamp <= shownAt) return;
+      e.preventDefault();
+      if (over) restart();
+      else next();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   const hidden = useMemo(() => new Set<AttrKey>(result ? [] : [round.hidden]), [result, round.hidden]);
   const truth = attr.value(round.card);
