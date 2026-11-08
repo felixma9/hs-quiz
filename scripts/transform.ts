@@ -36,9 +36,14 @@ const REPRINT_SETS = new Set(['CORE']);
  */
 export function cleanText(raw: string | undefined, keepTags = true): string {
   if (!raw) return '';
-  let s = raw.replace(/\[x\]/gi, '');
+  // Cards that change in play list their text variants after '@' ("base@(3 left!)@(Ready!)"),
+  // and a few join them with a digit instead ("...(Upgrades each turn!)</i>1Deal ...").
+  // Keep the first: the card's text as you first see it.
+  let s = raw.split('@')[0].split(/(?<=[)!.>])\d(?=[A-Z<])/)[0];
+  s = s.replace(/\|4\(([^,()]*),([^()]*)\)/g, '$2').replace(/\[x\]/gi, '');
   s = keepTags ? s.replace(/<(?!\/?[bi]>)[^>]*>/gi, '').replace(/<(\/?)I>/g, '<$1i>') : s.replace(/<\/?[a-z]+>/gi, '');
   return s
+    .replace(/(?<=[a-z])\{\d+\}/g, '')
     .replace(/\$?\{\d+\}/g, 'X')
     .replace(/[$#](\d)/g, '$1')
     .replace(/@/g, '')

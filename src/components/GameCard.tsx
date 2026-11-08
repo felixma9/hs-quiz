@@ -7,6 +7,7 @@ import { artUrl } from '../lib/cards';
 import { normalizeName } from '../lib/fuzzy';
 import { badge } from '../data/classes';
 import { boxStyle, layoutFor } from './cardLayout';
+import { fitText } from './fitText';
 
 /** Unknown stats show this in their gem. Name and text are left empty. */
 const BLANK = '?';
@@ -15,6 +16,7 @@ const RENDER_WIDTH = 500;
 const GEM_TEXT_SIZE = 80;
 
 const ASSETS = `${import.meta.env.BASE_URL}sunwell/`;
+const BODY_FONT = 'Libre Franklin';
 let sunwell: Sunwell | null = null;
 function getSunwell(): Sunwell {
   if (!sunwell) {
@@ -22,7 +24,7 @@ function getSunwell(): Sunwell {
       assetFolder: ASSETS,
       titleFont: 'Merriweather',
       gemFont: 'Merriweather',
-      bodyFontRegular: 'Libre Franklin',
+      bodyFontRegular: BODY_FONT,
       bodyFontSize: 36,
       bodyLineHeight: 40,
       // Sunwell draws each text line with its baseline at the top of the line,
@@ -144,6 +146,8 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
         if (!live || !canvas.current) return;
         const { props, raceText } = sunwellProps(card, shown, texture);
         try {
+          // Size the text for this card so long texts aren't clipped.
+          Object.assign(getSunwell().options, fitText(String(props.text ?? ''), card.type, BODY_FONT));
           const sw = getSunwell().createCard(props, RENDER_WIDTH, false, canvas.current, () => live && setReady(true));
           sw.raceText = raceText;
           for (const g of [sw.costGem, sw.attackGem, sw.healthGem]) if (g) g.textSize = GEM_TEXT_SIZE;

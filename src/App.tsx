@@ -5,10 +5,12 @@ import { drawable, filterPool, loadExcluded, saveExcluded } from './lib/pool';
 import { Gauntlet } from './modes/Gauntlet';
 import { Cardle } from './modes/Cardle';
 import { SetPicker } from './components/SetPicker';
+import { GameCard } from './components/GameCard';
 
-type Route = 'menu' | 'gauntlet' | 'cardle';
+type Route = 'menu' | 'gauntlet' | 'cardle' | 'card';
 const parse = (): Route => {
   const h = location.hash.replace(/^#\/?/, '');
+  if (h.startsWith('card/')) return 'card';
   return h === 'gauntlet' || h === 'cardle' ? h : 'menu';
 };
 
@@ -65,6 +67,7 @@ export function App() {
         )}
         {cards && pool.length > 0 && route === 'gauntlet' && <Gauntlet cards={pool} />}
         {cards && pool.length > 0 && route === 'cardle' && <Cardle cards={pool} />}
+        {cards && route === 'card' && <CardPreview cards={cards} />}
       </main>
       <footer className="muted small">
         Card data from <a href="https://hearthstonejson.com">HearthstoneJSON</a>. Hearthstone is © Blizzard Entertainment; this is an
@@ -92,4 +95,12 @@ function Menu({ count, children }: { count: number; children: React.ReactNode })
       </a>
     </div>
   );
+}
+
+/** #/card/<id>: one card, fully revealed. Handy for checking how a card draws. */
+function CardPreview({ cards }: { cards: Card[] }) {
+  const id = decodeURIComponent(location.hash.replace(/^#\/?card\//, ''));
+  const card = cards.find((c) => c.id === id);
+  if (!card) return <div className="panel center muted">No card with id {id}.</div>;
+  return <GameCard card={card} hidden={new Set()} pool={cards} />;
 }

@@ -1,4 +1,4 @@
-import { lcsWords, levenshtein, normalizeName, words } from './fuzzy';
+import { FILLER, levenshtein, matchWords, normalizeName, words } from './fuzzy';
 
 export type Verdict = 'correct' | 'close' | 'wrong';
 
@@ -12,8 +12,8 @@ export interface Grade {
   truthMatched?: boolean[];
 }
 
-export const TEXT_PASS = 0.8;
-export const TEXT_CLOSE = 0.5;
+export const TEXT_PASS = 0.7;
+export const TEXT_CLOSE = 0.4;
 
 export function gradeNumber(guess: number | null, truth: number | null): Grade {
   if (guess === truth) return { verdict: 'correct' };
@@ -46,18 +46,31 @@ export function gradeName(guess: string, truth: string): Grade {
 }
 
 /**
- * Free-typed card text. Score is the share of words in the right order;
- * the numbers must match exactly, since they matter most on a card.
+ * Free-typed card text, graded on meaning rather than exact wording:
+ * filler words ("a", "the", "your"...) don't count, words can be in any
+ * order, number words equal digits, and small typos and plurals are fine.
+ * Score = meaningful words matched / meaningful words in the longer of the
+ * two texts. The numbers must all be there (in any order) for a pass.
  */
 export function gradeText(guess: string, truth: string): Grade {
   const tw = words(truth);
   const gw = words(guess);
   if (!tw.length) return { verdict: gw.length ? 'wrong' : 'correct', score: gw.length ? 0 : 1, truthMatched: [] };
   if (!gw.length) return { verdict: 'wrong', score: 0, truthMatched: tw.map(() => false) };
-  const { length, inA } = lcsWords(tw, gw);
-  const score = length / Math.max(tw.length, gw.length);
+
+  const { inTruth } = matchWords(tw, gw);
+  const meaningful = (w: string) => !FILLER.has(w);
+  // If a text is all filler (unlikely), count every word.
+  const tKeep = tw.some(meaningful) ? meaningful : () => true;
+  const gKeep = gw.some(meaningful) ? meaningful : () => true;
+  const matched = tw.filter((w, i) => tKeep(w) && inTruth[i]).length;
+  const tCount = tw.filter(tKeep).length;
+  const gCount = gw.filter(gKeep).length;
+  const score = matched / Math.max(tCount, gCount);
+
   const isNum = (w: string) => /^\d+$/.test(w);
-  const numsOk = tw.filter(isNum).join(',') === gw.filter(isNum).join(',');
+  const sorted = (ws: string[]) => ws.filter(isNum).sort().join(',');
+  const numsOk = sorted(tw) === sorted(gw);
   const verdict: Verdict = score >= TEXT_PASS && numsOk ? 'correct' : score >= TEXT_CLOSE ? 'close' : 'wrong';
-  return { verdict, score, truthMatched: inA };
+  return { verdict, score, truthMatched: inTruth };
 }

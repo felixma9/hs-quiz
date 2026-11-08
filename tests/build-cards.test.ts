@@ -10,6 +10,14 @@ describe('cleanText', () => {
     expect(cleanText('[x]<b>Taunt</b>\nGain #3 Armor.', false)).toBe('Taunt Gain 3 Armor.');
     expect(cleanText('Battlecry:& Equip a 3/8 Blood Fury.~GAMEPLAY ASPROXY EX1 323')).toBe('Battlecry: Equip a 3/8 Blood Fury.');
   });
+  it('keeps only the first text variant', () => {
+    expect(cleanText('Draw a card for each minion that died this turn.@ <i>(@)</i>')).toBe('Draw a card for each minion that died this turn.');
+    expect(cleanText('<b>Battlecry:</b> Fill your hand. <i>({0} left!)</i>@<b>Battlecry:</b> Fill your hand. <i>(Ready!)</i>@x')).toBe(
+      '<b>Battlecry:</b> Fill your hand. <i>(X left!)</i>',
+    );
+    expect(cleanText('Deal ${0} damage. <i>(Upgrades each turn!)</i>1Deal ${0} damage.')).toBe('Deal X damage. <i>(Upgrades each turn!)</i>');
+    expect(cleanText('Choose {0} |4(Cataclysm,Cataclysms) to unleash!')).toBe('Choose X Cataclysms to unleash!');
+  });
 });
 
 describe('buildCards', () => {

@@ -11,6 +11,7 @@ declare module 'sunwell/dist/sunwell.web.js' {
   }
   export default class Sunwell {
     constructor(options: Record<string, unknown>);
+    options: Record<string, unknown>;
     getAssetPath(key: string): string;
     createCard(
       props: Record<string, unknown>,

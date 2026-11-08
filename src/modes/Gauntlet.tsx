@@ -216,7 +216,7 @@ function Feedback({ result, attrKey, card, truthPretty, answer }: { result: Grad
       <div className="feedback-head">{ok ? '✓ Correct!' : '✗ Not quite'}</div>
       {attrKey === 'text' ? (
         <>
-          <div className="small">Match: {Math.round((result.score ?? 0) * 100)}% (need 80% and the right numbers)</div>
+          <div className="small">Match: {Math.round((result.score ?? 0) * 100)}% (need 70% and the right numbers)</div>
           <div className="truth">
             <TextDiff truth={plainText(card.text)} matched={result.truthMatched} />
           </div>

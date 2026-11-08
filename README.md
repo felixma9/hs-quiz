@@ -5,10 +5,10 @@ A browser quiz on Hearthstone cards.
 Cards are drawn with in-game frames, with the fields you have to guess left blank. You fill them in on the card itself: tap the frame to cycle classes (or pick from the class list), tap the rarity gem to cycle rarities, and tap the cost, attack or health gem, the name banner, the text box or the tribe banner to type or choose. Your answers are drawn onto the card as you go. The class badges in the picker are simple original stand-ins, not the game's class icons.
 
 - **Gauntlet:** each card has one field blank (cost, attack, health, name, text, class, rarity or tribe). Fill it in. You have 3 lives; see how many cards you clear. Settings let you pick minions only or which fields can be blank.
-- **Cardle:** a daily, Wordle-style puzzle. You see the art and the frame, and fill in the rest of the card in 6 tries. After each guess: 🟩 right (it appears on the card), 🟨 close (numbers ±1, overlapping tribe/class, text ≥50% similar), ⬛ wrong. There is also an unlimited mode.
+- **Cardle:** a daily, Wordle-style puzzle. You see the art and the frame, and fill in the rest of the card in 6 tries. After each guess: 🟩 right (it appears on the card), 🟨 close (numbers ±1, overlapping tribe/class, text ≥40% right), ⬛ wrong. There is also an unlimited mode.
 - **Card sets:** choose which sets cards come from on the main menu (saved on your device; new expansions start switched on).
 
-Card text is free-typed and fuzzy graded. It counts as right when at least 80% of the words match in order **and** the numbers are exactly right. Number words count as digits ("two" = "2"), and a one-letter typo in a word of 5+ letters still matches. Names allow a typo or two.
+Card text is free-typed and graded on meaning: filler words ("a", "the", "your"...) don't count, word order doesn't matter, number words equal digits ("two" = "2"), plurals match, and small typos are fine (1 letter in words of 4+ letters, 2 in words of 8+). It's right at 70% of the meaningful words, as long as all the numbers are there. Names allow a typo or two.
 
 Play it at https://felixma9.github.io/hs-quiz/ (the `gh-pages` branch holds the built site; run `npm run deploy` to update it).
 

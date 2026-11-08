@@ -56,11 +56,15 @@ describe('text', () => {
     const g = gradeText('deal 7 damage', 'Deal 6 damage.');
     expect(g.verdict).not.toBe('correct');
   });
-  it('paraphrase gets partial credit', () => {
-    const g = gradeAttr('text', 'Charge. Battlecry: give your opponent two 1/1 whelps.', leeroy);
+  it('a close paraphrase passes', () => {
+    expect(gradeAttr('text', 'Charge. Battlecry: give your opponent two 1/1 whelps.', leeroy).verdict).toBe('correct');
+  });
+  it('a half-remembered text gets partial credit', () => {
+    const g = gradeAttr('text', 'Charge. Battlecry: summon some whelps.', leeroy);
     expect(g.verdict).toBe('close');
-    expect(g.score).toBeGreaterThan(0.4);
-    expect(g.score).toBeLessThan(0.85);
+  });
+  it('an unrelated text fails', () => {
+    expect(gradeAttr('text', 'Taunt. Deathrattle: draw a card.', leeroy).verdict).toBe('wrong');
   });
   it('blank matches a card with no text', () => {
     expect(gradeText('', '').verdict).toBe('correct');
@@ -84,5 +88,18 @@ describe('forgiving text', () => {
   });
   it('a wrong number still fails', () => {
     expect(gradeText('Deal seven damage', 'Deal 6 damage.').verdict).not.toBe('correct');
+  });
+});
+
+describe('order, filler and plurals', () => {
+  it('ignores word order and filler words', () => {
+    expect(gradeText('summon two 1/1 whelps for opponent, charge, battlecry', 'Charge. Battlecry: Summon two 1/1 Whelps for your opponent.').verdict).toBe('correct');
+  });
+  it('matches plurals', () => {
+    expect(gradeText('Draw 2 card', 'Draw 2 cards.').verdict).toBe('correct');
+  });
+  it('numbers may come in any order but must all be there', () => {
+    expect(gradeText('Give a minion +2/+1', 'Give a minion +1/+2.').verdict).toBe('correct');
+    expect(gradeText('Give a minion +2', 'Give a minion +1/+2.').verdict).not.toBe('correct');
   });
 });

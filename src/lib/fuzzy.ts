@@ -31,12 +31,46 @@ export function words(s: string): string[] {
     .map((w) => NUMBER_WORDS[w] ?? w);
 }
 
-/** Two words match if equal, or if a longer non-number word is off by one letter. */
+/** Drop a plural/verb "s" so "whelp" and "whelps" match. */
+const stem = (w: string) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w);
+
+/**
+ * Two words match if equal (ignoring a trailing "s"), or close enough for a
+ * typo: 1 letter off for words of 4+ letters, 2 letters for 8+. Numbers must
+ * match exactly.
+ */
 export function sameWord(a: string, b: string): boolean {
   if (a === b) return true;
   if (/\d/.test(a) || /\d/.test(b)) return false;
-  if (Math.min(a.length, b.length) < 5) return false;
-  return levenshtein(a, b) <= 1;
+  const x = stem(a);
+  const y = stem(b);
+  if (x === y) return true;
+  const n = Math.min(x.length, y.length);
+  if (n < 4) return false;
+  return levenshtein(x, y) <= (n >= 8 ? 2 : 1);
+}
+
+/** Words that carry no meaning on a card; they don't count toward the score. */
+export const FILLER = new Set([
+  'a', 'an', 'the', 'to', 'of', 'and', 'your', 'you', 'it', 'its', 'this', 'that', 'with', 'in', 'on', 'for', 'is', 'are',
+  'be', 'from', 'at', 'by', 'or', 'them', 'they', 'their', 'into',
+]);
+
+/**
+ * Match each word of `truth` to an unused word of `guess`, in any order.
+ * Returns which truth words were matched and how many guess words were used.
+ */
+export function matchWords(truth: string[], guess: string[]): { inTruth: boolean[]; usedGuess: boolean[] } {
+  const usedGuess = guess.map(() => false);
+  const inTruth = truth.map((t) => {
+    // Prefer an exact match before a typo match.
+    let j = guess.findIndex((g, k) => !usedGuess[k] && g === t);
+    if (j < 0) j = guess.findIndex((g, k) => !usedGuess[k] && sameWord(t, g));
+    if (j < 0) return false;
+    usedGuess[j] = true;
+    return true;
+  });
+  return { inTruth, usedGuess };
 }
 
 export function levenshtein(a: string, b: string): number {
