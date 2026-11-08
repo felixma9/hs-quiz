@@ -11,7 +11,11 @@ const GEM: Partial<Record<string, string>> = {
 };
 const gemUrl = (key: string) => `${import.meta.env.BASE_URL}sunwell/${GEM[key]}.webp`;
 
-const RARITY_COLOR: Record<string, string> = { Free: '#b5b5b5', Common: '#f2f2f2', Rare: '#3a7cf0', Epic: '#a640d8', Legendary: '#f29f1c' };
+/** Rarity is shown with the card's own rarity gem (Free cards have none in game: a faded Common gem). */
+const RARITY_GEM: Record<string, string> = { Free: 'rarity-common', Common: 'rarity-common', Rare: 'rarity-rare', Epic: 'rarity-epic', Legendary: 'rarity-legendary' };
+const asset = (name: string) => `${import.meta.env.BASE_URL}sunwell/${name}.webp`;
+/** Column headers with an icon instead of (on phones) a text label. */
+const HEAD_ICON: Partial<Record<string, string>> = { ...GEM, rarity: 'rarity-legendary' };
 const RARITY_SHORT: Record<string, string> = { Free: 'Free', Common: 'Com.', Rare: 'Rare', Epic: 'Epic', Legendary: 'Leg.' };
 
 
@@ -38,8 +42,8 @@ export function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
             <span className="head-label">Minion</span>
           </div>
           {COLUMNS.map((c) => (
-            <div key={c.key} className={`board-cell ${GEM[c.key] ? 'gem-head' : ''}`} role="columnheader" title={c.label}>
-              {GEM[c.key] && <img className="head-gem" src={gemUrl(c.key)} alt={c.label} />}
+            <div key={c.key} className={`board-cell ${HEAD_ICON[c.key] ? 'gem-head' : ''}`} role="columnheader" title={c.label}>
+              {HEAD_ICON[c.key] && <img className="head-gem" src={asset(HEAD_ICON[c.key]!)} alt={c.label} />}
               <span className="head-label">{c.label}</span>
             </div>
           ))}
@@ -94,7 +98,11 @@ function TileCell({ col, tile, delay, selected, onTap }: { col: string; tile: Ti
       {tile.arrow && <span className={`tile-arrow ${tile.arrow}`} aria-label={arrowLabel} />}
       {col === 'rarity' ? (
         <span className="tile-label rarity-label">
-          <span className="rarity-gem" style={{ background: RARITY_COLOR[tile.label] ?? '#999' }} />
+          <img
+            className={`rarity-gem ${tile.label === 'Free' ? 'free' : ''}`}
+            src={asset(RARITY_GEM[tile.label] ?? 'rarity-common')}
+            alt=""
+          />
           <span className="full">{tile.label}</span>
           <span className="short">{RARITY_SHORT[tile.label] ?? tile.label}</span>
         </span>
