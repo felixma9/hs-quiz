@@ -122,7 +122,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
       <div className="hud">
         <span className="lives" aria-label={`${lives} lives`}>
           {'♥'.repeat(lives)}
-          <span className="lost">{'♥'.repeat(LIVES - lives)}</span>
+          <span key={lives} className="lost">{'♥'.repeat(LIVES - lives)}</span>
         </span>
         <span>
           Score <b>{score}</b>

@@ -1,0 +1,63 @@
+/*
+ * Understated motion: short fades and eases so things don't snap.
+ * Everything here is switched off for "reduce motion" users at the bottom.
+ */
+:root {
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --fast: 0.15s;
+  --med: 0.25s;
+}
+
+@keyframes rise-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes drop-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes heart-lost { 0%, 100% { transform: none; } 30% { transform: translateX(-2px); } 60% { transform: translateX(2px); } }
+
+/* Pages: each mode / the menu rises in when opened. */
+.menu, .mode { animation: rise-in var(--med) var(--ease) backwards; }
+.menu > *, .mode > * { animation: rise-in var(--med) var(--ease) backwards; }
+.menu > :nth-child(2), .mode > :nth-child(2) { animation-delay: 30ms; }
+.menu > :nth-child(3), .mode > :nth-child(3) { animation-delay: 60ms; }
+.menu > :nth-child(n + 4), .mode > :nth-child(n + 4) { animation-delay: 90ms; }
+
+/* Controls: colors fade, presses dip a little. */
+.btn, .tabs button, .chip, .rarity-chip, .class-btn, .option-list button, .clue-btn, .give-up, .mode-card,
+.search-list button, .suggest button, .set-summary, .link, .top-back {
+  transition: background-color var(--fast) ease, border-color var(--fast) ease, color var(--fast) ease,
+    opacity var(--fast) ease, transform var(--fast) var(--ease);
+}
+.btn:active:not(:disabled), .chip:active:not(:disabled), .rarity-chip:active, .class-btn:active,
+.option-list button:active, .clue-btn.unlocked:active, .give-up:active { transform: scale(0.97); }
+.mode-card:hover { transform: translateY(-1px); }
+.mode-card:active { transform: none; }
+.in { transition: border-color var(--fast) ease, outline-color var(--fast) ease; }
+
+/* Popups and reveals ease in. */
+.suggest, .search-list { animation: drop-in var(--fast) var(--ease) backwards; }
+.picker { animation: pop-in var(--med) var(--ease) backwards; }
+.clue-body { animation: rise-in var(--med) var(--ease) backwards; }
+.feedback { animation: pop-in var(--med) var(--ease) backwards; }
+.board-detail { animation: fade-in var(--fast) ease backwards; }
+.set-year { animation: fade-in var(--med) ease backwards; }
+.card-edit, .card-edit-name { animation: fade-in var(--fast) ease backwards; }
+
+/* The card fades in from a hair smaller once drawn; tap areas fade their highlight. */
+.game-card canvas { transform: scale(0.985); transition: opacity var(--med) ease, transform var(--med) var(--ease); }
+.game-card canvas.ready { transform: none; }
+.hotspot { transition: background-color var(--fast) ease, outline-color var(--fast) ease; }
+
+/* Gauntlet: the heart you just lost gives a small shake. */
+.lives .lost { display: inline-block; animation: heart-lost 0.35s ease 1; }
+
+/* HSdle: armed give-up and selected tiles ease rather than snap. */
+.tile { transition: outline-color var(--fast) ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
