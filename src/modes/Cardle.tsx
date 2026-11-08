@@ -19,6 +19,14 @@ interface Saved {
 const KEY = { daily: 'hsq:cardle2:daily', unlimited: 'hsq:cardle2:unlimited' } as const;
 type Mode = keyof typeof KEY;
 
+/** Stat columns are drawn on the same gem icons the cards use. */
+const GEM: Partial<Record<string, string>> = {
+  cost: 'cost-mana',
+  attack: 'attack-minion',
+  health: 'health',
+};
+const gemUrl = (key: string) => `${import.meta.env.BASE_URL}sunwell/${GEM[key]}.webp`;
+
 const thumb = (c: Card) => `https://art.hearthstonejson.com/v1/256x/${c.id}.jpg`;
 
 export function Cardle({ cards }: { cards: Card[] }) {
@@ -259,6 +267,7 @@ function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
           </div>
           {COLUMNS.map((c) => (
             <div key={c.key} className="board-cell" role="columnheader">
+              {GEM[c.key] && <img className="head-gem" src={gemUrl(c.key)} alt="" />}
               {c.label}
             </div>
           ))}
@@ -272,7 +281,7 @@ function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
                 <span>{g.name}</span>
               </div>
               {COLUMNS.map((c, i) => (
-                <TileCell key={c.key} tile={t[c.key]} delay={r === 0 ? i * 120 : 0} />
+                <TileCell key={c.key} col={c.key} tile={t[c.key]} delay={r === 0 ? i * 120 : 0} />
               ))}
             </div>
           );
@@ -282,10 +291,26 @@ function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
   );
 }
 
-function TileCell({ tile, delay }: { tile: Tile; delay: number }) {
+function TileCell({ col, tile, delay }: { col: string; tile: Tile; delay: number }) {
+  const arrowLabel = tile.arrow === 'up' ? 'higher' : 'lower';
+  if (GEM[col]) {
+    return (
+      <div className={`board-cell tile stat-tile t-${tile.verdict}`} style={{ animationDelay: `${delay}ms` }} role="cell">
+        <span className={`stat-gem gem-${col}`}>
+          <img src={gemUrl(col)} alt="" />
+          <span className="stat-num">{tile.label}</span>
+        </span>
+        {tile.arrow && (
+          <span className="arrow-badge" aria-label={arrowLabel}>
+            {tile.arrow === 'up' ? '▲' : '▼'}
+          </span>
+        )}
+      </div>
+    );
+  }
   return (
     <div className={`board-cell tile t-${tile.verdict}`} style={{ animationDelay: `${delay}ms` }} role="cell">
-      {tile.arrow && <span className={`tile-arrow ${tile.arrow}`} aria-label={tile.arrow === 'up' ? 'higher' : 'lower'} />}
+      {tile.arrow && <span className={`tile-arrow ${tile.arrow}`} aria-label={arrowLabel} />}
       <span className="tile-label">{tile.label}</span>
     </div>
   );

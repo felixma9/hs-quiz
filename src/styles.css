@@ -288,3 +288,20 @@ body { background: radial-gradient(ellipse at top, #1a1d2b 0%, var(--bg) 55%) fi
 .mode-card:hover, .mode-card:active { border-color: var(--gold-dim); }
 .mode-card h2 { color: var(--gold); }
 body.has-decor-bg { background: linear-gradient(rgba(18,18,19,0.86), rgba(18,18,19,0.94)), var(--decor-bg) center / cover fixed, var(--bg); }
+
+/* Cardle stat tiles: number on its card gem */
+.stat-tile { padding: 0; }
+.stat-gem { position: relative; width: 44px; height: 46px; display: grid; place-items: center; }
+.stat-gem img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
+.gem-health img { width: 80%; left: 10%; }
+.stat-num {
+  position: relative; z-index: 1; font-family: 'Merriweather', Georgia, serif; font-weight: 900; font-size: 1.05rem; color: #fff;
+  -webkit-text-stroke: 3px #000; paint-order: stroke fill; line-height: 1;
+}
+.gem-attack .stat-num { transform: translate(2px, 2px); }
+.gem-health .stat-num { transform: translateY(4px); }
+.arrow-badge {
+  position: absolute; top: 3px; right: 3px; z-index: 2; font-size: 0.6rem; line-height: 1; color: #fff;
+  background: rgba(0,0,0,0.45); border-radius: 3px; padding: 2px 3px;
+}
+.head-gem { display: block; width: 18px; height: 18px; object-fit: contain; margin: 0 auto 2px; }
