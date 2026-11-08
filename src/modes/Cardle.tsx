@@ -5,7 +5,6 @@ import { cardOfTheDay, randomCard, today } from '../lib/cards';
 import type { Grade } from '../lib/grade';
 import { load, save } from '../lib/storage';
 import { GameCard } from '../components/GameCard';
-import { AnswerInput } from '../components/AnswerInput';
 import { TextDiff } from '../components/TextDiff';
 
 export const MAX_GUESSES = 6;
@@ -121,6 +120,11 @@ export function Cardle({ cards }: { cards: Card[] }) {
 
   const hidden = useMemo(() => new Set<AttrKey>(done ? [] : ATTRS.map((a) => a.key).filter((k) => !locked.has(k))), [done, locked]);
   const left = MAX_GUESSES - game.guesses.length;
+  const lastVerdicts = useMemo(() => {
+    const g = grades.at(-1);
+    if (!g || done) return {};
+    return Object.fromEntries(fields.filter((a) => !locked.has(a.key)).map((a) => [a.key, g[a.key]!.verdict]));
+  }, [grades, fields, locked, done]);
 
   return (
     <div className="mode">
@@ -142,7 +146,15 @@ export function Cardle({ cards }: { cards: Card[] }) {
         </span>
       </div>
 
-      <GameCard card={card} hidden={hidden} />
+      <GameCard
+        card={card}
+        hidden={hidden}
+        draft={draft}
+        editable={done ? new Set() : new Set(fields.map((a) => a.key).filter((k) => !locked.has(k)))}
+        onChange={(k, v) => setDraft((d) => ({ ...d, [k]: v }))}
+        verdicts={lastVerdicts}
+        pool={cards}
+      />
 
       {done && (
         <div className={`panel center feedback ${won ? 'ok' : 'bad'}`}>
@@ -170,7 +182,7 @@ export function Cardle({ cards }: { cards: Card[] }) {
       )}
 
       <form
-        className="panel fields"
+        className="panel"
         onSubmit={(e) => {
           e.preventDefault();
           submit();
@@ -178,37 +190,26 @@ export function Cardle({ cards }: { cards: Card[] }) {
       >
         {!done && game.guesses.length === 0 && (
           <p className="muted small">
-            Fill in the blank card. After each guess: 🟩 right (it appears on the card), 🟨 close (numbers ±1, overlapping tribe or class,
-            text at least 50% right), ⬛ wrong. Leave the text blank if you think the card has none.
+            Fill in the card by tapping it: the frame cycles classes, the gem under the name cycles rarity, and the cost, attack,
+            health, name, text and tribe open a box to type in. After each guess: 🟩 right (locked in), 🟨 close (numbers ±1,
+            overlapping tribe or class, text at least 50% right), ⬛ wrong.
           </p>
         )}
-        {fields.map((a) => {
-          const isLocked = locked.has(a.key) || done;
-          return (
-            <div key={a.key} className={`field ${locked.has(a.key) ? 'locked' : ''}`}>
-              <div className="field-head">
-                <label>{labelFor(a, card)}</label>
+        {game.guesses.length > 0 && (
+          <div className="history-table">
+            {fields.map((a) => (
+              <div key={a.key} className={`hist-row ${locked.has(a.key) ? 'locked' : ''}`}>
+                <span className="hist-label">{labelFor(a, card)}</span>
                 <History attr={a.key} guesses={game.guesses} grades={grades} />
               </div>
-              {isLocked ? (
-                <div className="locked-value">
-                  {a.key === 'text' ? (
-                    <TextDiff truth={plainText(card.text)} matched={done ? grades.at(-1)?.text?.truthMatched : undefined} />
-                  ) : (
-                    pretty(a.key, ATTR[a.key].value(card))
-                  )}
-                </div>
-              ) : (
-                <AnswerInput
-                  attr={a.key}
-                  value={draft[a.key]}
-                  onChange={(v) => setDraft((d) => ({ ...d, [a.key]: v }))}
-                  cards={cards}
-                />
-              )}
-            </div>
-          );
-        })}
+            ))}
+          </div>
+        )}
+        {done && (
+          <div className="truth">
+            <b>Card text:</b> <TextDiff truth={plainText(card.text)} matched={grades.at(-1)?.text?.truthMatched} />
+          </div>
+        )}
         {!done && (
           <button className="btn primary sticky" type="submit">
             Submit guess ({game.guesses.length + 1}/{MAX_GUESSES})

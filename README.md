@@ -2,7 +2,7 @@
 
 A browser quiz on Hearthstone cards.
 
-Cards are drawn with in-game frames, with the fields you have to guess left blank.
+Cards are drawn with in-game frames, with the fields you have to guess left blank. You fill them in on the card itself: tap the frame to cycle classes (or pick from the class list), tap the rarity gem to cycle rarities, and tap the cost, attack or health gem, the name banner, the text box or the tribe banner to type or choose. Your answers are drawn onto the card as you go. The class badges in the picker are simple original stand-ins, not the game's class icons.
 
 - **Gauntlet:** each card has one field blank (cost, attack, health, name, text, class, rarity or tribe). Fill it in. You have 3 lives; see how many cards you clear. Settings let you pick minions only or which fields can be blank.
 - **Cardle:** a daily, Wordle-style puzzle. You see the art and the frame, and fill in the rest of the card in 6 tries. After each guess: 🟩 right (it appears on the card), 🟨 close (numbers ±1, overlapping tribe/class, text ≥50% similar), ⬛ wrong. There is also an unlimited mode.

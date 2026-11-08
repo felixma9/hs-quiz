@@ -5,7 +5,6 @@ import { pickHidden, randomCard } from '../lib/cards';
 import type { Grade } from '../lib/grade';
 import { load, save } from '../lib/storage';
 import { GameCard } from '../components/GameCard';
-import { AnswerInput } from '../components/AnswerInput';
 import { TextDiff } from '../components/TextDiff';
 
 const LIVES = 3;
@@ -17,6 +16,16 @@ interface Settings {
   allowed: AttrKey[];
 }
 const DEFAULT_SETTINGS: Settings = { minionsOnly: false, allowed: ATTRS.map((a) => a.key) };
+
+/** How to fill in each kind of blank on the card. */
+const HOW: Record<string, string> = {
+  number: 'tap the gem and type a number.',
+  name: 'tap the name banner and type.',
+  text: 'tap the text box and type (leave it blank if the card has none).',
+  class: 'tap the card frame to cycle classes, or pick from the list.',
+  rarity: 'tap the gem under the name to cycle rarities.',
+  tribe: 'tap the tribe banner or school chip and pick one.',
+};
 
 interface Round {
   card: Card;
@@ -59,7 +68,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
 
   const submit = () => {
     if (result || over) return next();
-    if (attr.kind === 'enum' && !answer) return;
+    if (attr.kind !== 'text' && !answer) return;
     const g = gradeAttr(round.hidden, answer, round.card);
     setResult(g);
     if (g.verdict === 'correct') {
@@ -140,7 +149,16 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
         </div>
       )}
 
-      <GameCard card={round.card} hidden={hidden} />
+      <GameCard
+        card={round.card}
+        hidden={hidden}
+        draft={{ [round.hidden]: answer }}
+        editable={result ? new Set() : new Set([round.hidden])}
+        onChange={(_, v) => setAnswer(v)}
+        verdicts={result ? { [round.hidden]: result.verdict } : {}}
+        pool={cards}
+        onEnter={submit}
+      />
 
       {over && result ? (
         <div className="panel center">
@@ -161,22 +179,13 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
             submit();
           }}
         >
-          <div className="ask">
-            What is this card's <b>{labelFor(attr, round.card).toLowerCase()}</b>?
-          </div>
           {!result && (
-            <AnswerInput
-              key={round.card.id + round.hidden}
-              attr={round.hidden}
-              value={answer}
-              onChange={setAnswer}
-              onSubmit={submit}
-              cards={cards}
-              autoFocus={attr.kind !== 'enum'}
-            />
+            <div className="ask">
+              Fill in the <b>{labelFor(attr, round.card).toLowerCase()}</b>: {HOW[attr.kind === 'enum' ? round.hidden : attr.kind]}
+            </div>
           )}
           {result && <Feedback result={result} attrKey={round.hidden} card={round.card} truthPretty={pretty(round.hidden, truth)} answer={answer} />}
-          <button className="btn primary" type="submit" disabled={!result && attr.kind === 'enum' && !answer}>
+          <button className="btn primary" type="submit" disabled={!result && attr.kind !== 'text' && !answer}>
             {result ? 'Next card →' : 'Submit'}
           </button>
         </form>
