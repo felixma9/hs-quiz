@@ -43,7 +43,7 @@ export const SETS: Record<string, { name: string; year: number }> = {
   TIME_TRAVEL: { name: 'Across the Timeways', year: 2025 },
   CATACLYSM: { name: 'Cataclysm', year: 2026 },
   ESCAPEFROM_VIOLET_HOLD: { name: 'Escape from Violet Hold', year: 2026 },
-  BE: { name: 'BE', year: 2026 },
+  BE: { name: 'Reign of the Black Empire', year: 2026 },
   CORE: { name: 'Core', year: 2021 },
   EVENT: { name: 'Event', year: 2020 },
 };
