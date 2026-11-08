@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compare } from '../src/lib/cardle';
+import { compare } from '../src/lib/hsdle';
 import { filterPool } from '../src/lib/pool';
 import type { Card } from '../src/lib/types';
 
@@ -8,7 +8,7 @@ const base: Card = {
   rarity: 'LEGENDARY', set: 'EXPERT1', keywords: ['Battlecry', 'Charge'],
 };
 
-describe('cardle compare', () => {
+describe('hsdle compare', () => {
   it('identical card is all green', () => {
     const t = compare(base, base);
     expect(Object.values(t).every((x) => x.verdict === 'correct')).toBe(true);

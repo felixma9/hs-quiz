@@ -34,7 +34,7 @@ button { font-family: inherit; }
 .top-title { text-align: center; font-weight: 700; font-size: 1.6rem; letter-spacing: 0.01em; text-decoration: none; color: var(--text); }
 .top-back { color: var(--text); text-decoration: none; font-size: 1.4rem; display: grid; place-items: center; width: 44px; height: 44px; }
 
-.app.app-cardle { max-width: 780px; }
+.app.app-hsdle { max-width: 780px; }
 .app { max-width: 560px; margin: 0 auto; padding: 16px 16px 32px; min-height: calc(100vh - 57px); display: flex; flex-direction: column; }
 main { flex: 1; }
 footer { padding-top: 32px; text-align: center; }
@@ -123,7 +123,7 @@ h2 { margin: 0.2em 0; font-size: 1.15rem; font-weight: 700; }
 .set-year legend { padding: 0 6px; }
 .set-row { display: grid; grid-template-columns: auto 1fr auto; min-height: 36px; }
 
-/* Cardle fields */
+/* Old fill-in fields (unused) */
 .fields { gap: 14px; }
 .field { display: grid; gap: 6px; }
 .field-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -212,8 +212,8 @@ h2 { margin: 0.2em 0; font-size: 1.15rem; font-weight: 700; }
   }
 }
 
-/* Cardle: guess the minion */
-.cardle .ask { margin: 0; }
+/* HSdle: guess the minion */
+.hsdle .ask { margin: 0; }
 .search { position: relative; }
 .search .in { font-size: 17px; padding: 14px 16px; border-color: var(--gold-dim); background: #18181a; }
 .search .in:focus { outline: 2px solid var(--gold); }
@@ -242,8 +242,12 @@ h2 { margin: 0.2em 0; font-size: 1.15rem; font-weight: 700; }
 .clue-art { width: 220px; height: 220px; border: 2px solid var(--gold-dim); }
 .clue-body p { margin: 0; font-style: italic; color: var(--text); }
 
-.cardle-result { display: grid; gap: 14px; }
-.give-up { justify-self: center; text-decoration: underline; font-size: 0.85rem; }
+.hsdle-result { display: grid; gap: 14px; }
+.give-up {
+  justify-self: center; font: inherit; font-size: 0.85rem; color: var(--muted); background: none; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 4px; padding: 8px 16px; min-height: 40px;
+}
+.give-up.armed { color: #fff; background: #8f3434; border-color: #8f3434; }
 
 .board-wrap { overflow-x: auto; margin: 0 -16px; padding: 0 16px 8px; -webkit-overflow-scrolling: touch; }
 .board { display: grid; gap: 6px; min-width: max-content; }
@@ -289,7 +293,7 @@ body { background: radial-gradient(ellipse at top, #1a1d2b 0%, var(--bg) 55%) fi
 .mode-card h2 { color: var(--gold); }
 body.has-decor-bg { background: linear-gradient(rgba(18,18,19,0.86), rgba(18,18,19,0.94)), var(--decor-bg) center / cover fixed, var(--bg); }
 
-/* Cardle stat tiles: number on its card gem */
+/* HSdle stat tiles: number on its card gem */
 .stat-tile { padding: 0; }
 .stat-gem { position: relative; width: 44px; height: 46px; display: grid; place-items: center; }
 .stat-gem img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }

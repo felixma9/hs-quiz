@@ -3,7 +3,7 @@ import { SETS, setName } from '../data/sets';
 import { pretty } from './attributes';
 
 /**
- * Cardle: guess the mystery minion. Every guess is compared to the answer
+ * HSdle: guess the mystery minion. Every guess is compared to the answer
  * column by column: green = same, yellow = partly the same, red = different,
  * with an arrow on ordered columns pointing toward the answer.
  */

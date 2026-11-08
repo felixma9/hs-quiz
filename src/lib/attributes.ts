@@ -16,7 +16,7 @@ export interface Attr {
   kind: Kind;
   /** The card's real value. null = this card has none (e.g. a spell's attack). */
   value(card: Card): Value;
-  /** Whether this attribute exists on this card (Cardle asks only these). */
+  /** Whether this attribute exists on this card (HSdle-style questions ask only these). */
   applies(card: Card): boolean;
   /** Whether Gauntlet may hide this attribute on this card. */
   hideable(card: Card): boolean;

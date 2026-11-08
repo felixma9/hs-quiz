@@ -6,7 +6,7 @@ Cards are drawn with in-game frames, with the fields you have to guess left blan
 
 - **Gauntlet:** each card has one field blank (cost, attack, health, name, text, class, rarity or tribe). Fill it in. You have 3 lives; see how many cards you clear. Settings let you pick minions only or which fields can be blank.
 - **Card pool:** on the main menu, choose which rarities and sets cards come from (saved on your device; new expansions start switched on).
-- **Cardle:** guess the mystery minion (daily, or unlimited). Type any minion's name; each guess adds a row comparing it to the answer on Mana, Attack, Health, Rarity, Tribe, Keywords, Class and Set: 🟩 same, 🟨 partly the same (a shared keyword, tribe or class, or a set from the same year), 🟥 different, with arrows toward the answer (higher stats, newer set, rarer card). An art clue unlocks after 4 wrong guesses and a card-text clue after 8.
+- **HSdle:** guess the mystery minion (daily, or unlimited). Type any minion's name; each guess adds a row comparing it to the answer on Mana, Attack, Health, Rarity, Tribe, Keywords, Class and Set: 🟩 same, 🟨 partly the same (a shared keyword, tribe or class, or a set from the same year), 🟥 different, with arrows toward the answer (higher stats, newer set, rarer card). An art clue unlocks after 4 wrong guesses and a card-text clue after 8. You can give up after your first guess (tap twice) to see the answer.
 
 Card text is free-typed and graded on meaning: filler words ("a", "the", "your"...) don't count, word order doesn't matter, number words equal digits ("two" = "2"), plurals match, and small typos are fine (1 letter in words of 4+ letters, 2 in words of 8+). It's right at 70% of the meaningful words, as long as all the numbers are there. Names allow a typo or two.
 
@@ -29,7 +29,7 @@ Art is loaded from `art.hearthstonejson.com` (art only, so it doesn't give the a
 
 ## Art cropping
 
-Much of the art is padded with light bars. `python3 -I scripts/measure-art.py` downloads each minion's small art once, measures the bars and writes `public/art-crop.json`; Cardle's art and thumbnails zoom in just enough per card. Rerun it after `npm run cards` (it only measures new cards).
+Much of the art is padded with light bars. `python3 -I scripts/measure-art.py` downloads each minion's small art once, measures the bars and writes `public/art-crop.json`; HSdle's art and thumbnails zoom in just enough per card. Rerun it after `npm run cards` (it only measures new cards).
 
 ## Decor
 

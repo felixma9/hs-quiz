@@ -4,15 +4,16 @@ import { loadCards } from './lib/cards';
 import { drawable, filterPool, loadExcluded, loadExcludedRarities, saveExcluded, saveExcludedRarities } from './lib/pool';
 import { RarityPicker } from './components/RarityPicker';
 import { Gauntlet } from './modes/Gauntlet';
-import { Cardle } from './modes/Cardle';
+import { Hsdle } from './modes/Hsdle';
 import { SetPicker } from './components/SetPicker';
 import { GameCard } from './components/GameCard';
 
-type Route = 'menu' | 'gauntlet' | 'cardle' | 'card';
+type Route = 'menu' | 'gauntlet' | 'hsdle' | 'card';
 const parse = (): Route => {
   const h = location.hash.replace(/^#\/?/, '');
   if (h.startsWith('card/')) return 'card';
-  return h === 'gauntlet' || h === 'cardle' ? h : 'menu';
+  if (h === 'hsdle' || h === 'cardle') return 'hsdle'; // old links still work
+  return h === 'gauntlet' ? h : 'menu';
 };
 
 export function App() {
@@ -55,7 +56,7 @@ export function App() {
           )}
           <a href="#/" className="top-title">
             {decor.logo ? <img className="decor-logo" src={decor.logo} alt="" /> : <ManaMark />}
-            {route === 'gauntlet' ? 'Gauntlet' : route === 'cardle' ? 'Cardle' : 'HS Quiz'}
+            {route === 'gauntlet' ? 'Gauntlet' : route === 'hsdle' ? 'HSdle' : 'HS Quiz'}
           </a>
           <span />
         </div>
@@ -76,7 +77,7 @@ export function App() {
           </div>
         )}
         {cards && pool.length > 0 && route === 'gauntlet' && <Gauntlet cards={pool} />}
-        {cards && pool.length > 0 && route === 'cardle' && <Cardle cards={pool} />}
+        {cards && pool.length > 0 && route === 'hsdle' && <Hsdle cards={pool} />}
         {cards && route === 'card' && <CardPreview cards={cards} />}
       </main>
       <footer className="muted small">
@@ -99,8 +100,8 @@ function Menu({ count, children }: { count: number; children: React.ReactNode })
         <h2>Gauntlet</h2>
         <p>One blank per card. Three lives. How far can you get?</p>
       </a>
-      <a className="mode-card" href="#/cardle">
-        <h2>Cardle</h2>
+      <a className="mode-card" href="#/hsdle">
+        <h2>HSdle</h2>
         <p>Guess the daily minion. Every guess shows how close its mana, stats, keywords, set, rarity, tribe and class are.</p>
       </a>
     </div>

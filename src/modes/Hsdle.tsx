@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../lib/types';
 import { cardOfTheDay, randomCard, today } from '../lib/cards';
-import { CLUES, COLUMNS, EMOJI, compare, type Tile } from '../lib/cardle';
+import { CLUES, COLUMNS, EMOJI, compare, type Tile } from '../lib/hsdle';
 import { normalizeName } from '../lib/fuzzy';
 import { plainText } from '../lib/attributes';
 import { load, save } from '../lib/storage';
 import { GameCard } from '../components/GameCard';
 
-/** Guess the mystery minion, Loldle-style: each guess shows how its stats compare. */
+/** HSdle: guess the mystery minion; each guess shows how its stats compare. */
 
 interface Saved {
   key: string; // date (daily) or 'unlimited'
@@ -60,7 +60,7 @@ function Art({ card, crop, alt = '', className = '' }: { card: Card; crop: Recor
 
 const thumb = (c: Card) => `https://art.hearthstonejson.com/v1/256x/${c.id}.jpg`;
 
-export function Cardle({ cards }: { cards: Card[] }) {
+export function Hsdle({ cards }: { cards: Card[] }) {
   const minions = useMemo(() => cards.filter((c) => c.type === 'MINION'), [cards]);
   const byId = useMemo(() => new Map(minions.map((c) => [c.id, c])), [minions]);
   const date = today();
@@ -107,7 +107,7 @@ export function Cardle({ cards }: { cards: Card[] }) {
       const t = compare(g, answer);
       return COLUMNS.map((col) => EMOJI[t[col.key].verdict]).join('');
     });
-    const text = `HS Cardle ${mode === 'daily' ? date : '(unlimited)'}: ${won ? `${guesses.length} guess${guesses.length === 1 ? '' : 'es'}` : 'gave up'}\n${rows.join('\n')}`;
+    const text = `HSdle ${mode === 'daily' ? date : '(unlimited)'}: ${won ? `${guesses.length} guess${guesses.length === 1 ? '' : 'es'}` : 'gave up'}\n${rows.join('\n')}`;
     try {
       if (navigator.share) await navigator.share({ text });
       else {
@@ -120,7 +120,7 @@ export function Cardle({ cards }: { cards: Card[] }) {
   };
 
   return (
-    <div className="mode cardle">
+    <div className="mode hsdle">
       <div className="tabs">
         <button className={mode === 'daily' ? 'on' : ''} onClick={() => switchMode('daily')}>
           Daily
@@ -146,10 +146,12 @@ export function Cardle({ cards }: { cards: Card[] }) {
         </div>
       )}
 
+      {!done && guesses.length > 0 && <GiveUp key={game.answerId} onGiveUp={() => update({ ...game, gaveUp: true })} />}
+
       {done && (
-        <div className="cardle-result">
+        <div className="hsdle-result">
           <div className={`feedback ${won ? 'ok' : 'bad'}`}>
-            <div className="feedback-head">{won ? 'You got it!' : 'The answer was'}</div>
+            <div className="feedback-head">{won ? 'You got it!' : 'You gave up. The answer was'}</div>
             <div>
               <b>{answer.name}</b>
               {won && (
@@ -180,11 +182,6 @@ export function Cardle({ cards }: { cards: Card[] }) {
 
       {guesses.length > 0 && <Board guesses={guesses} answer={answer} />}
 
-      {!done && mode === 'unlimited' && guesses.length >= 3 && (
-        <button className="link give-up" onClick={() => update({ ...game, gaveUp: true })}>
-          Give up and show the answer
-        </button>
-      )}
 
       {guesses.length === 0 && !done && (
         <p className="muted small center">
@@ -193,6 +190,21 @@ export function Cardle({ cards }: { cards: Card[] }) {
         </p>
       )}
     </div>
+  );
+}
+
+/** Two taps to give up, so it can't happen by accident. */
+function GiveUp({ onGiveUp }: { onGiveUp(): void }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+  return (
+    <button className={`give-up ${armed ? 'armed' : ''}`} onClick={() => (armed ? onGiveUp() : setArmed(true))}>
+      {armed ? 'Tap again to give up and see the answer' : 'Give up'}
+    </button>
   );
 }
 
