@@ -1,6 +1,6 @@
-import type { Card } from './types';
-import { SETS, setName } from '../data/sets';
-import { pretty } from './attributes';
+import type { Card } from '../../lib/types';
+import { SETS, setName } from '../../data/sets';
+import { pretty } from '../../lib/attributes';
 
 /**
  * HSdle: guess the mystery minion. Every guess is compared to the answer

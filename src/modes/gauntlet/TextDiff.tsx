@@ -1,4 +1,4 @@
-import { words } from '../lib/fuzzy';
+import { words } from '../../lib/fuzzy';
 
 /** The real card text with the words the player got highlighted. */
 export function TextDiff({ truth, matched }: { truth: string; matched?: boolean[] }) {

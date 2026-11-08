@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Card } from '../lib/types';
-import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type AttrKey } from '../lib/attributes';
-import { pickHidden, randomCard } from '../lib/cards';
-import type { Grade } from '../lib/grade';
-import { load, save } from '../lib/storage';
-import { GameCard } from '../components/GameCard';
-import { TextDiff } from '../components/TextDiff';
+import type { Card } from '../../lib/types';
+import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
+import { pickHidden, randomCard } from '../../lib/cards';
+import type { Grade } from '../../lib/grade';
+import { load, save } from '../../lib/storage';
+import { GameCard } from '../../card/GameCard';
+import { TextDiff } from './TextDiff';
 
 const LIVES = 3;
 const BEST_KEY = 'hsq:gauntlet:best';

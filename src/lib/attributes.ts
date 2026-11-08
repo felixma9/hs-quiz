@@ -16,8 +16,6 @@ export interface Attr {
   kind: Kind;
   /** The card's real value. null = this card has none (e.g. a spell's attack). */
   value(card: Card): Value;
-  /** Whether this attribute exists on this card (HSdle-style questions ask only these). */
-  applies(card: Card): boolean;
   /** Whether Gauntlet may hide this attribute on this card. */
   hideable(card: Card): boolean;
   /** Label for this card, e.g. "Durability" for weapons. */
@@ -29,24 +27,22 @@ export interface Attr {
 const has = (v: Value) => v !== null && v !== '';
 
 export const ATTRS: Attr[] = [
-  { key: 'name', label: 'Name', kind: 'name', weight: 2, value: (c) => c.name, applies: () => true, hideable: () => true },
+  { key: 'name', label: 'Name', kind: 'name', weight: 2, value: (c) => c.name, hideable: () => true },
   {
     key: 'class',
     label: 'Class',
     kind: 'enum',
     weight: 1,
     value: (c) => (c.classes ? c.classes.join(' + ') : c.cardClass),
-    applies: () => true,
     hideable: () => true,
   },
-  { key: 'cost', label: 'Cost', kind: 'number', weight: 2, value: (c) => c.cost, applies: () => true, hideable: () => true },
+  { key: 'cost', label: 'Cost', kind: 'number', weight: 2, value: (c) => c.cost, hideable: () => true },
   {
     key: 'attack',
     label: 'Attack',
     kind: 'number',
     weight: 2,
     value: (c) => c.attack ?? null,
-    applies: (c) => c.attack != null,
     hideable: (c) => c.attack != null,
   },
   {
@@ -55,19 +51,17 @@ export const ATTRS: Attr[] = [
     kind: 'number',
     weight: 2,
     value: (c) => (c.type === 'HERO' ? c.armor ?? null : c.health ?? c.durability ?? null),
-    applies: (c) => has(ATTR.health.value(c)),
     hideable: (c) => has(ATTR.health.value(c)),
     labelFor: (c) =>
       c.type === 'WEAPON' || c.type === 'LOCATION' ? 'Durability' : c.type === 'HERO' ? 'Armor' : 'Health',
   },
-  { key: 'rarity', label: 'Rarity', kind: 'enum', weight: 1, value: (c) => c.rarity, applies: () => true, hideable: () => true },
+  { key: 'rarity', label: 'Rarity', kind: 'enum', weight: 1, value: (c) => c.rarity, hideable: () => true },
   {
     key: 'tribe',
     label: 'Tribe / School',
     kind: 'enum',
     weight: 1,
     value: (c) => (c.races ? c.races.join(' + ') : c.spellSchool ?? 'NONE'),
-    applies: (c) => c.type === 'MINION' || c.type === 'SPELL',
     hideable: (c) => c.type === 'MINION' || c.type === 'SPELL',
     labelFor: (c) => (c.type === 'SPELL' ? 'Spell school' : c.type === 'MINION' ? 'Tribe' : 'Tribe / School'),
   },
@@ -77,7 +71,6 @@ export const ATTRS: Attr[] = [
     kind: 'text',
     weight: 2.5,
     value: (c) => plainText(c.text),
-    applies: () => true,
     hideable: (c) => !!c.text,
   },
 ];

@@ -1,0 +1,33 @@
+/* Main menu: intro, mode links, card pool (rarities + sets). */
+.menu { display: grid; gap: 16px; padding-top: 12px; }
+.menu-intro { text-align: center; margin: 8px 0 4px; }
+.menu-intro p { margin: 0; color: var(--muted); }
+.mode-card {
+  display: block; padding: 16px 18px; border-radius: 4px; background: transparent;
+  border: 1px solid var(--border); color: var(--text); text-decoration: none; transition: border-color 0.15s;
+}
+.mode-card:hover, .mode-card:active { border-color: var(--gold-dim); }
+.mode-card h2 { color: var(--gold); }
+.mode-card p { margin: 0.25em 0 0; color: var(--muted); font-size: 0.92rem; }
+
+.rarity-picker { display: grid; gap: 8px; }
+.rarity-picker .label { font-weight: 700; }
+.rarity-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.rarity-chip {
+  display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 0.85rem; padding: 7px 12px; min-height: 38px;
+  border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer;
+}
+.rarity-chip.on { color: var(--text); border-color: var(--gold-dim); background: var(--surface-2); }
+.rarity-chip .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; opacity: 0.35; }
+.rarity-chip.on .dot { opacity: 1; }
+.rarity-chip .count { color: var(--muted); font-size: 0.75rem; }
+
+.set-picker { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 12px 0; }
+.set-summary {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; background: none; border: 0;
+  color: var(--text); font: inherit; text-align: left; padding: 0; cursor: pointer; min-height: 32px;
+}
+.chev { color: var(--muted); }
+.set-year { border: 1px solid var(--border); border-radius: 4px; padding: 4px 12px 8px; margin: 0; display: grid; gap: 2px; }
+.set-year legend { padding: 0 6px; }
+.set-row { display: grid; grid-template-columns: auto 1fr auto; min-height: 36px; }

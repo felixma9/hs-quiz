@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compare } from '../src/lib/hsdle';
-import { filterPool } from '../src/lib/pool';
+import { compare } from '../src/modes/hsdle/compare';
+import { filterPool } from '../src/pool/pool';
 import type { Card } from '../src/lib/types';
 
 const base: Card = {

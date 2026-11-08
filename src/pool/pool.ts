@@ -1,5 +1,5 @@
-import type { Card } from './types';
-import { load, save } from './storage';
+import type { Card } from '../lib/types';
+import { load, save } from '../lib/storage';
 
 const KEY = 'hsq:excludedSets';
 

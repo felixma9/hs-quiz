@@ -21,6 +21,25 @@ npm test           # grading + data pipeline tests
 npm run build      # static site in dist/
 ```
 
+## Project layout
+
+```
+src/
+  App.tsx, main.tsx        wiring: routes, card loading, page shell
+  app/                     title bar (+ decor), menu, routes, #/card/<id> preview
+  card/                    the drawn card: GameCard (tap to fill in), sunwell.ts (drawing),
+                           layout.ts (tap areas), fitText.ts, pickers, name editor, class icons
+  pool/                    card pool: set + rarity filters and their menu pickers
+  modes/gauntlet/          Gauntlet mode
+  modes/hsdle/             HSdle mode: compare.ts (column logic), Board, Search, Clues, Art
+  lib/                     shared logic: card types, attributes, grading, fuzzy matching, storage
+  data/                    set names/years, class badges
+  styles/                  base, menu, card, gauntlet, hsdle
+  types/                   type declarations for Sunwell
+scripts/                   build-cards.ts (+ transform.ts), measure-art.py
+tests/                     vitest: grading, fuzzy matching, card data, HSdle compare
+```
+
 ## Card data
 
 `public/cards.json` is built from [HearthstoneJSON](https://hearthstonejson.com) by `npm run cards`. Rerun it after a new expansion. It keeps collectible minions, spells, weapons, heroes and locations, drops Core/Vanilla reprints in favor of the original card, and cleans the text markup. If the script warns about new set codes, add them to `src/data/sets.ts`.

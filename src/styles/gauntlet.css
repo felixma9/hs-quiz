@@ -1,0 +1,11 @@
+/* Gauntlet: score bar, settings, answer feedback. */
+.hud { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.92rem; color: var(--muted); }
+.hud b { color: var(--text); }
+.lives { color: var(--text); letter-spacing: 3px; font-size: 1.05rem; }
+.lives .lost { opacity: 0.2; }
+.settings .chips { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+
+.truth { margin-top: 6px; }
+.text-diff .hit { background: var(--ok); color: #fff; border-radius: 2px; padding: 0 2px; }
+.text-diff .miss { color: inherit; text-decoration: underline 2px var(--key); text-underline-offset: 3px; }
+.feedback.ok .text-diff .hit { background: rgba(255,255,255,0.2); }

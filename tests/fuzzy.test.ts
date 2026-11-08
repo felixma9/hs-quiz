@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lcsWords, levenshtein, normalizeName, words } from '../src/lib/fuzzy';
+import { levenshtein, matchWords, normalizeName, words } from '../src/lib/fuzzy';
 
 describe('fuzzy', () => {
   it('normalizes names', () => {
@@ -14,9 +14,8 @@ describe('fuzzy', () => {
     expect(levenshtein('kitten', 'sitting')).toBe(3);
     expect(levenshtein('', 'abc')).toBe(3);
   });
-  it('lcs marks matched words', () => {
-    const r = lcsWords(['deal', '6', 'damage'], ['deal', 'damage']);
-    expect(r.length).toBe(2);
-    expect(r.inA).toEqual([true, false, true]);
+  it('matchWords pairs words in any order', () => {
+    const r = matchWords(['deal', '6', 'damage'], ['damage', 'deal']);
+    expect(r.inTruth).toEqual([true, false, true]);
   });
 });

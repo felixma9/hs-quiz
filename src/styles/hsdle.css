@@ -1,0 +1,139 @@
+/* HSdle: guess the minion. */
+.hsdle .ask { margin: 0; }
+.search { position: relative; }
+.search .in { font-size: 17px; padding: 14px 16px; border-color: var(--gold-dim); background: #18181a; }
+.search .in:focus { outline: 2px solid var(--gold); }
+.search-list {
+  list-style: none; margin: 4px 0 0; padding: 4px; position: absolute; z-index: 20; left: 0; right: 0;
+  background: #1c1c1e; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 10px 28px rgba(0,0,0,0.6);
+}
+.search-list button {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; background: none; border: 0;
+  color: var(--text); font: inherit; padding: 6px 8px; border-radius: 2px; cursor: pointer;
+}
+.search-list button.hi { background: var(--surface-2); }
+.search-list .thumb { width: 36px; height: 36px; }
+
+.clues { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; align-items: flex-start; }
+.clue { display: grid; justify-items: center; gap: 8px; }
+.clue-btn {
+  display: grid; gap: 2px; justify-items: center; min-width: 120px; padding: 8px 14px; border-radius: 4px; font: inherit;
+  font-weight: 700; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase;
+  background: transparent; color: var(--muted); border: 1px solid var(--border); cursor: default;
+}
+.clue-btn .small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.clue-btn.unlocked { color: var(--gold); border-color: var(--gold-dim); cursor: pointer; }
+.clue-btn.on { background: var(--surface-2); }
+.clue-body { max-width: 320px; text-align: center; }
+.clue-art { width: 220px; height: 220px; border: 2px solid var(--gold-dim); }
+.clue-body p { margin: 0; font-style: italic; color: var(--text); }
+
+.hsdle-result { display: grid; gap: 14px; }
+.give-up {
+  justify-self: center; font: inherit; font-size: 0.85rem; color: var(--muted); background: none; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 4px; padding: 8px 16px; min-height: 40px;
+}
+.give-up.armed { color: #fff; background: #8f3434; border-color: #8f3434; }
+
+.board-wrap { overflow-x: auto; margin: 0 -16px; padding: 0 16px 8px; -webkit-overflow-scrolling: touch; }
+.board { display: grid; gap: 6px; min-width: max-content; }
+.board-row { display: grid; grid-template-columns: 116px 54px 54px 54px 70px 74px 104px 74px 84px; gap: 5px; }
+.board-head .board-cell {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+  border-bottom: 2px solid var(--border); padding-bottom: 4px; text-align: center; align-self: end;
+}
+.board-head .name-cell { text-align: left; }
+.board-cell { position: relative; }
+.board-row .name-cell { position: sticky; left: 0; z-index: 2; background: var(--bg); box-shadow: 6px 0 6px -4px rgba(0,0,0,0.6); }
+.name-cell { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; line-height: 1.15; min-width: 0; }
+.name-cell .thumb { width: 36px; height: 36px; border: 1px solid var(--gold-dim); }
+.name-cell span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.tile {
+  height: 64px; display: grid; place-items: center; text-align: center; padding: 3px; border-radius: 3px; overflow: hidden;
+  font-size: 0.66rem; font-weight: 700; line-height: 1.12; color: #fff; border: 1px solid rgba(0,0,0,0.35);
+}
+.tile.t-correct { background: var(--ok); }
+.tile.t-close { background: var(--close); }
+.tile.t-wrong { background: #8f3434; }
+.tile-label { position: relative; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.6); overflow-wrap: normal; hyphens: manual; }
+.tile-arrow { position: absolute; inset: 6px; opacity: 0.28; background: #000; z-index: 0;
+  clip-path: polygon(50% 0, 100% 45%, 70% 45%, 70% 100%, 30% 100%, 30% 45%, 0 45%); }
+.tile-arrow.down { transform: rotate(180deg); }
+.board-row.newest .tile { animation: flip 0.45s ease both; }
+@keyframes flip { from { transform: rotateX(90deg); opacity: 0.3; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .board-row.newest .tile { animation: none; } }
+@media (min-width: 720px) {
+  .board-wrap { margin: 0; padding: 0 0 8px; }
+  .board { justify-content: center; }
+}
+
+/* Stat tiles: number on its card gem */
+.stat-tile { padding: 0; }
+.stat-gem { position: relative; width: 44px; height: 46px; display: grid; place-items: center; }
+.stat-gem img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
+.gem-health img { width: 80%; left: 10%; }
+.stat-num {
+  position: relative; z-index: 1; font-family: 'Merriweather', Georgia, serif; font-weight: 900; font-size: 1.05rem; color: #fff;
+  -webkit-text-stroke: 3px #000; paint-order: stroke fill; line-height: 1;
+}
+.gem-attack .stat-num { transform: translate(2px, 2px); }
+.gem-health .stat-num { transform: translateY(4px); }
+.arrow-badge {
+  position: absolute; top: 3px; right: 3px; z-index: 2; font-size: 0.6rem; line-height: 1; color: #fff;
+  background: rgba(0,0,0,0.45); border-radius: 3px; padding: 2px 3px;
+}
+.head-gem { display: block; width: 18px; height: 18px; object-fit: contain; margin: 0 auto 2px; }
+
+/* Art: zoomed per card (public/art-crop.json) so the light padding bars at the edges are hidden. */
+.art-crop { display: block; flex: none; border-radius: 50%; overflow: hidden; background: #000; }
+.art-crop img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Tap a tile for its full value */
+.board-cell.name-cell { background: none; border: 0; color: var(--text); font: inherit; font-size: 0.72rem; font-weight: 700; text-align: left; padding: 0; cursor: pointer; }
+.tile { cursor: pointer; }
+.tile.selected { outline: 2px solid #fff; outline-offset: -2px; }
+.name-cell.selected .thumb { outline: 2px solid #fff; }
+.board-detail {
+  margin-top: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem;
+  text-align: center; background: var(--surface-2);
+}
+
+/* Rarity tile: gem + label */
+.rarity-label { display: grid; justify-items: center; gap: 3px; }
+.rarity-gem { width: 12px; height: 12px; transform: rotate(45deg); border-radius: 2px; border: 1px solid rgba(0,0,0,0.5); box-shadow: 0 0 0 1px rgba(255,255,255,0.35); }
+.rarity-label .short { display: none; }
+
+/* Phones: fit the whole board on screen */
+@media (max-width: 600px) {
+  .search .in { padding: 12px 14px; }
+  .clue-btn { min-width: 0; flex: 1; padding: 6px 10px; }
+  .clues { gap: 8px; }
+  .clue { flex: 1; }
+
+  .board-wrap { margin: 0; padding: 0; overflow: visible; }
+  .board { min-width: 0; gap: 4px; }
+  .board-row {
+    grid-template-columns: 38px 0.85fr 0.85fr 0.85fr 1fr 1fr 1.5fr 1fr 1.1fr;
+    gap: 3px;
+  }
+  .board-head .board-cell { font-size: 0.5rem; letter-spacing: 0.02em; padding-bottom: 3px; }
+  .board-head .name-cell .head-label { display: none; }
+  .gem-head .head-label { display: none; }
+  .head-gem { width: 20px; height: 20px; margin: 0 auto; }
+  .board-row .name-cell { position: static; box-shadow: none; justify-content: center; }
+  .name-cell .name-text { display: none; }
+  .name-cell .thumb { width: 36px; height: 36px; }
+  .tile { height: 46px; font-size: 0.5rem; line-height: 1.12; padding: 2px; border-radius: 2px; }
+  .tile-label { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .tile-arrow { inset: 4px; }
+  .stat-gem { width: 30px; height: 32px; }
+  .stat-num { font-size: 0.8rem; -webkit-text-stroke: 2.5px #000; }
+  .arrow-badge { top: 1px; right: 1px; font-size: 0.45rem; padding: 1px 2px; }
+  .rarity-label .full { display: none; }
+  .rarity-label .short { display: inline; }
+  .rarity-gem { width: 10px; height: 10px; }
+  .clues { flex-wrap: nowrap; }
+  .clue { flex: 1 1 0; min-width: 0; }
+  .clue-btn { width: 100%; }
+  .tile-label.rarity-label { display: grid; -webkit-line-clamp: unset; }
+}
