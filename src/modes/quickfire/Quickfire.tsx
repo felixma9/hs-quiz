@@ -31,6 +31,11 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
   const [endAt, setEndAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [best, setBest] = useState<number>(() => load(BEST_KEY, 0));
+  const [newBest, setNewBest] = useState(false);
+  /** Correct answers in a row (a skip breaks it). */
+  const [streak, setStreak] = useState(0);
+  /** Counts skips, so each one replays the "−3s" float. */
+  const [skips, setSkips] = useState(0);
   const field = useRef<HTMLInputElement>(null);
   const poolIds = useMemo(() => new Set(cards.map((c) => c.id)), [cards]);
 
@@ -50,6 +55,7 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
     setPhase('over');
     setTurns((ts) => [...ts, { prompt, card: null }]);
     field.current?.blur();
+    setNewBest(score > best);
     if (score > best) {
       setBest(score);
       save(BEST_KEY, score);
@@ -60,6 +66,8 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
     const fresh = new Set<string>();
     setUsed(fresh);
     setTurns([]);
+    setStreak(0);
+    setSkips(0);
     setPrompt(makePrompt(cards, fresh));
     setInput('');
     setMsg(null);
@@ -96,6 +104,7 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
     const u = new Set(used).add(c.id);
     setUsed(u);
     setTurns((ts) => [...ts, { prompt, card: c }]);
+    setStreak((n) => n + 1);
     say(true, c.name);
     next(u);
   };
@@ -104,6 +113,8 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
     if (phase !== 'playing') return;
     setTurns((ts) => [...ts, { prompt, card: null }]);
     setEndAt((e) => e - SKIP_PENALTY * 1000);
+    setStreak(0);
+    setSkips((n) => n + 1);
     const ex = prompt.answers.find((c) => !used.has(c.id));
     say(false, ex ? `Skipped: e.g. ${ex.name}` : 'Skipped');
     next(used);
@@ -116,13 +127,25 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
   return (
     <div className="mode quickfire">
       <div className="hud">
-        <span key={urgent ? Math.ceil(left) : 'calm'} className={`qf-clock ${urgent ? 'urgent' : ''}`} aria-label={`${Math.ceil(left)} seconds left`}>
-          {phase === 'playing' ? Math.ceil(left) : phase === 'over' ? 0 : ROUND_SECONDS}
-          <small>s</small>
+        <span className="qf-float-anchor">
+          <span key={urgent ? Math.ceil(left) : 'calm'} className={`qf-clock ${urgent ? 'urgent' : ''}`} aria-label={`${Math.ceil(left)} seconds left`}>
+            {phase === 'playing' ? Math.ceil(left) : phase === 'over' ? 0 : ROUND_SECONDS}
+            <small>s</small>
+          </span>
+          {phase === 'playing' && skips > 0 && (
+            <span key={`minus-${skips}`} className="qf-float minus" aria-hidden="true">
+              −{SKIP_PENALTY}s
+            </span>
+          )}
         </span>
         <span className={`stat score ${score > 0 && score >= best ? 'record' : ''}`}>
           <span className="stat-label">Score</span>
           <b key={score} className="stat-value">{score}</b>
+          {phase === 'playing' && score > 0 && (
+            <span key={`plus-${score}`} className="qf-float plus" aria-hidden="true">
+              +1
+            </span>
+          )}
         </span>
         <span className="stat best">
           <span className="stat-label">Best</span>
@@ -134,7 +157,7 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
       </div>
 
       {phase === 'over' ? (
-        <Results turns={turns} score={score} best={best} onAgain={start} crop={crop} />
+        <Results turns={turns} score={score} best={best} newBest={newBest} onAgain={start} crop={crop} />
       ) : (
         <>
           <div className={`qf-prompt ${msg?.ok && phase === 'playing' ? 'after-hit' : ''}`} key={phase === 'ready' ? 'ready' : prompt.text + turns.length}>
@@ -192,6 +215,7 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
 
           <div className={`qf-msg ${msg ? (msg.ok ? 'ok' : 'bad') : ''}`} key={msg?.n} aria-live="polite">
             {msg ? (msg.ok ? `✓ ${msg.text}` : msg.text) : ' '}
+            {msg?.ok && streak >= 3 && <span className="qf-streak">🔥 {streak} in a row</span>}
           </div>
 
           {answered.length > 0 && (
@@ -210,13 +234,29 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
   );
 }
 
-function Results({ turns, score, best, onAgain, crop }: { turns: Turn[]; score: number; best: number; onAgain(): void; crop: Record<string, number> }) {
+function Results({
+  turns,
+  score,
+  best,
+  newBest,
+  onAgain,
+  crop,
+}: {
+  turns: Turn[];
+  score: number;
+  best: number;
+  newBest: boolean;
+  onAgain(): void;
+  crop: Record<string, number>;
+}) {
   return (
     <div className="panel qf-results">
       <h2>Time!</h2>
-      <p>
-        You named <b>{score}</b> card{score === 1 ? '' : 's'}. Best: {best}.
-      </p>
+      <div className="qf-final">
+        <CountUp to={score} />
+        <span className="muted small">card{score === 1 ? '' : 's'} named</span>
+      </div>
+      {newBest ? <div className="qf-newbest">New best!</div> : <p className="muted small">Best: {best}</p>}
       <button className="btn primary" onClick={onAgain}>
         Play again
       </button>
@@ -257,4 +297,23 @@ function Bold({ text }: { text: string }) {
       ))}
     </>
   );
+}
+
+/** A number that counts up quickly from 0 (instant for reduced motion). */
+function CountUp({ to }: { to: number }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches || to === 0) return setN(to);
+    const ms = Math.min(700, 120 + to * 45);
+    const t0 = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / ms);
+      setN(Math.round(to * (1 - (1 - k) ** 3)));
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [to]);
+  return <b className={`qf-count ${n === to ? 'done' : ''}`}>{n}</b>;
 }
