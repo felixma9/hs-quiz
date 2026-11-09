@@ -1,25 +1,60 @@
+import type React from 'react';
 import type { ReactNode } from 'react';
 
-/** Main menu: intro line, the card-pool pickers (children) and the mode links. */
-export function Menu({ count, children }: { count: number; children: ReactNode }) {
+const art = (id: string) => `https://art.hearthstonejson.com/v1/512x/${id}.jpg`;
+
+const MODES = [
+  {
+    href: '#/gauntlet',
+    name: 'Gauntlet',
+    blurb: 'One blank per card. Three lives. How far can you get?',
+    art: 'EX1_116', // Leeroy Jenkins
+  },
+  {
+    href: '#/quickfire',
+    name: 'Quickfire',
+    blurb: '60 seconds. "Name a minion with 4 Attack." "Finish the name: Chi…"',
+    art: 'NEW1_010', // Al'Akir the Windlord
+  },
+  {
+    href: '#/hsdle',
+    name: 'HSdle',
+    blurb: 'Guess the daily minion from how close each guess is.',
+    art: 'EX1_298', // Ragnaros the Firelord
+  },
+];
+
+/**
+ * Main menu: headline, the three modes (each over a slice of classic card
+ * art), then the card-pool settings (children).
+ */
+export function Menu({ count, banner, children }: { count: number; banner?: ReactNode; children: ReactNode }) {
   return (
     <div className="menu">
       <div className="menu-intro">
-        <p>How well do you know {count.toLocaleString()} Hearthstone cards?</p>
+        <h1>
+          How well do you know <span className="gold-text">{count.toLocaleString()}</span> Hearthstone cards?
+        </h1>
       </div>
-      {children}
-      <a className="mode-card" href="#/gauntlet">
-        <h2>Gauntlet</h2>
-        <p>One blank per card. Three lives. How far can you get?</p>
-      </a>
-      <a className="mode-card" href="#/quickfire">
-        <h2>Quickfire</h2>
-        <p>60 seconds. "Name a minion with 4 Attack", "Finish the name: Chi…". How many can you name?</p>
-      </a>
-      <a className="mode-card" href="#/hsdle">
-        <h2>HSdle</h2>
-        <p>Guess the daily minion. Every guess shows how close its mana, stats, keywords, set, rarity, tribe and class are.</p>
-      </a>
+      {banner}
+      <nav className="mode-list">
+        {MODES.map((m) => (
+          <a key={m.href} className="mode-card" href={m.href} style={{ '--art': `url(${art(m.art)})` } as React.CSSProperties}>
+            <span className="mode-art" aria-hidden="true" />
+            <span className="mode-body">
+              <h2>{m.name}</h2>
+              <p>{m.blurb}</p>
+            </span>
+            <span className="mode-go" aria-hidden="true">
+              →
+            </span>
+          </a>
+        ))}
+      </nav>
+      <section className="pool-section">
+        <div className="section-label">Card pool</div>
+        {children}
+      </section>
     </div>
   );
 }

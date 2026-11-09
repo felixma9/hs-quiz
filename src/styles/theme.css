@@ -1,0 +1,175 @@
+/*
+ * Theme polish: deeper night-sky background, glass surfaces, gold accents,
+ * Cinzel for titles and Inter for everything else. Loaded after the feature
+ * styles so it can refine them; motion.css still comes last.
+ */
+:root {
+  --bg: #0b0c12;
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-2: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.12);
+  --text: #f4f1ea;
+  --muted: #9a98a6;
+  --gold: #f0c75e;
+  --gold-2: #ffe7a3;
+  --gold-dim: rgba(240, 199, 94, 0.35);
+  --ok: #4f9a55;
+  --ok-2: #62b86a;
+  --display: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --radius: 10px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+html { background: var(--bg); }
+body {
+  min-height: 100vh;
+  font-family: 'Inter', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(84, 70, 160, 0.28), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(40, 90, 160, 0.16), transparent 60%),
+    radial-gradient(800px 500px at 0% 100%, rgba(180, 120, 40, 0.10), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+/* A faint grain so the gradients don't band. */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+#root { position: relative; z-index: 1; }
+::selection { background: rgba(240, 199, 94, 0.35); }
+
+.gold-text {
+  background: linear-gradient(180deg, var(--gold-2), var(--gold) 55%, #c9952f);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* ---- Title bar: sticky glass with a gold hairline that fades at the ends ---- */
+.top {
+  position: sticky; top: 0; z-index: 20; border-bottom: 0;
+  background: rgba(11, 12, 18, 0.62); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+.top::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240, 199, 94, 0.55), transparent);
+}
+.top-title { font-family: var(--display); font-weight: 800; letter-spacing: 0.04em; }
+.top-title .mark { filter: drop-shadow(0 0 8px rgba(80, 150, 255, 0.45)); }
+.top-back { border-radius: 50%; }
+.top-back:hover { background: var(--surface-2); }
+
+h1, h2 { font-family: var(--display); letter-spacing: 0.02em; }
+
+/* ---- Menu ---- */
+.menu { gap: 18px; }
+.menu-intro h1 {
+  margin: 10px 0 2px; font-size: clamp(1.45rem, 5.2vw, 2rem); line-height: 1.2; font-weight: 700; text-wrap: balance;
+}
+.mode-list { display: grid; gap: 12px; }
+.mode-card {
+  position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
+  min-height: 112px; padding: 18px 20px; border-radius: var(--radius); border: 1px solid var(--glass-border);
+  background: #10111a; box-shadow: var(--shadow); isolation: isolate;
+}
+/* Card art on the right, fading into the panel. */
+.mode-art {
+  position: absolute; inset: 0 0 0 38%; z-index: -1; background: var(--art) center 30% / cover no-repeat;
+  /* Zoomed in so the light/dark padding some art has at its edges never shows. */
+  opacity: 0.75; transform: scale(1.3); transition: transform 0.5s var(--ease, ease), opacity 0.3s ease;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 55%); mask-image: linear-gradient(90deg, transparent, #000 55%);
+}
+.mode-card::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(90deg, rgba(16, 17, 26, 0.96) 35%, rgba(16, 17, 26, 0.55) 70%, rgba(16, 17, 26, 0.2));
+}
+.mode-body { display: grid; gap: 4px; max-width: 68%; }
+.mode-card h2 { margin: 0; font-size: 1.45rem; font-weight: 800; color: var(--gold); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); }
+.mode-card p { margin: 0; color: #cfccd8; font-size: 0.9rem; line-height: 1.35; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); }
+.mode-go {
+  width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 1.1rem; color: var(--gold);
+  background: rgba(11, 12, 18, 0.65); border: 1px solid var(--gold-dim); backdrop-filter: blur(6px);
+  transition: transform 0.25s var(--ease, ease), background-color 0.25s ease;
+}
+@media (hover: hover) {
+  .mode-card:hover .mode-art { transform: scale(1.36); opacity: 0.95; }
+  .mode-card:hover .mode-go { transform: translateX(3px); background: rgba(240, 199, 94, 0.18); }
+}
+
+.pool-section {
+  display: grid; gap: 14px; padding: 16px; border-radius: var(--radius); border: 1px solid var(--glass-border);
+  background: var(--surface); backdrop-filter: blur(8px);
+}
+.section-label, .rarity-picker .label, .share-panel .label {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+}
+.set-picker { border-color: var(--glass-border); }
+.rarity-chip { border-radius: 999px; border-color: var(--glass-border); background: rgba(255, 255, 255, 0.02); }
+.rarity-chip.on { background: rgba(240, 199, 94, 0.08); border-color: var(--gold-dim); }
+.rarity-chip.on .dot { box-shadow: 0 0 8px currentColor; }
+.set-year { border-color: var(--glass-border); border-radius: 8px; }
+.share-code { border-radius: 8px; border-color: var(--glass-border); background: rgba(0, 0, 0, 0.25); }
+.shared-banner { border-radius: var(--radius); background: linear-gradient(135deg, rgba(240, 199, 94, 0.12), rgba(255, 255, 255, 0.03)); }
+
+/* ---- Controls ---- */
+.btn { border-radius: 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border); }
+.btn.primary {
+  border: 0; background: linear-gradient(180deg, var(--ok-2), var(--ok));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 6px 18px rgba(79, 154, 85, 0.28);
+}
+.btn.primary:disabled { box-shadow: none; }
+.in { border-radius: 8px; background: rgba(0, 0, 0, 0.28); border-color: var(--glass-border); }
+.in::placeholder { color: #6f6d7a; }
+.suggest, .search-list { border-radius: 10px; background: rgba(20, 21, 30, 0.96); backdrop-filter: blur(12px); border-color: var(--glass-border); }
+.tabs { border-bottom-color: var(--glass-border); }
+.tabs button.on { border-bottom-color: var(--gold); color: var(--gold-2); }
+.chip { border-radius: 999px; }
+
+/* ---- Feedback panels ---- */
+.feedback { border-radius: var(--radius); }
+.feedback.ok { background: linear-gradient(160deg, var(--ok-2), var(--ok)); box-shadow: 0 8px 24px rgba(79, 154, 85, 0.25); }
+.feedback.bad { background: var(--surface-2); border: 1px solid var(--glass-border); }
+.feedback-head { font-family: var(--display); letter-spacing: 0.08em; }
+
+/* ---- Game card: soft light behind it ---- */
+.game-card-frame::before {
+  content: ''; position: absolute; inset: 8% 4%; z-index: -1; border-radius: 40%;
+  background: radial-gradient(closest-side, rgba(120, 110, 220, 0.25), transparent); filter: blur(10px);
+}
+.game-card-frame { isolation: isolate; }
+.picker { border-radius: 12px; }
+
+/* ---- Gauntlet / Quickfire HUD ---- */
+.stat-label { letter-spacing: 0.16em; }
+.score .stat-value { font-family: 'Inter', sans-serif; }
+.qf-prompt {
+  border-radius: 14px; border-color: var(--glass-border);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
+  box-shadow: var(--shadow), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+.qf-text b { color: var(--gold-2); }
+.qf-bar { height: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
+.qf-bar span { border-radius: 999px; background: linear-gradient(90deg, #c9952f, var(--gold), var(--gold-2)); box-shadow: 0 0 10px rgba(240, 199, 94, 0.5); }
+.qf-bar span.urgent { background: linear-gradient(90deg, #b8333a, #e5484d); box-shadow: 0 0 10px rgba(229, 72, 77, 0.6); }
+.qf-thumb { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5); }
+.qf-log li { border-radius: 8px; background: var(--surface); }
+.qf-results h2 { font-size: 1.6rem; }
+
+/* ---- HSdle ---- */
+.tile { border-radius: 6px; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 3px 8px rgba(0, 0, 0, 0.35); }
+.tile.t-correct { background: linear-gradient(170deg, #5aa760, #3f8646); }
+.tile.t-close { background: linear-gradient(170deg, #c9ae45, #9d8630); }
+.tile.t-wrong { background: linear-gradient(170deg, #a23d3d, #7c2c2c); }
+.clue-btn { border-radius: 10px; }
+
+footer { opacity: 0.8; }
+
+@media (max-width: 600px) {
+  .mode-card { min-height: 100px; padding: 16px; }
+  .mode-card h2 { font-size: 1.3rem; }
+  .mode-body { max-width: 74%; }
+  .pool-section { padding: 14px 12px; }
+  .tile { border-radius: 3px; }
+}

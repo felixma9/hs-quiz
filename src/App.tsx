@@ -62,17 +62,21 @@ export function App() {
           {error && <div className="panel feedback bad">{error}</div>}
           {!cards && !error && <div className="panel center muted">Loading cards…</div>}
           {cards && route === 'menu' && (
-            <Menu count={pool.length}>
-              {incoming && (
-                <SharedBanner
-                  setup={incoming}
-                  onAccept={() => {
-                    applySetup(incoming);
-                    closeIncoming();
-                  }}
-                  onDismiss={closeIncoming}
-                />
-              )}
+            <Menu
+              count={pool.length}
+              banner={
+                incoming && (
+                  <SharedBanner
+                    setup={incoming}
+                    onAccept={() => {
+                      applySetup(incoming);
+                      closeIncoming();
+                    }}
+                    onDismiss={closeIncoming}
+                  />
+                )
+              }
+            >
               <RarityPicker cards={setPool} excluded={excludedRarities} onChange={updateRarities} />
               <SetPicker cards={cards} excluded={excludedSets} onChange={updateSets} />
               <SharePanel excludedSets={excludedSets} excludedRarities={excludedRarities} onApply={applySetup} />

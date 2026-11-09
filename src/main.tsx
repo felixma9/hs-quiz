@@ -8,6 +8,7 @@ import './styles/card.css';
 import './styles/gauntlet.css';
 import './styles/hsdle.css';
 import './styles/quickfire.css';
+import './styles/theme.css';
 import './styles/motion.css';
 
 createRoot(document.getElementById('root')!).render(
