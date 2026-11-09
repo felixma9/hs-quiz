@@ -20,6 +20,8 @@ import { Quickfire } from './modes/quickfire/Quickfire';
 export function App() {
   const [route, setRoute] = useState<Route>(() => parseRoute());
   const [cards, setCards] = useState<Card[] | null>(null);
+  /** Every collectible card, including types the card renderer can't draw (Quickfire uses these). */
+  const [everything, setEverything] = useState<Card[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { pool, setPool, excludedSets, excludedRarities, updateSets, updateRarities } = usePool(cards);
   // Settings from a share link (#/?s=CODE), waiting for the player to accept.
@@ -50,7 +52,13 @@ export function App() {
     return () => window.removeEventListener('hashchange', on);
   }, []);
   useEffect(() => {
-    loadCards().then((c) => setCards(drawable(c)), (e) => setError(String(e)));
+    loadCards().then(
+      (c) => {
+        setEverything(c);
+        setCards(drawable(c));
+      },
+      (e) => setError(String(e)),
+    );
   }, []);
 
   const playable = cards && pool.length > 0;
@@ -82,14 +90,14 @@ export function App() {
               <SharePanel excludedSets={excludedSets} excludedRarities={excludedRarities} onApply={applySetup} />
             </Menu>
           )}
-          {cards && (route === 'gauntlet' || route === 'hsdle' || route === 'quickfire') && pool.length === 0 && (
+          {cards && (route === 'gauntlet' || route === 'hsdle') && pool.length === 0 && (
             <div className="panel center">
               No cards match your sets and rarities. <a href="#/">Change them on the menu.</a>
             </div>
           )}
           {playable && route === 'gauntlet' && <Gauntlet cards={pool} />}
           {playable && route === 'hsdle' && <Hsdle cards={pool} />}
-          {playable && route === 'quickfire' && <Quickfire cards={pool} all={cards} />}
+          {cards && route === 'quickfire' && <Quickfire cards={pool} everything={everything} />}
           {cards && route === 'card' && <CardPreview cards={cards} />}
         </main>
         <footer className="muted small">

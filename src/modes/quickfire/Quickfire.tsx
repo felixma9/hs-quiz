@@ -14,7 +14,11 @@ type View = { kind: 'home' } | { kind: 'solo' } | { kind: 'party'; mode: PartyMo
  * Quickfire: host or join a room and take turns naming cards before the fuse
  * burns out, or practise alone against the clock.
  */
-export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
+/**
+ * `cards` is the menu's card pool (solo prompts); `everything` is every
+ * collectible card: rooms use all of it, and any real card can be an answer.
+ */
+export function Quickfire({ cards, everything }: { cards: Card[]; everything: Card[] }) {
   const [name, setName] = useState(() => load<string>(NAME_KEY, ''));
   const [code, setCode] = useState(() => roomFromLocation() ?? '');
   const [view, setView] = useState<View>({ kind: 'home' });
@@ -45,14 +49,14 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
   if (view.kind === 'solo') {
     return (
       <>
-        <Solo cards={cards} all={all} />
+        <Solo cards={cards.length ? cards : everything} all={everything} />
         <button className="link party-leave" onClick={leave}>
           ← Rooms
         </button>
       </>
     );
   }
-  if (view.kind === 'party') return <Party mode={view.mode} name={name.trim()} pool={cards} all={all} onLeave={leave} />;
+  if (view.kind === 'party') return <Party mode={view.mode} name={name.trim()} pool={everything} all={everything} onLeave={leave} />;
 
   const fullCode = cleanCode(code).length === 4;
   return (

@@ -14,7 +14,7 @@ export type PartyMode = { role: 'host' } | { role: 'guest'; code: string };
 interface Props {
   mode: PartyMode;
   name: string;
-  /** The host's card pool (ignored for guests: the host's pool is used). */
+  /** Cards prompts are built from (every collectible card). */
   pool: Card[];
   all: Card[];
   onLeave(): void;
@@ -251,7 +251,7 @@ function Lobby({
       <div className="party-settings">
         <Setting label="Lives" options={LIVES_OPTIONS} value={state.settings.lives} disabled={!isHost} onPick={(v) => onSettings({ lives: v })} />
         <Setting label="Seconds per turn" options={FUSE_OPTIONS} value={state.settings.fuse} disabled={!isHost} onPick={(v) => onSettings({ fuse: v })} />
-        <div className="muted small">Cards come from the host's card pool ({state.poolSize.toLocaleString()} cards).</div>
+        <div className="muted small">Every collectible card counts ({state.poolSize.toLocaleString()} cards).</div>
       </div>
 
       {isHost ? (
@@ -354,8 +354,22 @@ function Play({
   const hitCard = last?.kind === 'hit' ? byId.get(last.cardId) : undefined;
   const RING = 2 * Math.PI * 46;
 
+  // A buzz on phones that can when it becomes your turn.
+  useEffect(() => {
+    if (myTurn) navigator.vibrate?.(60);
+  }, [myTurn, state.round]);
+
   return (
     <>
+      <div className={`turn-banner ${myTurn ? 'mine' : ''}`} key={`turn-${state.round}`} role="status">
+        {current && (
+          <span className="avatar" style={avatarStyle(current.id)}>
+            {current.name.slice(0, 1).toUpperCase()}
+          </span>
+        )}
+        <span className="turn-banner-text">{myTurn ? 'Your turn!' : `${current?.name ?? '…'}'s turn`}</span>
+      </div>
+      {myTurn && <div className="my-turn-glow" aria-hidden="true" />}
       <div className={`table ${myTurn ? 'compact' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
         <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
@@ -396,7 +410,6 @@ function Play({
       </div>
 
       <div className={`qf-prompt party-prompt ${myTurn ? 'mine' : ''}`} key={state.round}>
-        <div className="turn-label">{myTurn ? 'Your turn!' : `${current?.name ?? '…'}'s turn`}</div>
         <div className="qf-text">{state.prompt && <Bold text={state.prompt.text} />}</div>
         {state.prompt?.hint && <div className="muted small">{state.prompt.hint}</div>}
       </div>

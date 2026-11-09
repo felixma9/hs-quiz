@@ -25,6 +25,18 @@ describe('quickfire prompts', () => {
     const r = rng(3);
     for (let i = 0; i < 50; i++) expect(makePrompt(tiny, new Set(), r).answers.length).toBeGreaterThan(0);
   });
+  it('finish-the-name prompts are only for Legendaries', () => {
+    const r = rng(11);
+    let seen = 0;
+    for (let i = 0; i < 400; i++) {
+      const p = makePrompt(cards, new Set(), r);
+      if (p.text.startsWith('Finish')) {
+        seen++;
+        expect(p.text).toMatch(/^Finish the Legendary /);
+      }
+    }
+    expect(seen).toBeGreaterThan(10);
+  });
   it('name prefixes are partial', () => {
     expect(namePrefix('Chillwind Yeti')).toBe('Chill');
     expect(namePrefix('Leeroy Jenkins')).toBe('Leero');

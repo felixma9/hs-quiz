@@ -205,10 +205,8 @@ export class PartyGame {
   answer(id: string, text: string): boolean {
     if (this.phase !== 'playing' || this.turn !== id || !this.prompt) return false;
     const c = findCard(text, this.all);
-    const poolIds = new Set(this.pool.map((x) => x.id));
     let why: string | null = null;
     if (!c) why = `No card called "${text.trim()}"`;
-    else if (!poolIds.has(c.id)) why = `${c.name} isn't in this room's card pool`;
     else if (this.used.has(c.id)) why = `${c.name} was already used`;
     else if (!this.prompt.test(c)) why = `${c.name} ${this.prompt.why(c)}`;
     if (why || !c) {

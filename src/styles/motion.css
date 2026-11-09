@@ -209,6 +209,11 @@ html { scroll-behavior: smooth; }
 .crown { animation: crown 0.5s var(--ease) 0.65s backwards; }
 .dots::after { animation: dots 1.2s steps(1) infinite; }
 
+@keyframes banner-in { 0% { opacity: 0; transform: scale(0.85); } 60% { opacity: 1; transform: scale(1.06); } 100% { transform: none; } }
+@keyframes glow-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.turn-banner { animation: banner-in 0.35s var(--ease) backwards; }
+.my-turn-glow { animation: fade-in 0.25s ease backwards, glow-pulse 1.6s ease-in-out 0.25s infinite; }
+
 /* Share panel and banner. */
 .shared-banner { animation: drop-in var(--med) var(--ease) backwards; }
 .share-note.ok, .share-note.bad { animation: fade-in var(--fast) ease backwards; }

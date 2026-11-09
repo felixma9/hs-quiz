@@ -184,15 +184,18 @@ const TEMPLATES: Template[] = [
   {
     weight: 3,
     min: 1,
+    // Only Legendaries: they're the names people actually remember.
     make: (s) => {
+      if (s.rarity !== 'LEGENDARY') return null;
       const p = namePrefix(s.name);
       if (!p) return null;
       const n = normalizeName(p);
       return {
-        text: `Finish the ${TYPE_WORD[s.type]} name: **${p}…**`,
+        text: `Finish the Legendary ${TYPE_WORD[s.type]}: **${p}…**`,
         hint: s.cardClass === 'NEUTRAL' ? 'Neutral' : cls(s),
-        test: (c) => c.type === s.type && normalizeName(c.name).startsWith(n),
-        why: (c) => (normalizeName(c.name).startsWith(n) ? `is ${a(TYPE_WORD[c.type])}` : `doesn't start with "${p}"`),
+        // Any card that starts this way counts.
+        test: (c) => normalizeName(c.name).startsWith(n),
+        why: () => `doesn't start with "${p}"`,
       };
     },
   },
@@ -227,11 +230,12 @@ export function makePrompt(pool: Card[], used: Set<string> = new Set(), rng: Rng
     if (open.length >= (t.min ?? (i < 150 ? minAnswers : 1))) return { ...p, answers };
   }
   // Fallback: finish any name.
-  const seed = pool.find((c) => !used.has(c.id) && namePrefix(c.name)) ?? pool[0];
+  const open = pool.filter((c) => !used.has(c.id) && namePrefix(c.name));
+  const seed = open.find((c) => c.rarity === 'LEGENDARY') ?? open[0] ?? pool[0];
   const p = namePrefix(seed.name) ?? seed.name.slice(0, 3);
   const n = normalizeName(p);
   return {
-    text: `Finish the ${TYPE_WORD[seed.type]} name: **${p}…**`,
+    text: `Finish the ${seed.rarity === 'LEGENDARY' ? 'Legendary ' : ''}${TYPE_WORD[seed.type]}: **${p}…**`,
     test: (c) => normalizeName(c.name).startsWith(n),
     why: () => `doesn't start with "${p}"`,
     answers: pool.filter((c) => normalizeName(c.name).startsWith(n)),

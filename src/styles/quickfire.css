@@ -175,3 +175,16 @@
 .sound-toggle svg { width: 20px; height: 20px; fill: currentColor; }
 .sound-toggle .stroke { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .sound-toggle.off { color: var(--muted); }
+
+/* Whose turn: a big banner on top; on your turn it's gold and the screen edges glow. */
+.turn-banner { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; border-radius: 999px;
+  margin: 0 46px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border, var(--border)); }
+.turn-banner .avatar { width: 32px; height: 32px; font-size: 0.95rem; }
+.turn-banner-text { font-family: var(--display, serif); font-weight: 800; font-size: 1.3rem; letter-spacing: 0.03em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.turn-banner.mine { background: linear-gradient(180deg, #ffe08a, #e6aa2e); border-color: #ffe7a3; color: #2a1a00;
+  box-shadow: 0 0 0 4px rgba(240, 199, 94, 0.18), 0 8px 28px rgba(240, 199, 94, 0.45); }
+.turn-banner.mine .turn-banner-text { font-size: 1.5rem; text-transform: uppercase; }
+.turn-banner.mine .avatar { box-shadow: 0 0 0 2px #2a1a00; }
+.my-turn-glow { position: fixed; inset: 0; z-index: 30; pointer-events: none;
+  box-shadow: inset 0 0 0 3px rgba(240, 199, 94, 0.85), inset 0 0 60px rgba(240, 199, 94, 0.35); }

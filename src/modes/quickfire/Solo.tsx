@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { load, save } from '../../lib/storage';
 import { Art, useArtCrop } from '../hsdle/Art';
@@ -37,7 +37,6 @@ export function Solo({ cards, all }: { cards: Card[]; all: Card[] }) {
   /** Counts skips, so each one replays the "−3s" float. */
   const [skips, setSkips] = useState(0);
   const field = useRef<HTMLInputElement>(null);
-  const poolIds = useMemo(() => new Set(cards.map((c) => c.id)), [cards]);
 
   const score = turns.filter((t) => t.card).length;
   const left = Math.max(0, endAt - now) / 1000;
@@ -98,7 +97,6 @@ export function Solo({ cards, all }: { cards: Card[]; all: Card[] }) {
     if (phase !== 'playing' || !input.trim()) return;
     const c = findCard(input, all);
     if (!c) return say(false, `No card called "${input.trim()}"`);
-    if (!poolIds.has(c.id)) return say(false, `${c.name} isn't in your card pool`);
     if (used.has(c.id)) return say(false, `You already used ${c.name}`);
     if (!prompt.test(c)) return say(false, `${c.name} ${prompt.why(c)}`);
     const u = new Set(used).add(c.id);
