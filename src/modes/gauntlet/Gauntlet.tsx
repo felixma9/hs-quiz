@@ -121,8 +121,9 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     <div className="mode">
       <div className="hud">
         <span className="lives" aria-label={`${lives} lives`}>
-          {'♥'.repeat(lives)}
-          <span key={lives} className="lost">{'♥'.repeat(LIVES - lives)}</span>
+          {Array.from({ length: LIVES }, (_, i) => (
+            <Heart key={i === lives ? `just-${lives}` : i} full={i < lives} just={i === lives} last={lives === 1} />
+          ))}
         </span>
         <span>
           Score <b>{score}</b>
@@ -234,5 +235,13 @@ function Feedback({ result, attrKey, card, truthPretty, answer }: { result: Grad
         )
       )}
     </div>
+  );
+}
+
+function Heart({ full, just, last }: { full: boolean; just: boolean; last: boolean }) {
+  return (
+    <svg className={`heart ${full ? 'full' : 'lost'} ${full && last ? 'last' : ''} ${just ? 'just' : ''}`} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 21s-7.5-4.6-10-9.3C.4 8.4 2.1 4 6.3 4c2.3 0 3.9 1.3 5.7 3.4C13.8 5.3 15.4 4 17.7 4 21.9 4 23.6 8.4 22 11.7 19.5 16.4 12 21 12 21z" />
+    </svg>
   );
 }

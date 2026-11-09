@@ -12,7 +12,8 @@
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes drop-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @keyframes pop-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
-@keyframes heart-lost { 0%, 100% { transform: none; } 30% { transform: translateX(-2px); } 60% { transform: translateX(2px); } }
+@keyframes heart-lost { 0% { transform: scale(1.35); opacity: 1; fill: #e5484d; } 25% { transform: translateX(-3px) scale(1.1); } 50% { transform: translateX(3px); } 100% { transform: none; } }
+@keyframes heart-beat { 0%, 100% { transform: none; } 15% { transform: scale(1.15); } 30% { transform: none; } 45% { transform: scale(1.1); } }
 
 /* Pages: each mode / the menu rises in when opened. */
 .menu, .mode { animation: rise-in var(--med) var(--ease) backwards; }
@@ -48,7 +49,8 @@
 .hotspot { transition: background-color var(--fast) ease, outline-color var(--fast) ease; }
 
 /* Gauntlet: the heart you just lost gives a small shake. */
-.lives .lost { display: inline-block; animation: heart-lost 0.35s ease 1; }
+.heart.just { animation: heart-lost 0.5s ease 1; }
+.heart.last { animation: heart-beat 1.4s ease-in-out infinite; transform-origin: center; }
 
 /* HSdle: armed give-up and selected tiles ease rather than snap. */
 .tile { transition: outline-color var(--fast) ease; }
