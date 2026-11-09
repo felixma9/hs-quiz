@@ -13,7 +13,7 @@ const MODES = [
   {
     href: '#/quickfire',
     name: 'Quickfire',
-    blurb: 'Name as many cards as you can before the clock runs out.',
+    blurb: 'Host a room with friends and take turns naming cards before your fuse burns out. Last one standing wins.',
     art: 'NEW1_010', // Al'Akir the Windlord
   },
   {
