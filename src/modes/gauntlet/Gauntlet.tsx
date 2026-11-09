@@ -125,10 +125,14 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
             <Heart key={i === lives ? `just-${lives}` : i} full={i < lives} just={i === lives} last={lives === 1} />
           ))}
         </span>
-        <span>
-          Score <b>{score}</b>
+        <span className={`stat score ${score > 0 && score >= best ? 'record' : ''}`}>
+          <span className="stat-label">Score</span>
+          <b key={score} className="stat-value">{score}</b>
         </span>
-        <span className="muted">Best {best}</span>
+        <span className="stat best">
+          <span className="stat-label">Best</span>
+          <b className="stat-value">{best}</b>
+        </span>
         <button className="link" onClick={() => setShowSettings((v) => !v)}>
           ⚙
         </button>

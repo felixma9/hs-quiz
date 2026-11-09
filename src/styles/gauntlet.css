@@ -1,11 +1,17 @@
 /* Gauntlet: score bar, settings, answer feedback. */
 .hud { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.92rem; color: var(--muted); }
 .hud b { color: var(--text); }
+.stat { display: flex; flex-direction: column; align-items: center; line-height: 1; gap: 3px; }
+.stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+.stat-value { font-variant-numeric: tabular-nums; font-weight: 800; }
+.score .stat-value { font-size: 2rem; color: var(--text); display: inline-block; }
+.score.record .stat-value { color: #f0b232; text-shadow: 0 0 10px rgba(240, 178, 50, 0.35); }
+.best .stat-value { font-size: 1.2rem; color: var(--muted); }
 .lives { display: inline-flex; align-items: center; gap: 4px; }
 .heart { width: 30px; height: 30px; display: block; }
 .heart.full { fill: #e5484d; filter: drop-shadow(0 0 4px rgba(229, 72, 77, 0.45)); }
 .heart.lost { fill: none; stroke: var(--key); stroke-width: 1.6; opacity: 0.55; }
-@media (max-width: 600px) { .heart { width: 28px; height: 28px; } .lives { gap: 3px; } }
+@media (max-width: 600px) { .heart { width: 28px; height: 28px; } .lives { gap: 3px; } .score .stat-value { font-size: 1.75rem; } }
 .settings .chips { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 
 .truth { margin-top: 6px; }
