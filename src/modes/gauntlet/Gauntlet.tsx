@@ -6,16 +6,11 @@ import type { Grade } from '../../lib/grade';
 import { load, save } from '../../lib/storage';
 import { GameCard } from '../../card/GameCard';
 import { TextDiff } from './TextDiff';
+import { loadSettings, saveSettings, type GauntletSettings as Settings } from './settings';
 
 const LIVES = 3;
 const BEST_KEY = 'hsq:gauntlet:best';
-const SETTINGS_KEY = 'hsq:gauntlet:settings';
 
-interface Settings {
-  minionsOnly: boolean;
-  allowed: AttrKey[];
-}
-const DEFAULT_SETTINGS: Settings = { minionsOnly: false, allowed: ATTRS.map((a) => a.key) };
 
 /** How to fill in each kind of blank on the card. */
 const HOW: Record<string, string> = {
@@ -44,11 +39,7 @@ function newRound(pool: Card[], allowed: AttrKey[]): Round {
 }
 
 export function Gauntlet({ cards }: { cards: Card[] }) {
-  const [settings, setSettings] = useState<Settings>(() => {
-    const s = { ...DEFAULT_SETTINGS, ...load<Partial<Settings>>(SETTINGS_KEY, {}) };
-    const allowed = s.allowed.filter((k) => k in ATTR);
-    return { ...s, allowed: allowed.length ? allowed : DEFAULT_SETTINGS.allowed };
-  });
+  const [settings, setSettings] = useState<Settings>(loadSettings);
   const pool = useMemo(() => (settings.minionsOnly ? cards.filter((c) => c.type === 'MINION') : cards), [cards, settings.minionsOnly]);
   const [round, setRound] = useState<Round>(() => newRound(pool, settings.allowed));
   const [answer, setAnswer] = useState('');
@@ -107,7 +98,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
   const updateSettings = (s: Settings) => {
     if (!s.allowed.length) return;
     setSettings(s);
-    save(SETTINGS_KEY, s);
+    saveSettings(s);
     restart(s);
   };
 

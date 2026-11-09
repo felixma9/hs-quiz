@@ -1,4 +1,4 @@
-/** Set code -> display name and release year (used for "close" clues). */
+/** Set code -> display name and release year (used for "close" clues). New sets must also be appended to SHARE_SETS in src/pool/shareCode.ts (a test checks). */
 export const SETS: Record<string, { name: string; year: number }> = {
   LEGACY: { name: 'Legacy', year: 2014 },
   EXPERT1: { name: 'Classic', year: 2014 },

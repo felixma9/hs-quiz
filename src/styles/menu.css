@@ -31,3 +31,21 @@
 .set-year { border: 1px solid var(--border); border-radius: 4px; padding: 4px 12px 8px; margin: 0; display: grid; gap: 2px; }
 .set-year legend { padding: 0 6px; }
 .set-row { display: grid; grid-template-columns: auto 1fr auto; min-height: 36px; }
+
+/* Share settings: your code + copy/link, and a box for a friend's code. */
+.share-panel { display: grid; gap: 8px; }
+.share-panel .label { font-weight: 700; }
+.share-row { display: flex; gap: 6px; align-items: stretch; }
+.share-row .in { flex: 1; min-width: 0; }
+.share-code {
+  flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 12px; border: 1px solid var(--border); border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1rem; letter-spacing: 0.06em; color: var(--gold);
+  overflow-x: auto; white-space: nowrap; user-select: all; -webkit-user-select: all;
+}
+.share-note { color: var(--muted); min-height: 1.2em; }
+.share-note.ok { color: #6aaa64; }
+.share-note.bad { color: #e5484d; }
+.shared-banner {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 12px 14px; border: 1px solid var(--gold-dim); border-radius: 4px; background: var(--surface-2);
+}
