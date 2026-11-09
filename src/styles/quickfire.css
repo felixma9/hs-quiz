@@ -101,8 +101,10 @@
 .seat .avatar { width: 15cqw; height: 15cqw; font-size: 6.5cqw; transition: transform 0.3s var(--ease, ease), box-shadow 0.3s ease; }
 .seat-name { font-size: 3.6cqw; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seat-lives { display: flex; gap: 2px; font-size: 3cqw; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
-.seat-lives i { width: 2.6cqw; height: 2.6cqw; border-radius: 50%; background: rgba(255, 255, 255, 0.12); transition: background-color 0.3s ease; }
-.seat-lives i.on { background: #e5484d; box-shadow: 0 0 5px rgba(229, 72, 77, 0.7); }
+.seat-lives { align-items: center; gap: 1px; }
+.seat-lives .life { width: max(11px, 3.8cqw); height: auto; display: block; filter: grayscale(1) brightness(0.45); opacity: 0.5;
+  transition: filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease; }
+.seat-lives .life.on { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); opacity: 1; }
 .seat.active .avatar { transform: scale(1.18); box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(240, 199, 94, 0.65); }
 .seat.active .seat-name { color: var(--gold); }
 .seat.me .seat-name { font-weight: 800; }

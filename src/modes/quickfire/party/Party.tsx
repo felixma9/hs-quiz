@@ -9,6 +9,8 @@ import { FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, type PartySettings, type Public
 import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './net';
 
 const HOST_ID = 'host';
+/** Hearthstone's health drop (from the card frame assets), one per life. */
+const HEALTH_ICON = `${import.meta.env.BASE_URL}sunwell/health.webp`;
 
 /** Right answers in a row before a player counts as on a hot streak. */
 const HOT = 2;
@@ -555,7 +557,9 @@ function Play({
               <span className="seat-name">{p.id === me ? 'You' : p.name}</span>
               <span className="seat-lives" aria-label={`${p.lives} lives`}>
                 {p.lives > 0
-                  ? Array.from({ length: state.settings.lives }, (_, k) => <i key={k} className={k < p.lives ? 'on' : ''} />)
+                  ? Array.from({ length: state.settings.lives }, (_, k) => (
+                      <img key={k} className={`life ${k < p.lives ? 'on' : ''}`} src={HEALTH_ICON} alt="" draggable={false} />
+                    ))
                   : 'out'}
               </span>
             </div>
