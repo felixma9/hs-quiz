@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../lib/types';
 import { ATTR, enumOptions, pretty, type AttrKey } from '../lib/attributes';
 import type { Verdict } from '../lib/grade';
-import { badge } from '../data/classes';
+import { classIcon } from '../app/icons';
 import { boxStyle, layoutFor } from './layout';
 import { BLANK, drawCard, truth, type Shown } from './sunwell';
 import { NameEditor } from './NameEditor';
@@ -194,7 +194,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
           disabled={!canEdit('class') && !verdicts.class}
           onClick={() => canEdit('class') && setActive(active === 'class' ? null : 'class')}
         >
-          {shown.class && !shown.class.includes('+') && <span className="badge-dot" style={{ background: badge(shown.class).color }} />}
+          {shown.class && !shown.class.includes('+') && <img className="chip-class-icon" src={classIcon(shown.class)} alt="" draggable={false} />}
           Class: {classLabel}
         </button>
         {card.type === 'SPELL' && (

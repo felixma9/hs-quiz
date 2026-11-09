@@ -1,5 +1,6 @@
 import type React from 'react';
 import type { ReactNode } from 'react';
+import { ICON, rarityIcon } from './icons';
 
 const art = (id: string) => `https://art.hearthstonejson.com/v1/512x/${id}.jpg`;
 
@@ -9,18 +10,21 @@ const MODES = [
     name: 'Gauntlet',
     blurb: 'One blank per card. Three lives. How far can you get?',
     art: 'EX1_116', // Leeroy Jenkins
+    icon: ICON.health,
   },
   {
     href: '#/quickfire',
     name: 'Quickfire',
-    blurb: 'Party game: take turns with friends naming cards that fit the prompt before your fuse burns out. Or practise solo.',
+    blurb: 'Party game: take turns with friends naming cards that fit the prompt before the rope burns out. Or practise solo.',
     art: 'NEW1_010', // Al'Akir the Windlord
+    icon: ICON.attack,
   },
   {
     href: '#/hsdle',
     name: 'HSdle',
     blurb: 'Guess the daily minion from how close each guess is.',
     art: 'EX1_298', // Ragnaros the Firelord
+    icon: rarityIcon('LEGENDARY'),
   },
 ];
 
@@ -42,7 +46,10 @@ export function Menu({ count, banner, children }: { count: number; banner?: Reac
           <a key={m.href} className="mode-card" href={m.href} style={{ '--art': `url(${art(m.art)})` } as React.CSSProperties}>
             <span className="mode-art" aria-hidden="true" />
             <span className="mode-body">
-              <h2>{m.name}</h2>
+              <h2>
+                <img className="mode-icon" src={m.icon} alt="" draggable={false} />
+                {m.name}
+              </h2>
               <p>{m.blurb}</p>
             </span>
             <span className="mode-go" aria-hidden="true">

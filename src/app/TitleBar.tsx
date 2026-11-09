@@ -1,3 +1,4 @@
+import { ICON } from './icons';
 import { useEffect, useState } from 'react';
 import { ROUTE_TITLES, type Route } from './routes';
 
@@ -24,20 +25,9 @@ export function TitleBar({ route }: { route: Route }) {
   );
 }
 
-/** A small mana-crystal mark (original drawing) for the title bar. */
+/** The mana crystal from the card frames, as the site mark. */
 function ManaMark() {
-  return (
-    <svg className="mark" viewBox="0 0 22 26" aria-hidden="true">
-      <defs>
-        <linearGradient id="mana" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#8fd0ff" />
-          <stop offset="1" stopColor="#1f5fbf" />
-        </linearGradient>
-      </defs>
-      <path d="M11 1 L21 7 L21 19 L11 25 L1 19 L1 7 Z" fill="url(#mana)" stroke="#e8c26a" strokeWidth="1.5" />
-      <path d="M11 1 L11 25 M1 7 L21 19 M21 7 L1 19" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
-    </svg>
-  );
+  return <img className="mark" src={ICON.mana} alt="" draggable={false} />;
 }
 
 /**

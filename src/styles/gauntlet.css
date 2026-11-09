@@ -8,10 +8,10 @@
 .score.record .stat-value { color: #f0b232; text-shadow: 0 0 10px rgba(240, 178, 50, 0.35); }
 .best .stat-value { font-size: 1.2rem; color: var(--muted); }
 .lives { display: inline-flex; align-items: center; gap: 4px; }
-.heart { width: 30px; height: 30px; display: block; }
-.heart.full { fill: #e5484d; filter: drop-shadow(0 0 4px rgba(229, 72, 77, 0.45)); }
-.heart.lost { fill: none; stroke: var(--key); stroke-width: 1.6; opacity: 0.55; }
-@media (max-width: 600px) { .heart { width: 28px; height: 28px; } .lives { gap: 3px; } .score .stat-value { font-size: 1.75rem; } }
+.heart { width: 26px; height: 34px; object-fit: contain; display: block; transition: filter 0.3s ease, opacity 0.3s ease; }
+.heart.full { filter: drop-shadow(0 0 5px rgba(229, 72, 77, 0.5)); }
+.heart.lost { filter: grayscale(1) brightness(0.45); opacity: 0.45; }
+@media (max-width: 600px) { .heart { width: 24px; height: 31px; } .lives { gap: 3px; } .score .stat-value { font-size: 1.75rem; } }
 .settings .chips { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 
 .truth { margin-top: 6px; }

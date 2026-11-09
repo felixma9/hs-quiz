@@ -1,3 +1,4 @@
+import { rarityIcon } from '../app/icons';
 import type { Card } from '../lib/types';
 
 export const RARITIES = [
@@ -38,7 +39,7 @@ export function RarityPicker({ cards, excluded, onChange }: Props) {
             aria-pressed={!ex.has(r.value)}
             onClick={() => toggle(r.value)}
           >
-            <span className="dot" style={{ background: r.color }} />
+            <img className={`rarity-chip-gem ${r.value === 'FREE' ? 'free' : ''}`} src={rarityIcon(r.value)} alt="" draggable={false} />
             {r.label}
             <span className="count">{count(r.value)}</span>
           </button>

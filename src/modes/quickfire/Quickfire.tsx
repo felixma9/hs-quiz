@@ -1,3 +1,5 @@
+import type React from 'react';
+import { ICON } from '../../app/icons';
 import { useEffect, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { load, save } from '../../lib/storage';
@@ -47,8 +49,16 @@ export function Quickfire({ everything }: { everything: Card[] }) {
   const fullCode = cleanCode(code).length === 4;
   return (
     <div className="mode qf-home">
+      <div className="qf-hero" style={{ '--art': `url(https://art.hearthstonejson.com/v1/512x/NEW1_010.jpg)` } as React.CSSProperties}>
+        <span className="mode-art" aria-hidden="true" />
+        <span className="qf-hero-icons" aria-hidden="true">
+          <img src={ICON.mana} alt="" />
+          <img src={ICON.attack} alt="" />
+          <img src={ICON.health} alt="" />
+        </span>
+      </div>
       <p className="qf-home-intro">
-        Take turns naming cards that fit the prompt before your fuse burns out. Run out of time and you lose a life. Last one
+        Take turns naming cards that fit the prompt before the rope burns out. Run out of time and you lose a life. Last one
         standing wins.
       </p>
 

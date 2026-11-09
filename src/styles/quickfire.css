@@ -38,10 +38,10 @@
 /* ---- Lobby ---- */
 .party { gap: 14px; }
 .room-code-box { display: grid; justify-items: center; gap: 10px; padding: 18px 16px; border-radius: 14px;
-  border: 1px solid var(--gold-dim); background: linear-gradient(160deg, rgba(240, 199, 94, 0.1), rgba(255, 255, 255, 0.02)); }
+  border: 1px solid var(--gold-dim); background: rgba(240, 199, 94, 0.06); }
 .room-code { display: flex; gap: 8px; }
 .room-code span { display: grid; place-items: center; width: 54px; height: 64px; border-radius: 12px; font-family: var(--display, serif); font-size: 2.1rem; font-weight: 800;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(0, 0, 0, 0.35)); border: 1px solid var(--gold-dim);
+  background: rgba(0, 0, 0, 0.35); border: 1px solid var(--gold-dim);
   color: var(--gold-2, var(--gold)); text-shadow: 0 0 14px rgba(240, 199, 94, 0.55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 6px 16px rgba(0, 0, 0, 0.4); }
 .room-code-box { position: relative; overflow: hidden; }
 .room-code-box::after { content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -81,10 +81,10 @@
   transition: width 0.35s var(--ease, ease); }
 .table.compact { width: 210px; }
 .table::before { content: ''; position: absolute; inset: 13%; border-radius: 50%;
-  background: radial-gradient(circle, rgba(120, 100, 220, 0.18), rgba(255, 255, 255, 0.02) 60%, transparent 70%);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05); }
 .table-center { position: absolute; inset: 27%; border-radius: 50%; display: grid; place-items: center;
-  background: radial-gradient(circle at 50% 35%, #23243a, #12131d 70%); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+  background: #171826; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
 .fuse-count { font-size: 15cqw; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
 .table.urgent .fuse-count { color: #ff6b6f; }
 .center-hit { position: absolute; inset: 6%; border-radius: 50%; overflow: hidden; pointer-events: none; }
@@ -122,10 +122,10 @@
 .crown { position: absolute; top: -26px; font-size: 1.5rem; }
 .podium-name { font-weight: 700; font-size: 0.9rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .podium-block { width: 100%; display: grid; align-content: start; justify-items: center; padding-top: 8px; border-radius: 10px 10px 0 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02)); border: 1px solid var(--glass-border, var(--border)); border-bottom: 0; }
+  background: rgba(255, 255, 255, 0.06); border: 1px solid var(--glass-border, var(--border)); border-bottom: 0; }
 .podium-block b { font-family: var(--display, serif); font-size: 1.6rem; line-height: 1; }
 .podium-block small { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
-.place-1 .podium-block { height: 110px; background: linear-gradient(180deg, rgba(240, 199, 94, 0.35), rgba(240, 199, 94, 0.05)); border-color: var(--gold-dim); }
+.place-1 .podium-block { height: 110px; background: rgba(240, 199, 94, 0.2); border-color: var(--gold-dim); }
 .place-1 .podium-block b { color: var(--gold-2, var(--gold)); }
 .place-2 .podium-block { height: 80px; }
 .place-3 .podium-block { height: 58px; }
@@ -150,7 +150,7 @@
 .turn-banner .avatar { width: 32px; height: 32px; font-size: 0.95rem; }
 .turn-banner-text { font-family: var(--display, serif); font-weight: 800; font-size: 1.3rem; letter-spacing: 0.03em;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.turn-banner.mine { background: linear-gradient(180deg, #ffe08a, #e6aa2e); border-color: #ffe7a3; color: #2a1a00;
+.turn-banner.mine { background: #f0c25a; border-color: #ffe7a3; color: #2a1a00;
   box-shadow: 0 0 0 4px rgba(240, 199, 94, 0.18), 0 8px 28px rgba(240, 199, 94, 0.45); }
 .turn-banner.mine .turn-banner-text { font-size: 1.5rem; text-transform: uppercase; }
 .turn-banner.mine .avatar { box-shadow: 0 0 0 2px #2a1a00; }
@@ -232,7 +232,7 @@
 .avatar-wrap { position: relative; display: grid; place-items: center; }
 .hot-badge { position: absolute; z-index: 2; top: -22%; right: -42%; padding: 1px 5px; border-radius: 999px; font-size: max(10px, 3.2cqw); font-weight: 800;
   line-height: 1.3; color: #fff; white-space: nowrap; text-shadow: none;
-  background: linear-gradient(180deg, #ff9a3c, #e2551c); box-shadow: 0 0 0 2px #12131d, 0 0 10px rgba(255, 120, 40, 0.7); }
+  background: #e8611f; box-shadow: 0 0 0 2px #12131d, 0 0 10px rgba(255, 120, 40, 0.7); }
 /* Flame aura behind the avatar. */
 .seat.hot .avatar-wrap::before { content: ''; position: absolute; inset: -18%; z-index: -1; border-radius: 50%;
   background: conic-gradient(from 0deg, #ff5e1a, #ffb347, #ff3d00, #ffd36b, #ff5e1a); filter: blur(5px); opacity: 0.55; }
@@ -244,4 +244,4 @@
 /* Event line callout. */
 .hot-callout { padding: 1px 8px; border-radius: 999px; font-weight: 800; font-size: 0.82rem; color: #ffb347;
   background: rgba(255, 120, 40, 0.14); border: 1px solid rgba(255, 150, 60, 0.4); }
-.hot-callout.hot-3 { color: #fff; background: linear-gradient(90deg, #ff7a2e, #e2401a); border-color: transparent; }
+.hot-callout.hot-3 { color: #fff; background: #e8611f; border-color: transparent; }

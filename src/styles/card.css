@@ -45,7 +45,6 @@
 .chip.v-correct { border: 2px solid var(--ok); }
 .chip.v-close { border: 2px solid var(--close); }
 .chip.v-wrong { border: 2px solid var(--bad); }
-.badge-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
 /* Class / tribe pickers */
 .picker { width: 100%; gap: 10px; }

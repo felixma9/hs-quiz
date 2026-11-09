@@ -1,3 +1,4 @@
+import { ICON } from '../../app/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
@@ -213,7 +214,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
           <div className="actions">
             {!result && (
               <button className="btn reveal" type="button" onClick={reveal}>
-                Reveal <span className="cost">−1 ♥</span>
+                Reveal <span className="cost">−1 <img className="cost-drop" src={ICON.health} alt="life" /></span>
               </button>
             )}
             <button className="btn primary" type="submit" disabled={!result && attr.kind !== 'text' && !answer}>
@@ -269,9 +270,13 @@ function Feedback({
 }
 
 function Heart({ full, just, last }: { full: boolean; just: boolean; last: boolean }) {
+  // Hearthstone's health drop stands in for a life.
   return (
-    <svg className={`heart ${full ? 'full' : 'lost'} ${full && last ? 'last' : ''} ${just ? 'just' : ''}`} viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 21s-7.5-4.6-10-9.3C.4 8.4 2.1 4 6.3 4c2.3 0 3.9 1.3 5.7 3.4C13.8 5.3 15.4 4 17.7 4 21.9 4 23.6 8.4 22 11.7 19.5 16.4 12 21 12 21z" />
-    </svg>
+    <img
+      className={`heart ${full ? 'full' : 'lost'} ${full && last ? 'last' : ''} ${just ? 'just' : ''}`}
+      src={ICON.health}
+      alt=""
+      draggable={false}
+    />
   );
 }

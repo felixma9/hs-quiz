@@ -1,3 +1,4 @@
+import { classIcon } from '../../app/icons';
 import type React from 'react';
 import { useState } from 'react';
 import type { Card } from '../../lib/types';
@@ -106,6 +107,11 @@ function TileCell({ col, tile, delay, selected, onTap }: { col: string; tile: Ti
           />
           <span className="full">{tile.label}</span>
           <span className="short">{RARITY_SHORT[tile.label] ?? tile.label}</span>
+        </span>
+      ) : col === 'class' && !tile.label.includes('+') ? (
+        <span className="tile-label rarity-label class-label">
+          <img className="class-tile-icon" src={classIcon(tile.label.toUpperCase().replace(/ /g, ''))} alt="" />
+          <span>{tile.label}</span>
         </span>
       ) : (
         <span className="tile-label">{tile.label}</span>

@@ -2,7 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../../lib/types';
 import { Art, useArtCrop } from '../../hsdle/Art';
-import { Bold } from '../Bold';
+import { Bold, ClassName } from '../Bold';
 import { load, save } from '../../../lib/storage';
 import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
 import { FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, type PartySettings, type PublicState } from './game';
@@ -570,7 +570,11 @@ function Play({
 
       <div className={`qf-prompt party-prompt ${myTurn ? 'mine' : ''}`} key={state.round}>
         <div className="qf-text">{state.prompt && <Bold text={state.prompt.text} />}</div>
-        {state.prompt?.hint && <div className="muted small">{state.prompt.hint}</div>}
+        {state.prompt?.hint && (
+          <div className="muted small prompt-hint">
+            <ClassName name={state.prompt.hint} />
+          </div>
+        )}
       </div>
 
       {myTurn ? (
