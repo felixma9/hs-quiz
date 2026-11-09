@@ -25,6 +25,8 @@ export interface PartyPlayer {
   connected: boolean;
   /** Cards this player named this game. */
   hits: number;
+  /** Turn number when they went out (0 while still in), for ranking. */
+  outAt: number;
 }
 
 export type PartyEvent =
@@ -105,7 +107,7 @@ export class PartyGame {
       existing.name = name;
     } else {
       // Late joiners watch until the next game.
-      this.players.push({ id, name, lives: this.phase === 'lobby' ? this.settings.lives : 0, connected: true, hits: 0 });
+      this.players.push({ id, name, lives: this.phase === 'lobby' ? this.settings.lives : 0, connected: true, hits: 0, outAt: 0 });
     }
     this.event({ kind: 'info', text: `${name} joined` });
     this.emit();
@@ -118,6 +120,7 @@ export class PartyGame {
       this.players = this.players.filter((x) => x.id !== id);
     } else {
       p.connected = false;
+      if (p.lives > 0) p.outAt = this.round;
       p.lives = 0;
     }
     this.event({ kind: 'info', text: `${p.name} left` });
@@ -140,6 +143,7 @@ export class PartyGame {
     for (const p of this.players) {
       p.lives = this.settings.lives;
       p.hits = 0;
+      p.outAt = 0;
     }
     this.phase = 'playing';
     this.used = new Set();
@@ -228,6 +232,7 @@ export class PartyGame {
     const example = this.prompt?.answers.find((c) => !this.used.has(c.id))?.name;
     if (p) {
       p.lives = Math.max(0, p.lives - 1);
+      if (p.lives === 0) p.outAt = this.round;
       this.event({ kind: 'boom', player: p.id, out: p.lives === 0, example });
     }
     if (!this.checkOver()) this.nextTurn();

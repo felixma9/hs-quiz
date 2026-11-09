@@ -204,7 +204,7 @@ function Lobby({
         <ul>
           {state.players.map((p) => (
             <li key={p.id} className="party-player-row">
-              <span className="avatar" style={{ background: colorFor(p.id) }}>
+              <span className="avatar" style={avatarStyle(p.id)}>
                 {p.name.slice(0, 1).toUpperCase()}
               </span>
               <span className="party-player-name">{p.name}</span>
@@ -226,7 +226,9 @@ function Lobby({
           {state.players.length > 1 ? 'Start game' : 'Start (just you)'}
         </button>
       ) : (
-        <div className="muted center waiting">Waiting for the host to start…</div>
+        <div className="muted center waiting">
+          Waiting for the host to start<span className="dots" />
+        </div>
       )}
     </>
   );
@@ -296,37 +298,62 @@ function Play({
     }
   }, [last, me]);
 
+  // The pointer turns the short way round to whoever's up.
+  const n = state.players.length;
+  const seatAngle = (i: number) => (n ? (i / n) * 360 : 0);
+  const turnIdx = Math.max(0, state.players.findIndex((p) => p.id === state.turn));
+  const angle = useRef(0);
+  const target = seatAngle(turnIdx);
+  const delta = ((((target - angle.current) % 360) + 540) % 360) - 180;
+  angle.current += delta;
+
   const left = Math.max(0, deadline - now) / 1000;
   const frac = Math.min(1, left / state.settings.fuse);
   const urgent = left <= 3;
   const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? 'Someone';
   const typed = typing && typing.id === state.turn ? typing.text : '';
+  const hitCard = last?.kind === 'hit' ? byId.get(last.cardId) : undefined;
+  const RING = 2 * Math.PI * 46;
 
   return (
     <>
-      <div className="party-ring">
-        {state.players.map((p) => (
-          <div
-            key={p.id + (last?.kind === 'boom' && last.player === p.id ? `-boom-${last.n}` : '')}
-            className={`ring-player ${p.id === state.turn ? 'active' : ''} ${p.lives === 0 ? 'out' : ''} ${last?.kind === 'boom' && last.player === p.id ? 'boom' : ''}`}
-          >
-            <span className="avatar" style={{ background: colorFor(p.id) }}>
-              {p.name.slice(0, 1).toUpperCase()}
+      <div className={`table ${myTurn ? 'compact' : ''} ${urgent ? 'urgent' : ''}`}>
+        <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
+        <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
+          <svg className="fuse-ring" viewBox="0 0 100 100" aria-hidden="true">
+            <circle className="fuse-ring-track" cx="50" cy="50" r="46" />
+            <circle className="fuse-ring-burn" cx="50" cy="50" r="46" strokeDasharray={RING} strokeDashoffset={RING * (1 - frac)} />
+          </svg>
+          <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
+            {Math.ceil(left)}
+          </span>
+          {hitCard && (
+            <span className="center-hit" key={`hit-${last!.n}`} aria-hidden="true">
+              <Art card={hitCard} crop={crop} className="center-art" />
             </span>
-            <span className="ring-name">{p.id === me ? 'You' : p.name}</span>
-            <span className="ring-lives" aria-label={`${p.lives} lives`}>
-              {p.lives > 0 ? '♥'.repeat(p.lives) : 'out'}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className={`fuse ${urgent ? 'urgent' : ''}`} aria-label={`${Math.ceil(left)} seconds left`}>
-        <span className="fuse-track">
-          <span className="fuse-burn" style={{ transform: `scaleX(${frac})` }} />
-          <span className="fuse-spark" style={{ left: `${frac * 100}%` }} />
-        </span>
-        <span className="fuse-num">{Math.ceil(left)}</span>
+          )}
+        </div>
+        {state.players.map((p, i) => {
+          const a = seatAngle(i);
+          const boom = last?.kind === 'boom' && last.player === p.id;
+          return (
+            <div
+              key={p.id + (boom ? `-boom-${last!.n}` : '')}
+              className={`seat ${p.id === state.turn ? 'active' : ''} ${p.lives === 0 ? 'out' : ''} ${boom ? 'boom' : ''} ${p.id === me ? 'me' : ''}`}
+              style={{ '--a': `${a}deg` } as React.CSSProperties}
+            >
+              <span className="avatar" style={avatarStyle(p.id)}>
+                {p.name.slice(0, 1).toUpperCase()}
+              </span>
+              <span className="seat-name">{p.id === me ? 'You' : p.name}</span>
+              <span className="seat-lives" aria-label={`${p.lives} lives`}>
+                {p.lives > 0
+                  ? Array.from({ length: state.settings.lives }, (_, k) => <i key={k} className={k < p.lives ? 'on' : ''} />)
+                  : 'out'}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       <div className={`qf-prompt party-prompt ${myTurn ? 'mine' : ''}`} key={state.round}>
@@ -428,40 +455,67 @@ function EventLine({
 
 function Over({ state, me, isHost, onAgain }: { state: PublicState; me: string; isHost: boolean; onAgain(): void }) {
   const winner = state.players.find((p) => p.id === state.winner);
-  const ranked = [...state.players].sort((a, b) => b.lives - a.lives || b.hits - a.hits);
+  const ranked = [...state.players].sort((a, b) => Number(b.id === state.winner) - Number(a.id === state.winner) || b.lives - a.lives || b.outAt - a.outAt || b.hits - a.hits);
+  // Podium order: 2nd, 1st, 3rd.
+  const podium = [ranked[1], ranked[0], ranked[2]].filter(Boolean);
+  const rest = ranked.slice(3);
+  const place = (id: string) => ranked.findIndex((p) => p.id === id) + 1;
   return (
     <div className="panel party-over">
-      <div className="trophy" aria-hidden="true">
-        🏆
-      </div>
       <h2>{winner ? (winner.id === me ? 'You win!' : `${winner.name} wins!`) : 'Game over'}</h2>
-      <ol className="party-ranking">
-        {ranked.map((p) => (
-          <li key={p.id} className={p.id === state.winner ? 'winner' : ''}>
-            <span className="avatar" style={{ background: colorFor(p.id) }}>
+      <div className="podium">
+        {podium.map((p) => (
+          <div key={p.id} className={`podium-spot place-${place(p.id)}`}>
+            {place(p.id) === 1 && (
+              <span className="crown" aria-hidden="true">
+                👑
+              </span>
+            )}
+            <span className="avatar" style={avatarStyle(p.id)}>
               {p.name.slice(0, 1).toUpperCase()}
             </span>
-            <span className="party-player-name">{p.id === me ? `${p.name} (you)` : p.name}</span>
-            <span className="muted small">
-              {p.hits} card{p.hits === 1 ? '' : 's'}
+            <span className="podium-name">{p.id === me ? 'You' : p.name}</span>
+            <span className="podium-block">
+              <b>{place(p.id)}</b>
+              <small>
+                {p.hits} card{p.hits === 1 ? '' : 's'}
+              </small>
             </span>
-          </li>
+          </div>
         ))}
-      </ol>
+      </div>
+      {rest.length > 0 && (
+        <ol className="party-ranking" start={4}>
+          {rest.map((p) => (
+            <li key={p.id}>
+              <span className="avatar" style={avatarStyle(p.id)}>
+                {p.name.slice(0, 1).toUpperCase()}
+              </span>
+              <span className="party-player-name">{p.id === me ? `${p.name} (you)` : p.name}</span>
+              <span className="muted small">
+                {p.hits} card{p.hits === 1 ? '' : 's'}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
       {isHost ? (
         <button className="btn primary" onClick={onAgain}>
           Back to lobby
         </button>
       ) : (
-        <div className="muted center waiting">Waiting for the host…</div>
+        <div className="muted center waiting">
+          Waiting for the host<span className="dots" />
+        </div>
       )}
     </div>
   );
 }
 
-/** A stable color per player id. */
-function colorFor(id: string): string {
+/** A stable two-tone gradient per player id. */
+function avatarStyle(id: string): React.CSSProperties {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 360;
-  return `hsl(${h} 55% 45%)`;
+  return { background: `linear-gradient(140deg, hsl(${h} 70% 58%), hsl(${(h + 40) % 360} 60% 36%))` };
 }
+

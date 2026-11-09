@@ -77,3 +77,20 @@ describe('quickfire party', () => {
     expect(state().players.every((p) => p.lives === 2)).toBe(true);
   });
 });
+
+describe('quickfire party ranking', () => {
+  it('records when each player went out', () => {
+    let t = 0;
+    let last!: PublicState;
+    const g = new PartyGame(all, all, (s) => (last = s), () => t);
+    ['A', 'B', 'C'].forEach((n) => g.addPlayer(n, n));
+    g.setSettings({ lives: 1, fuse: 8 });
+    g.start();
+    t += 8001; g.tick(); // A out first
+    t += 8001; g.tick(); // then B
+    const [a, b] = last.players;
+    expect(a.outAt).toBeGreaterThan(0);
+    expect(b.outAt).toBeGreaterThan(a.outAt);
+    expect(last.winner).toBe('C');
+  });
+});
