@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useState } from 'react';
 import type { Card } from '../../lib/types';
 import { COLUMNS, compare, type Tile } from './compare';
@@ -80,7 +81,7 @@ function TileCell({ col, tile, delay, selected, onTap }: { col: string; tile: Ti
   const arrowLabel = tile.arrow === 'up' ? 'higher' : 'lower';
   if (GEM[col]) {
     return (
-      <div className={`board-cell tile stat-tile t-${tile.verdict} ${selected ? 'selected' : ''}`} style={{ animationDelay: `${delay}ms` }} role="cell" onClick={onTap}>
+      <div className={`board-cell tile stat-tile t-${tile.verdict} ${selected ? 'selected' : ''}`} style={{ '--d': `${delay}ms` } as React.CSSProperties} role="cell" onClick={onTap}>
         <span className={`stat-gem gem-${col}`}>
           <img src={gemUrl(col)} alt="" />
           <span className="stat-num">{tile.label}</span>
@@ -94,7 +95,7 @@ function TileCell({ col, tile, delay, selected, onTap }: { col: string; tile: Ti
     );
   }
   return (
-    <div className={`board-cell tile t-${tile.verdict} ${selected ? 'selected' : ''}`} style={{ animationDelay: `${delay}ms` }} role="cell" onClick={onTap}>
+    <div className={`board-cell tile t-${tile.verdict} ${selected ? 'selected' : ''}`} style={{ '--d': `${delay}ms` } as React.CSSProperties} role="cell" onClick={onTap}>
       {tile.arrow && <span className={`tile-arrow ${tile.arrow}`} aria-label={arrowLabel} />}
       {col === 'rarity' ? (
         <span className="tile-label rarity-label">

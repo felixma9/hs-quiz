@@ -52,7 +52,7 @@ export function SetPicker({ cards, excluded, onChange }: Props) {
             {selectedSets === all.length ? 'All sets' : `${selectedSets} of ${all.length} sets`} · {selectedCount.toLocaleString()} cards
           </span>
         </span>
-        <span className="chev">{open ? '▴' : '▾'}</span>
+        <span className={`chev ${open ? 'open' : ''}`}>▾</span>
       </button>
       {open && (
         <>

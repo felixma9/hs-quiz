@@ -59,7 +59,7 @@
 .tile-arrow { position: absolute; inset: 6px; opacity: 0.28; background: #000; z-index: 0;
   clip-path: polygon(50% 0, 100% 45%, 70% 45%, 70% 100%, 30% 100%, 30% 45%, 0 45%); }
 .tile-arrow.down { transform: rotate(180deg); }
-.board-row.newest .tile { animation: flip 0.45s ease both; }
+.board-row.newest .tile { animation: flip 0.45s ease both; animation-delay: var(--d, 0ms); }
 @keyframes flip { from { transform: rotateX(90deg); opacity: 0.3; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .board-row.newest .tile { animation: none; } }
 @media (min-width: 720px) {

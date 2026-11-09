@@ -70,3 +70,89 @@
 .qf-prompt { animation: pop-in var(--fast) var(--ease) backwards; }
 .qf-msg.ok, .qf-msg.bad { animation: fade-in var(--fast) ease backwards; }
 .qf-chip:first-child { animation: pop-in var(--med) var(--ease) backwards; }
+
+/* ---- Second pass: smoother everywhere ---- */
+@keyframes glow-ok { 0% { box-shadow: 0 0 0 0 rgba(106, 170, 100, 0); } 30% { box-shadow: 0 0 0 3px rgba(106, 170, 100, 0.9), 0 0 28px 6px rgba(106, 170, 100, 0.45); } 100% { box-shadow: 0 0 0 0 rgba(106, 170, 100, 0); } }
+@keyframes shake { 0%, 100% { transform: none; } 20% { transform: translateX(-6px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+@keyframes hop { 0%, 100% { transform: none; } 40% { transform: translateY(-14px); } 60% { transform: translateY(2px); } }
+@keyframes tick { 0% { transform: scale(1.25); } 100% { transform: none; } }
+@keyframes shimmer { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+@keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+html { scroll-behavior: smooth; }
+
+/* Page changes: content cross-fades and rises; the title bar stays put. */
+.top { view-transition-name: topbar; }
+::view-transition-old(root) { animation: 120ms ease both fade-out; }
+::view-transition-new(root) { animation: 220ms var(--ease) both rise-in; }
+::view-transition-group(topbar) { animation-duration: 0.2s; }
+@keyframes fade-out { to { opacity: 0; } }
+
+/* Buttons: soft lift on hover (mouse only), clear focus ring for keyboards. */
+@media (hover: hover) {
+  .btn:hover:not(:disabled) { filter: brightness(1.12); }
+  .btn.primary:hover:not(:disabled) { box-shadow: 0 4px 14px rgba(83, 141, 78, 0.35); }
+  .mode-card:hover { border-color: var(--gold-dim); box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(232, 194, 106, 0.15) inset; transform: translateY(-2px); }
+  .rarity-chip:hover { border-color: var(--gold-dim); }
+}
+.btn { transition: background-color var(--fast) ease, border-color var(--fast) ease, color var(--fast) ease, opacity var(--fast) ease,
+  transform var(--fast) var(--ease), box-shadow var(--med) ease, filter var(--fast) ease; }
+.mode-card { transition: border-color var(--med) ease, box-shadow var(--med) ease, transform var(--med) var(--ease); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; transition: outline-offset var(--fast) ease; }
+.in:focus { border-color: var(--gold-dim); box-shadow: 0 0 0 3px rgba(232, 194, 106, 0.12); }
+.in { transition: border-color var(--fast) ease, box-shadow var(--med) ease; }
+
+/* Toggles bounce a touch when switched. */
+.rarity-chip.on .dot { transition: opacity var(--fast) ease, transform var(--med) var(--ease); transform: scale(1.15); }
+.chev { display: inline-block; transition: transform var(--med) var(--ease); }
+.chev.open { transform: rotate(180deg); }
+
+/* Loading text breathes. */
+.card-loading, .panel.center.muted { animation: shimmer 1.4s ease-in-out infinite; }
+
+/* Cards: each new card slides up as it's drawn. */
+.game-card canvas { transform: translateY(8px) scale(0.97); transition: opacity 0.3s ease, transform 0.35s var(--ease); }
+.game-card canvas.ready { transform: none; }
+
+/* Gauntlet: the card glows green when you're right and shakes when you're not. */
+/* The glow follows the card's own outline (drop-shadow on the canvas), not its box. */
+@keyframes glow-card { 0%, 100% { filter: drop-shadow(0 0 0 rgba(106, 170, 100, 0)); } 30% { filter: drop-shadow(0 0 14px rgba(106, 170, 100, 0.95)); } }
+.gauntlet-card.got canvas { animation: glow-card 1s ease 1; }
+.gauntlet-card.miss .game-card-frame { animation: shake 0.4s ease 1; }
+.feedback.ok { animation: pop-in var(--med) var(--ease) backwards; }
+.feedback.bad { animation: slide-up var(--med) var(--ease) backwards; }
+.settings { animation: drop-in var(--med) var(--ease) backwards; }
+
+/* HSdle: after the winning row flips, its tiles hop in turn. */
+.hsdle.won .board-row.newest .tile {
+  animation: flip 0.45s ease both, hop 0.5s ease;
+  animation-delay: var(--d, 0ms), calc(var(--d, 0ms) + 1000ms);
+}
+.board-row:not(.newest) { transition: opacity var(--med) ease; }
+.hsdle-result { animation: slide-up var(--med) var(--ease) 0.9s backwards; }
+.tile.selected { transition: outline-color var(--fast) ease, transform var(--fast) var(--ease); transform: scale(1.04); z-index: 2; }
+
+/* Quickfire: misses shake the box, hits flash the next prompt, the last ten seconds tick. */
+.qf-input.shake { animation: shake 0.35s ease 1; border-color: #e5484d; }
+.qf-prompt.after-hit { animation: pop-in var(--fast) var(--ease) backwards, glow-ok 0.6s ease 1; }
+.qf-clock.urgent { display: inline-block; animation: tick 0.3s var(--ease) 1; }
+.qf-bar span { transition: transform 0.1s linear, background-color var(--med) ease; }
+.qf-log li { animation: slide-up var(--med) var(--ease) backwards; }
+.qf-results h2 { animation: pop-in var(--med) var(--ease) backwards; }
+.qf-chip:first-child .qf-thumb { animation: glow-ok 0.6s ease 1; }
+
+/* Share panel and banner. */
+.shared-banner { animation: drop-in var(--med) var(--ease) backwards; }
+.share-note.ok, .share-note.bad { animation: fade-in var(--fast) ease backwards; }
+
+/* Reduced motion again, so this second pass is covered too. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}

@@ -70,7 +70,16 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
     field.current?.focus();
   };
 
-  const say = (ok: boolean, text: string) => setMsg((m) => ({ ok, text, n: (m?.n ?? 0) + 1 }));
+  const say = (ok: boolean, text: string) => {
+    setMsg((m) => ({ ok, text, n: (m?.n ?? 0) + 1 }));
+    // Restart the shake animation on every miss.
+    const el = field.current;
+    if (!ok && el) {
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+  };
 
   const next = (u: Set<string>) => {
     setPrompt(makePrompt(cards, u));
@@ -107,7 +116,7 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
   return (
     <div className="mode quickfire">
       <div className="hud">
-        <span className={`qf-clock ${urgent ? 'urgent' : ''}`} aria-label={`${Math.ceil(left)} seconds left`}>
+        <span key={urgent ? Math.ceil(left) : 'calm'} className={`qf-clock ${urgent ? 'urgent' : ''}`} aria-label={`${Math.ceil(left)} seconds left`}>
           {phase === 'playing' ? Math.ceil(left) : phase === 'over' ? 0 : ROUND_SECONDS}
           <small>s</small>
         </span>
@@ -128,7 +137,7 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
         <Results turns={turns} score={score} best={best} onAgain={start} crop={crop} />
       ) : (
         <>
-          <div className="qf-prompt" key={phase === 'ready' ? 'ready' : prompt.text + turns.length}>
+          <div className={`qf-prompt ${msg?.ok && phase === 'playing' ? 'after-hit' : ''}`} key={phase === 'ready' ? 'ready' : prompt.text + turns.length}>
             {phase === 'ready' ? (
               <>
                 <div className="qf-text">Name as many cards as you can in {ROUND_SECONDS} seconds.</div>
@@ -213,7 +222,7 @@ function Results({ turns, score, best, onAgain, crop }: { turns: Turn[]; score: 
       </button>
       <ol className="qf-log">
         {turns.map((t, i) => (
-          <li key={i} className={t.card ? 'ok' : 'miss'}>
+          <li key={i} className={t.card ? 'ok' : 'miss'} style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}>
             <div className="qf-log-prompt">
               <Bold text={t.prompt.text} />
             </div>

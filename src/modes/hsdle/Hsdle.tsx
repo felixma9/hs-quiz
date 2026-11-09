@@ -80,7 +80,7 @@ export function Hsdle({ cards }: { cards: Card[] }) {
   };
 
   return (
-    <div className="mode hsdle">
+    <div className={`mode hsdle ${won ? 'won' : ''}`}>
       <div className="tabs">
         <button className={mode === 'daily' ? 'on' : ''} onClick={() => switchMode('daily')}>
           Daily

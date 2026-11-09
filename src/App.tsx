@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { Card } from './lib/types';
 import { loadCards } from './lib/cards';
 import { drawable } from './pool/pool';
@@ -36,7 +37,12 @@ export function App() {
 
   useEffect(() => {
     const on = () => {
-      setRoute(parseRoute());
+      // Cross-fade between pages where the browser supports view transitions.
+      const go = () => flushSync(() => setRoute(parseRoute()));
+      const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const doc = document as Document & { startViewTransition?(cb: () => void): unknown };
+      if (doc.startViewTransition && !calm) doc.startViewTransition(go);
+      else go();
       const s = decodeSetup(codeFromLocation() ?? '');
       if (s) setIncoming(s);
     };

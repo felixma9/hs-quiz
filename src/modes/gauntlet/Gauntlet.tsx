@@ -172,16 +172,18 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
         </div>
       )}
 
-      <GameCard
-        card={round.card}
-        hidden={hidden}
-        draft={{ [round.hidden]: answer }}
-        editable={result ? new Set() : new Set([round.hidden])}
-        onChange={(_, v) => setAnswer(v)}
-        verdicts={result ? { [round.hidden]: result.verdict } : {}}
-        pool={cards}
-        onEnter={submit}
-      />
+      <div className={`gauntlet-card ${result ? (result.verdict === 'correct' ? 'got' : 'miss') : ''}`}>
+        <GameCard
+          card={round.card}
+          hidden={hidden}
+          draft={{ [round.hidden]: answer }}
+          editable={result ? new Set() : new Set([round.hidden])}
+          onChange={(_, v) => setAnswer(v)}
+          verdicts={result ? { [round.hidden]: result.verdict } : {}}
+          pool={cards}
+          onEnter={submit}
+        />
+      </div>
 
       {over && result ? (
         <div className="panel center">
