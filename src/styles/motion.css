@@ -186,6 +186,10 @@ html { scroll-behavior: smooth; }
 @keyframes dots-bounce { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 .bubble { animation: bubble-in 0.25s var(--ease) backwards; transform-origin: 50% 100%; }
 .bubble-dots { animation: dots-bounce 0.9s ease-in-out infinite; }
+@keyframes bubble-shake { 0%, 100% { translate: 0; } 20% { translate: -5px; } 40% { translate: 4px; } 60% { translate: -3px; } 80% { translate: 2px; } }
+.bubble.wrong { animation: bubble-shake 0.35s ease 1; }
+.bubble { transition: background-color 0.2s ease, color 0.2s ease; }
+.bubble::after { transition: border-top-color 0.2s ease; }
 .party-event { animation: qf-nudge 0.15s ease backwards; }
 .party-event .event-thumb { animation: qf-pop 0.3s var(--ease) backwards; }
 .party-ranking li { animation: slide-up 0.25s var(--ease) backwards; }
@@ -217,6 +221,19 @@ html { scroll-behavior: smooth; }
 @keyframes glow-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 .turn-banner { animation: banner-in 0.35s var(--ease) backwards; }
 .my-turn-glow { animation: fade-in 0.25s ease backwards, glow-pulse 1.6s ease-in-out 0.25s infinite; }
+
+/* Rope flame: flicker, and sparks that pop up and drift off. */
+@keyframes flicker { 0%, 100% { transform: scale(1, 1) rotate(-2deg); } 25% { transform: scale(0.92, 1.08) rotate(3deg); }
+  50% { transform: scale(1.05, 0.94) rotate(-4deg); } 75% { transform: scale(0.96, 1.05) rotate(2deg); } }
+@keyframes spark-a { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(-10px, -22px) scale(0.4); } }
+@keyframes spark-b { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(8px, -26px) scale(0.4); } }
+@keyframes spark-c { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(-3px, -30px) scale(0.3); } }
+.flame-core { animation: flicker 0.35s ease-in-out infinite; }
+.rope.urgent .flame-core { animation-duration: 0.2s; }
+.spark.s1 { animation: spark-a 0.7s ease-out infinite; }
+.spark.s2 { animation: spark-b 0.9s ease-out 0.25s infinite; }
+.spark.s3 { animation: spark-c 0.8s ease-out 0.5s infinite; }
+.rope { animation: fade-in 0.2s ease backwards; }
 
 /* Share panel and banner. */
 .shared-banner { animation: drop-in var(--med) var(--ease) backwards; }

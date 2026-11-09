@@ -31,7 +31,7 @@ export interface PartyPlayer {
 
 export type PartyEvent =
   | { kind: 'hit'; player: string; cardId: string; n: number }
-  | { kind: 'miss'; player: string; text: string; n: number }
+  | { kind: 'miss'; player: string; text: string; guess: string; n: number }
   | { kind: 'boom'; player: string; out: boolean; example?: string; n: number }
   | { kind: 'info'; text: string; n: number };
 
@@ -210,7 +210,7 @@ export class PartyGame {
     else if (this.used.has(c.id)) why = `${c.name} was already used`;
     else if (!this.prompt.test(c)) why = `${c.name} ${this.prompt.why(c)}`;
     if (why || !c) {
-      this.event({ kind: 'miss', player: id, text: why ?? '' });
+      this.event({ kind: 'miss', player: id, text: why ?? '', guess: text.trim().slice(0, 60) });
       this.emit();
       return false;
     }

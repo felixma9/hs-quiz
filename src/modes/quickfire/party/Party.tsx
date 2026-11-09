@@ -9,6 +9,13 @@ import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './n
 
 const HOST_ID = 'host';
 
+interface Typing {
+  id: string;
+  text: string;
+  /** Set (to the miss event's number) when this text was a rejected guess. */
+  wrong?: number;
+}
+
 export type PartyMode = { role: 'host' } | { role: 'guest'; code: string };
 
 interface Props {
@@ -26,7 +33,8 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
   const [me, setMe] = useState<string | null>(mode.role === 'host' ? HOST_ID : null);
   const [code, setCode] = useState(mode.role === 'guest' ? mode.code : '');
   const [error, setError] = useState<string | null>(null);
-  const [typing, setTyping] = useState<{ id: string; text: string } | null>(null);
+  /** What the current player is typing; `wrong` marks a guess the host just rejected (shown in red until they type again). */
+  const [typing, setTyping] = useState<Typing | null>(null);
   /** Local time the current fuse burns out (from the snapshot's fuseLeft). */
   const [deadline, setDeadline] = useState(0);
 
@@ -113,7 +121,10 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
     const e = state?.last;
     if (!e) return;
     if (e.kind === 'hit') sfx.hit(e.player === me);
-    else if (e.kind === 'miss') sfx.miss();
+    else if (e.kind === 'miss') {
+      sfx.miss();
+      setTyping({ id: e.player, text: e.guess, wrong: e.n });
+    }
     else if (e.kind === 'boom') sfx.boom();
     else if (e.kind === 'info' && e.text.endsWith('joined')) sfx.join();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -298,13 +309,15 @@ function Play({
   state: PublicState;
   me: string;
   deadline: number;
-  typing: { id: string; text: string } | null;
+  typing: Typing | null;
   all: Card[];
   onAnswer(text: string): void;
   onTyping(text: string): void;
 }) {
   const crop = useArtCrop();
   const [input, setInput] = useState('');
+  /** My last guess was rejected and I haven't changed it yet: show it in red. */
+  const [myWrong, setMyWrong] = useState(false);
   const [now, setNow] = useState(() => performance.now());
   const field = useRef<HTMLInputElement>(null);
   const myTurn = state.turn === me;
@@ -319,6 +332,7 @@ function Play({
   // New turn: clear the box, and focus it if it's mine.
   useEffect(() => {
     setInput('');
+    setMyWrong(false);
     if (myTurn) field.current?.focus();
   }, [state.round, myTurn]);
 
@@ -326,6 +340,7 @@ function Play({
   const last = state.last;
   useEffect(() => {
     if (last?.kind === 'miss' && last.player === me && field.current) {
+      setMyWrong(true);
       const el = field.current;
       el.classList.remove('shake');
       void el.offsetWidth;
@@ -354,7 +369,6 @@ function Play({
   const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? 'Someone';
   const typed = typing && typing.id === state.turn ? typing.text : '';
   const hitCard = last?.kind === 'hit' ? byId.get(last.cardId) : undefined;
-  const RING = 2 * Math.PI * 46;
 
   // A buzz on phones that can when it becomes your turn.
   useEffect(() => {
@@ -375,10 +389,6 @@ function Play({
       <div className={`table ${myTurn ? 'compact' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
         <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
-          <svg className="fuse-ring" viewBox="0 0 100 100" aria-hidden="true">
-            <circle className="fuse-ring-track" cx="50" cy="50" r="46" />
-            <circle className="fuse-ring-burn" cx="50" cy="50" r="46" strokeDasharray={RING} strokeDashoffset={RING * (1 - frac)} />
-          </svg>
           <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
             {Math.ceil(left)}
           </span>
@@ -397,6 +407,7 @@ function Play({
           // Your own words are in your input box, so only other players get a bubble.
           const speaking = p.id === state.turn && p.id !== me;
           const words = speaking ? typed : '';
+          const wrong = speaking && typing?.wrong && typing.id === p.id ? typing.wrong : 0;
           return (
             <div
               key={p.id + (boom ? `-boom-${last!.n}` : '')}
@@ -404,8 +415,14 @@ function Play({
               style={{ '--a': `${a}deg` } as React.CSSProperties}
             >
               {speaking && (
-                <span className={`bubble side-${side}`} key={`bubble-${state.round}`} aria-live="off">
-                  {words ? <span className="bubble-text">{words}</span> : <span className="bubble-dots" aria-label="thinking" />}
+                <span className={`bubble side-${side} ${wrong ? 'wrong' : ''}`} key={`bubble-${state.round}-${wrong}`} aria-live="off">
+                  {words ? (
+                    <span className={`bubble-text ${wrong ? 'wrong' : ''}`} key={wrong || 'typing'}>
+                      {words}
+                    </span>
+                  ) : (
+                    <span className="bubble-dots" aria-label="thinking" />
+                  )}
                 </span>
               )}
               <span className="avatar" style={avatarStyle(p.id)}>
@@ -422,6 +439,8 @@ function Play({
         })}
       </div>
 
+      <Rope frac={frac} urgent={urgent} key={`rope-${state.round}`} />
+
       <div className={`qf-prompt party-prompt ${myTurn ? 'mine' : ''}`} key={state.round}>
         <div className="qf-text">{state.prompt && <Bold text={state.prompt.text} />}</div>
         {state.prompt?.hint && <div className="muted small">{state.prompt.hint}</div>}
@@ -437,10 +456,11 @@ function Play({
         >
           <input
             ref={field}
-            className="in qf-input"
+            className={`in qf-input ${myWrong ? 'wrong' : ''}`}
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
+              setMyWrong(false);
               onTyping(e.target.value);
             }}
             placeholder="Card name"
@@ -598,5 +618,27 @@ function SoundToggle() {
         {off ? <path d="M17 9l5 6M22 9l-5 6" className="stroke" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" className="stroke" />}
       </svg>
     </button>
+  );
+}
+
+/**
+ * The turn timer as a rope burning down from the right: a twisted cord that
+ * shortens, a charred tip, a flickering flame and a few sparks.
+ */
+function Rope({ frac, urgent }: { frac: number; urgent: boolean }) {
+  const pct = `${(frac * 100).toFixed(2)}%`;
+  return (
+    <div className={`rope ${urgent ? 'urgent' : ''}`} role="presentation">
+      <span className="rope-ash" />
+      <span className="rope-cord" style={{ width: pct }} />
+      {frac > 0 && (
+        <span className="rope-flame" style={{ left: pct }}>
+          <span className="flame-core" />
+          <span className="spark s1" />
+          <span className="spark s2" />
+          <span className="spark s3" />
+        </span>
+      )}
+    </div>
   );
 }

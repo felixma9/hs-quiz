@@ -110,12 +110,6 @@
   border: 1px solid rgba(255, 255, 255, 0.05); }
 .table-center { position: absolute; inset: 27%; border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle at 50% 35%, #23243a, #12131d 70%); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
-.fuse-ring { position: absolute; inset: -7%; width: 114%; height: 114%; transform: rotate(-90deg); overflow: visible; }
-.fuse-ring circle { fill: none; stroke-width: 4; }
-.fuse-ring-track { stroke: rgba(255, 255, 255, 0.07); }
-.fuse-ring-burn { stroke: var(--gold); stroke-linecap: round; transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease;
-  filter: drop-shadow(0 0 4px rgba(240, 199, 94, 0.8)); }
-.table.urgent .fuse-ring-burn { stroke: #e5484d; filter: drop-shadow(0 0 5px rgba(229, 72, 77, 0.9)); }
 .fuse-count { font-size: 15cqw; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
 .table.urgent .fuse-count { color: #ff6b6f; }
 .center-hit { position: absolute; inset: 6%; border-radius: 50%; overflow: hidden; pointer-events: none; }
@@ -201,3 +195,32 @@
 .bubble-dots { display: inline-block; width: 26px; height: 8px;
   background: radial-gradient(circle, #8a8a99 3px, transparent 3.5px) 0 50% / 9px 8px repeat-x; }
 .table.compact .bubble { font-size: 0.85rem; max-width: 70cqw; }
+
+/* A rejected guess: red in the speaker's bubble (for everyone) and in your own box. */
+.bubble.wrong { background: #e5484d; color: #fff; }
+.bubble.wrong::after { border-top-color: #e5484d; }
+.bubble-text.wrong { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: rgba(255, 255, 255, 0.7); }
+.bubble-text.wrong::after { display: none; }
+.qf-input.wrong { color: #ff6b6f; border-color: rgba(229, 72, 77, 0.7); }
+
+/* ---- The rope: a twisted cord burning down towards the left ---- */
+.rope { position: relative; height: 22px; margin: 0 14px; }
+.rope-ash { position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; border-radius: 2px;
+  background: repeating-linear-gradient(90deg, rgba(120, 110, 100, 0.35) 0 3px, transparent 3px 7px); }
+.rope-cord { position: absolute; left: 0; top: 50%; height: 13px; margin-top: -6.5px; border-radius: 6px 2px 2px 6px;
+  transition: width 0.1s linear;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 45%, rgba(0, 0, 0, 0.35)),
+    repeating-linear-gradient(-60deg, #d8b47a 0 4px, #a87d45 4px 7px, #7a5730 7px 8px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); }
+/* Charred end next to the flame. */
+.rope-cord::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 16px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #3a2412 60%, #120a05); }
+.rope-flame { position: absolute; top: 50%; width: 0; height: 0; transition: left 0.1s linear; pointer-events: none; }
+.flame-core { position: absolute; left: -9px; top: -20px; width: 18px; height: 26px; border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+  background: radial-gradient(ellipse at 50% 75%, #fff8d6 0 18%, #ffd35c 32%, #ff8a1f 58%, rgba(255, 70, 20, 0) 72%);
+  filter: drop-shadow(0 0 6px rgba(255, 140, 40, 0.9)); transform-origin: 50% 85%; }
+.spark { position: absolute; left: -1px; top: -6px; width: 3px; height: 3px; border-radius: 50%; background: #ffd35c;
+  box-shadow: 0 0 4px #ff9a2e; opacity: 0; }
+.rope.urgent .flame-core { width: 24px; left: -12px; height: 34px; top: -27px; }
+.rope.urgent .rope-cord { box-shadow: 0 0 10px rgba(255, 90, 40, 0.5); }
