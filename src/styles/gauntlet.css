@@ -18,3 +18,9 @@
 .text-diff .hit { background: var(--ok); color: #fff; border-radius: 2px; padding: 0 2px; }
 .text-diff .miss { color: inherit; text-decoration: underline 2px var(--key); text-underline-offset: 3px; }
 .feedback.ok .text-diff .hit { background: rgba(255,255,255,0.2); }
+
+.actions { display: flex; gap: 8px; }
+.actions .btn.primary { flex: 1; }
+.btn.reveal { background: transparent; border: 1px solid var(--border, #3a3a3c); color: var(--muted); }
+.btn.reveal .cost { color: #e5484d; margin-left: 4px; white-space: nowrap; }
+.btn.reveal:hover { color: var(--text); }

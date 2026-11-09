@@ -52,6 +52,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
   const [round, setRound] = useState<Round>(() => newRound(pool, settings.allowed));
   const [answer, setAnswer] = useState('');
   const [result, setResult] = useState<Grade | null>(null);
+  const [revealed, setRevealed] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(LIVES);
   const [best, setBest] = useState<number>(() => load(BEST_KEY, 0));
@@ -64,6 +65,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     setRound(newRound(pool, settings.allowed));
     setAnswer('');
     setResult(null);
+    setRevealed(false);
   }, [pool, settings.allowed]);
 
   const submit = () => {
@@ -83,6 +85,14 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     }
   };
 
+  /** Give up on this card: show the answer and lose a life. */
+  const reveal = () => {
+    if (result || over) return;
+    setResult({ verdict: 'wrong' });
+    setRevealed(true);
+    setLives((l) => l - 1);
+  };
+
   const restart = (s = settings) => {
     const p = s.minionsOnly ? cards.filter((c) => c.type === 'MINION') : cards;
     setScore(0);
@@ -90,6 +100,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     setRound(newRound(p, s.allowed));
     setAnswer('');
     setResult(null);
+    setRevealed(false);
   };
 
   const updateSettings = (s: Settings) => {
@@ -182,7 +193,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
 
       {over && result ? (
         <div className="panel center">
-          <Feedback result={result} attrKey={round.hidden} card={round.card} truthPretty={pretty(round.hidden, truth)} />
+          <Feedback result={result} attrKey={round.hidden} card={round.card} truthPretty={pretty(round.hidden, truth)} revealed={revealed} />
           <h2>Game over</h2>
           <p>
             You cleared <b>{score}</b> card{score === 1 ? '' : 's'}. Best: {best}.
@@ -204,24 +215,45 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
               Fill in the <b>{labelFor(attr, round.card).toLowerCase()}</b>: {HOW[attr.kind === 'enum' ? round.hidden : attr.kind]}
             </div>
           )}
-          {result && <Feedback result={result} attrKey={round.hidden} card={round.card} truthPretty={pretty(round.hidden, truth)} answer={answer} />}
-          <button className="btn primary" type="submit" disabled={!result && attr.kind !== 'text' && !answer}>
-            {result ? 'Next card →' : 'Submit'}
-          </button>
+          {result && <Feedback result={result} attrKey={round.hidden} card={round.card} truthPretty={pretty(round.hidden, truth)} answer={revealed ? undefined : answer} revealed={revealed} />}
+          <div className="actions">
+            {!result && (
+              <button className="btn reveal" type="button" onClick={reveal}>
+                Reveal <span className="cost">−1 ♥</span>
+              </button>
+            )}
+            <button className="btn primary" type="submit" disabled={!result && attr.kind !== 'text' && !answer}>
+              {result ? 'Next card →' : 'Submit'}
+            </button>
+          </div>
         </form>
       )}
     </div>
   );
 }
 
-function Feedback({ result, attrKey, card, truthPretty, answer }: { result: Grade; attrKey: AttrKey; card: Card; truthPretty: string; answer?: string }) {
+function Feedback({
+  result,
+  attrKey,
+  card,
+  truthPretty,
+  answer,
+  revealed,
+}: {
+  result: Grade;
+  attrKey: AttrKey;
+  card: Card;
+  truthPretty: string;
+  answer?: string;
+  revealed?: boolean;
+}) {
   const ok = result.verdict === 'correct';
   return (
     <div className={`feedback ${ok ? 'ok' : 'bad'}`}>
-      <div className="feedback-head">{ok ? '✓ Correct!' : '✗ Not quite'}</div>
+      <div className="feedback-head">{ok ? '✓ Correct!' : revealed ? 'Revealed (−1 life)' : '✗ Not quite'}</div>
       {attrKey === 'text' ? (
         <>
-          <div className="small">Match: {Math.round((result.score ?? 0) * 100)}% (need 70% and the right numbers)</div>
+          {!revealed && <div className="small">Match: {Math.round((result.score ?? 0) * 100)}% (need 70% and the right numbers)</div>}
           <div className="truth">
             <TextDiff truth={plainText(card.text)} matched={result.truthMatched} />
           </div>

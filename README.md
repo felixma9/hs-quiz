@@ -4,7 +4,7 @@ A browser quiz on Hearthstone cards.
 
 Cards are drawn with in-game frames, with the fields you have to guess left blank. You fill them in on the card itself: tap the frame to cycle classes (or pick from the class list), tap the rarity gem to cycle rarities, and tap the cost, attack or health gem, the name banner, the text box or the tribe banner to type or choose. Your answers are drawn onto the card as you go. The class badges in the picker are simple original stand-ins, not the game's class icons.
 
-- **Gauntlet:** each card has one field blank (cost, attack, health, name, text, class, rarity or tribe). Fill it in. You have 3 lives; see how many cards you clear. Settings let you pick minions only or which fields can be blank.
+- **Gauntlet:** each card has one field blank (cost, attack, health, name, text, class, rarity or tribe). Fill it in. You have 3 lives; stuck? Reveal the answer for one life. See how many cards you clear. Settings let you pick minions only or which fields can be blank.
 - **Card pool:** on the main menu, choose which rarities and sets cards come from (saved on your device; new expansions start switched on).
 - **HSdle:** guess the mystery minion (daily, or unlimited). Type any minion's name; each guess adds a row comparing it to the answer on Mana, Attack, Health, Rarity, Tribe, Keywords, Class and Set: 🟩 same, 🟨 partly the same (a shared keyword, tribe or class, or a set from the same year), 🟥 different, with arrows toward the answer (higher stats, newer set, rarer card). An art clue unlocks after 4 wrong guesses and a card-text clue after 8. You can give up after your first guess (tap twice) to see the answer.
 
