@@ -167,3 +167,11 @@
 .party-over h2 { margin: 0; font-size: 1.6rem; color: var(--gold); }
 .party-ranking { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; text-align: left; }
 .party-ranking li.winner { border-color: var(--gold-dim); background: rgba(240, 199, 94, 0.08); }
+
+/* Sound toggle, top right of a room. */
+.party { position: relative; }
+.sound-toggle { position: absolute; top: 8px; right: 8px; z-index: 3; width: 38px; height: 38px; display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid var(--glass-border, var(--border)); background: rgba(0, 0, 0, 0.3); color: var(--text); cursor: pointer; }
+.sound-toggle svg { width: 20px; height: 20px; fill: currentColor; }
+.sound-toggle .stroke { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.sound-toggle.off { color: var(--muted); }

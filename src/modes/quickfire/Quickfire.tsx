@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { load, save } from '../../lib/storage';
 import { Solo } from './Solo';
+import { unlock } from '../../lib/sound';
 import { Party, type PartyMode } from './party/Party';
 import { cleanCode, roomFromLocation } from './party/net';
 
@@ -33,6 +34,7 @@ export function Quickfire({ cards, all }: { cards: Card[]; all: Card[] }) {
     const n = name.trim();
     if (!n) return setNeedName(true);
     save(NAME_KEY, n);
+    unlock();
     setView({ kind: 'party', mode });
   };
   const leave = () => {

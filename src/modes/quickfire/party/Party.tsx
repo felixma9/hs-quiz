@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../../lib/types';
 import { Art, useArtCrop } from '../../hsdle/Art';
 import { Bold } from '../Solo';
+import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
 import { FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, type PartySettings, type PublicState } from './game';
 import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './net';
 
@@ -106,6 +107,34 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
     else guest.current?.send({ t: 'typing', text });
   };
 
+  // Sounds for what just happened in the room.
+  const lastN = state?.last?.n;
+  useEffect(() => {
+    const e = state?.last;
+    if (!e) return;
+    if (e.kind === 'hit') sfx.hit(e.player === me);
+    else if (e.kind === 'miss') sfx.miss();
+    else if (e.kind === 'boom') sfx.boom();
+    else if (e.kind === 'info' && e.text.endsWith('joined')) sfx.join();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastN]);
+  const myTurnNow = state?.phase === 'playing' && state.turn === me;
+  useEffect(() => {
+    // After a boom, let the explosion finish before the chime.
+    if (myTurnNow) {
+      const t = setTimeout(() => sfx.yourTurn(), state?.last?.kind === 'boom' ? 450 : 120);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myTurnNow, state?.round]);
+  const over = state?.phase === 'over';
+  useEffect(() => {
+    if (!over) return;
+    const t = setTimeout(() => (state?.winner === me ? sfx.win() : sfx.lose()), 500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [over]);
+
   if (error) {
     return (
       <div className="mode party">
@@ -133,8 +162,12 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
   const isHost = mode.role === 'host';
   return (
     <div className="mode party">
+      <SoundToggle />
       {state.phase === 'lobby' && (
-        <Lobby state={state} code={code} me={me} isHost={isHost} onSettings={(s) => game.current?.setSettings(s)} onStart={() => game.current?.start()} />
+        <Lobby state={state} code={code} me={me} isHost={isHost} onSettings={(s) => game.current?.setSettings(s)} onStart={() => {
+            unlock();
+            game.current?.start();
+          }} />
       )}
       {state.phase === 'playing' && (
         <Play state={state} me={me} deadline={deadline} typing={typing} all={all} onAnswer={answer} onTyping={sendTyping} />
@@ -310,6 +343,12 @@ function Play({
   const left = Math.max(0, deadline - now) / 1000;
   const frac = Math.min(1, left / state.settings.fuse);
   const urgent = left <= 3;
+  // Tick each of the last few seconds.
+  const secs = Math.ceil(left);
+  useEffect(() => {
+    if (secs > 0 && secs <= 3) sfx.tick(true);
+    else if (secs > 3 && secs <= 5) sfx.tick(false);
+  }, [secs]);
   const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? 'Someone';
   const typed = typing && typing.id === state.turn ? typing.text : '';
   const hitCard = last?.kind === 'hit' ? byId.get(last.cardId) : undefined;
@@ -519,3 +558,24 @@ function avatarStyle(id: string): React.CSSProperties {
   return { background: `linear-gradient(140deg, hsl(${h} 70% 58%), hsl(${(h + 40) % 360} 60% 36%))` };
 }
 
+/** Sound on/off, remembered on this device. */
+function SoundToggle() {
+  const [off, setOff] = useState(isMuted);
+  return (
+    <button
+      type="button"
+      className={`sound-toggle ${off ? 'off' : ''}`}
+      aria-pressed={!off}
+      aria-label={off ? 'Turn sound on' : 'Turn sound off'}
+      onClick={() => {
+        setMuted(!off);
+        setOff(!off);
+      }}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 9h4l5-4v14l-5-4H4z" />
+        {off ? <path d="M17 9l5 6M22 9l-5 6" className="stroke" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" className="stroke" />}
+      </svg>
+    </button>
+  );
+}
