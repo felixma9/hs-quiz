@@ -10,6 +10,11 @@ import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './n
 
 const HOST_ID = 'host';
 
+/** Right answers in a row before a player counts as on a hot streak. */
+const HOT = 2;
+/** Streak levels: warm (2), hot (3-4), blazing (5+). */
+const hotClass = (n: number) => (n >= 5 ? 'hot hot-3' : n >= 3 ? 'hot hot-2' : n >= HOT ? 'hot hot-1' : '');
+
 interface Typing {
   id: string;
   text: string;
@@ -130,7 +135,7 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
   useEffect(() => {
     const e = state?.last;
     if (!e) return;
-    if (e.kind === 'hit') sfx.hit(e.player === me);
+    if (e.kind === 'hit') sfx.hit(e.player === me, e.streak);
     else if (e.kind === 'miss') {
       sfx.miss();
       setTyping({ id: e.player, text: e.guess, wrong: e.n });
@@ -523,7 +528,7 @@ function Play({
           return (
             <div
               key={p.id + (boom ? `-boom-${last!.n}` : '')}
-              className={`seat ${p.id === state.turn ? 'active' : ''} ${p.lives === 0 ? 'out' : ''} ${boom ? 'boom' : ''} ${p.id === me ? 'me' : ''}`}
+              className={`seat ${p.id === state.turn ? 'active' : ''} ${p.lives === 0 ? 'out' : ''} ${boom ? 'boom' : ''} ${p.id === me ? 'me' : ''} ${hotClass(p.streak)}`}
               style={{ '--a': `${a}deg` } as React.CSSProperties}
             >
               {speaking && (
@@ -537,8 +542,15 @@ function Play({
                   )}
                 </span>
               )}
-              <span className="avatar" style={avatarStyle(p.id)}>
-                {p.name.slice(0, 1).toUpperCase()}
+              <span className="avatar-wrap">
+                <span className="avatar" style={avatarStyle(p.id)}>
+                  {p.name.slice(0, 1).toUpperCase()}
+                </span>
+                {p.streak >= HOT && (
+                  <span className="hot-badge" key={`hot-${p.streak}`} aria-label={`${p.streak} in a row`}>
+                    🔥{p.streak}
+                  </span>
+                )}
               </span>
               <span className="seat-name">{p.id === me ? 'You' : p.name}</span>
               <span className="seat-lives" aria-label={`${p.lives} lives`}>
@@ -619,6 +631,11 @@ function EventLine({
         <span>
           {who(last.player)}: <b>{c?.name}</b>
         </span>
+        {last.streak >= HOT && (
+          <span className={`hot-callout ${hotClass(last.streak)}`}>
+            🔥 {last.streak} in a row{last.streak >= 5 ? '!' : ''}
+          </span>
+        )}
       </>
     );
   } else if (last.kind === 'miss') {

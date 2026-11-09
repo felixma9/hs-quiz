@@ -96,8 +96,9 @@ export const sfx = {
     tone({ freq: 990, at: 0.09, dur: 0.18, type: 'triangle', gain: 0.22 });
   },
   /** Someone named a card. Brighter when it was you. */
-  hit(mine: boolean) {
-    const base = mine ? 784 : 587;
+  hit(mine: boolean, streak = 1) {
+    // Each answer in a streak rises a step in pitch (up to a fifth).
+    const base = (mine ? 784 : 587) * 2 ** (Math.min(Math.max(streak - 1, 0), 7) / 12);
     [0, 4, 7].forEach((semi, i) =>
       tone({ freq: base * 2 ** (semi / 12), at: i * 0.06, dur: 0.16, type: 'triangle', gain: mine ? 0.22 : 0.12 }),
     );

@@ -27,10 +27,12 @@ export interface PartyPlayer {
   hits: number;
   /** Turn number when they went out (0 while still in), for ranking. */
   outAt: number;
+  /** This player's right answers in a row (their burnt fuse resets it). */
+  streak: number;
 }
 
 export type PartyEvent =
-  | { kind: 'hit'; player: string; cardId: string; n: number }
+  | { kind: 'hit'; player: string; cardId: string; streak: number; n: number }
   | { kind: 'miss'; player: string; text: string; guess: string; n: number }
   | { kind: 'boom'; player: string; out: boolean; example?: string; n: number }
   | { kind: 'info'; text: string; n: number };
@@ -124,7 +126,7 @@ export class PartyGame {
       existing.name = name;
     } else {
       // Late joiners watch until the next game.
-      this.players.push({ id, name, lives: this.phase === 'lobby' ? this.settings.lives : 0, connected: true, hits: 0, outAt: 0 });
+      this.players.push({ id, name, lives: this.phase === 'lobby' ? this.settings.lives : 0, connected: true, hits: 0, outAt: 0, streak: 0 });
     }
     this.event({ kind: 'info', text: `${name} joined` });
     this.emit();
@@ -161,6 +163,7 @@ export class PartyGame {
       p.lives = this.settings.lives;
       p.hits = 0;
       p.outAt = 0;
+      p.streak = 0;
     }
     this.phase = 'playing';
     this.used = new Set();
@@ -237,8 +240,9 @@ export class PartyGame {
     this.used.add(c.id);
     const p = this.players.find((x) => x.id === id)!;
     p.hits++;
+    p.streak++;
     this.streak++;
-    this.event({ kind: 'hit', player: id, cardId: c.id });
+    this.event({ kind: 'hit', player: id, cardId: c.id, streak: p.streak });
     this.nextTurn();
     this.emit();
     return true;
@@ -252,6 +256,7 @@ export class PartyGame {
     if (p) {
       p.lives = Math.max(0, p.lives - 1);
       if (p.lives === 0) p.outAt = this.round;
+      p.streak = 0;
       this.event({ kind: 'boom', player: p.id, out: p.lives === 0, example });
       this.streak = 0;
     }

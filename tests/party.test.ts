@@ -118,3 +118,23 @@ describe('quickfire party speed-up', () => {
     expect(last.turnSeconds).toBe(12);
   });
 });
+
+describe('quickfire party hot streaks', () => {
+  it("counts each player's own run and resets it when their fuse burns", () => {
+    let t = 0;
+    let last!: PublicState;
+    const g = new PartyGame(all, all, (s) => (last = s), () => t);
+    ['A', 'B'].forEach((n) => g.addPlayer(n, n));
+    g.setSettings({ fuse: 12, lives: 3 });
+    g.start();
+    g.answer('A', solve(g)); // A 1
+    g.answer('B', solve(g)); // B 1
+    g.answer('A', solve(g)); // A 2
+    expect(last.players.find((p) => p.id === 'A')!.streak).toBe(2);
+    expect(last.last).toMatchObject({ kind: 'hit', player: 'A', streak: 2 });
+    t += 60_000;
+    g.tick(); // B burns
+    expect(last.players.find((p) => p.id === 'B')!.streak).toBe(0);
+    expect(last.players.find((p) => p.id === 'A')!.streak).toBe(2);
+  });
+});
