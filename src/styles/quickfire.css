@@ -46,3 +46,84 @@
   .qf-text { font-size: 1.2rem; }
   .qf-form .btn { padding: 0 12px; }
 }
+
+/* ---- Quickfire home: name, host, join, practise ---- */
+.qf-home { gap: 14px; }
+.qf-home-intro { margin: 4px 0 0; text-align: center; color: var(--muted); }
+.qf-name { display: grid; gap: 6px; }
+.bad-text { color: #e5484d; }
+.qf-join { display: flex; gap: 6px; }
+.room-input { flex: 1; text-align: center; font-size: 1.4rem; font-weight: 800; letter-spacing: 0.4em; text-transform: uppercase; }
+.room-input::placeholder { letter-spacing: 0.4em; font-weight: 600; }
+.qf-join .btn { min-width: 96px; }
+.qf-or { text-align: center; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.14em; }
+.qf-solo { background: transparent; }
+.party-leave { justify-self: center; font-size: 0.9rem; margin-top: 4px; }
+
+/* ---- Lobby ---- */
+.party { gap: 14px; }
+.room-code-box { display: grid; justify-items: center; gap: 10px; padding: 18px 16px; border-radius: 14px;
+  border: 1px solid var(--gold-dim); background: linear-gradient(160deg, rgba(240, 199, 94, 0.1), rgba(255, 255, 255, 0.02)); }
+.room-code { display: flex; gap: 8px; }
+.room-code span { display: grid; place-items: center; width: 52px; height: 62px; border-radius: 10px; font-size: 2rem; font-weight: 800;
+  background: rgba(0, 0, 0, 0.35); border: 1px solid var(--glass-border, var(--border)); color: var(--gold-2, var(--gold)); }
+.party-players ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.party-player-row, .party-ranking li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--glass-border, var(--border)); }
+.party-player-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avatar { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; font-weight: 800; font-size: 0.9rem;
+  color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15); }
+.tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 999px; color: var(--muted);
+  border: 1px solid var(--glass-border, var(--border)); }
+.tag.you { color: var(--gold); border-color: var(--gold-dim); }
+.party-settings { display: grid; gap: 10px; }
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.seg { display: inline-flex; padding: 3px; gap: 3px; border-radius: 999px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border, var(--border)); }
+.seg button { min-width: 40px; min-height: 34px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
+.seg button.on { background: var(--gold); color: #1a1408; }
+.seg button:disabled { cursor: default; }
+.seg button:disabled:not(.on) { opacity: 0.5; }
+.waiting { padding: 10px 0; }
+
+/* ---- In game ---- */
+.party-ring { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: none; justify-content: safe center; }
+.ring-player { flex: 0 0 auto; display: grid; justify-items: center; gap: 3px; min-width: 64px; padding: 8px 6px 6px; border-radius: 12px;
+  border: 1px solid transparent; transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.3s ease, transform 0.2s ease; }
+.ring-player .avatar { width: 38px; height: 38px; font-size: 1.05rem; }
+.ring-name { font-size: 0.75rem; max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ring-lives { font-size: 0.72rem; color: #e5484d; letter-spacing: 1px; line-height: 1; }
+.ring-player.active { background: rgba(240, 199, 94, 0.1); border-color: var(--gold-dim); transform: translateY(-2px); }
+.ring-player.active .avatar { box-shadow: 0 0 0 2px var(--gold), 0 0 14px rgba(240, 199, 94, 0.55); }
+.ring-player.out { opacity: 0.35; }
+.ring-player.out .ring-lives { color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.fuse { display: flex; align-items: center; gap: 10px; }
+.fuse-track { position: relative; flex: 1; height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
+.fuse-burn { position: absolute; inset: 0; border-radius: 999px; transform-origin: left; transition: transform 0.1s linear;
+  background: linear-gradient(90deg, #c9952f, var(--gold), #ffb347); }
+.fuse-spark { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; transition: left 0.1s linear;
+  background: radial-gradient(circle, #fff 0 20%, #ffd36b 35%, rgba(255, 140, 40, 0.6) 60%, transparent 70%); }
+.fuse-num { min-width: 2ch; text-align: right; font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.fuse.urgent .fuse-burn { background: linear-gradient(90deg, #b8333a, #e5484d, #ff7a5c); }
+.fuse.urgent .fuse-num { color: #e5484d; }
+
+.party-prompt { min-height: 120px; }
+.turn-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+.party-prompt.mine .turn-label { color: var(--gold); }
+.party-prompt.mine { border-color: var(--gold-dim); }
+.watch-typing { display: flex; align-items: center; min-height: 52px; padding: 0 14px; border-radius: 8px; font-size: 1.05rem;
+  border: 1px dashed var(--glass-border, var(--border)); background: rgba(0, 0, 0, 0.2); }
+.caret { width: 2px; height: 1.2em; margin-left: 2px; background: var(--gold); }
+.party-event { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; text-align: center; font-size: 0.95rem; }
+.party-event.ok { color: #6aaa64; }
+.party-event.ok b { color: var(--text); }
+.party-event.bad { color: #e5484d; }
+.party-event.boom { color: #ff8a5c; font-weight: 600; }
+.event-thumb { width: 34px; height: 34px; border-width: 1px; }
+
+/* ---- Results ---- */
+.party-over { text-align: center; }
+.trophy { font-size: 3rem; line-height: 1; }
+.party-over h2 { margin: 0; font-size: 1.6rem; color: var(--gold); }
+.party-ranking { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; text-align: left; }
+.party-ranking li.winner { border-color: var(--gold-dim); background: rgba(240, 199, 94, 0.08); }

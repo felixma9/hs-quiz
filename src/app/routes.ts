@@ -13,5 +13,6 @@ export function parseRoute(hash = location.hash): Route {
   const h = hash.replace(/^#\/?/, '');
   if (h.startsWith('card/')) return 'card';
   if (h === 'hsdle' || h === 'cardle') return 'hsdle'; // old links still work
-  return h === 'gauntlet' || h === 'quickfire' ? h : 'menu';
+  if (h.startsWith('quickfire')) return 'quickfire'; // #/quickfire?room=CODE
+  return h === 'gauntlet' ? h : 'menu';
 }

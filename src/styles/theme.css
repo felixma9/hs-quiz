@@ -76,10 +76,12 @@ h1, h2 { font-family: var(--display); letter-spacing: 0.02em; }
 }
 /* Card art on the right, fading into the panel. */
 .mode-art {
-  position: absolute; inset: 0 0 0 38%; z-index: -1; background: var(--art) center 30% / cover no-repeat;
-  /* Zoomed in so the light/dark padding some art has at its edges never shows. */
-  opacity: 0.75; transform: scale(1.3); transition: transform 0.5s var(--ease, ease), opacity 0.3s ease;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 55%); mask-image: linear-gradient(90deg, transparent, #000 55%);
+  position: absolute; inset: 0 0 0 30%; z-index: -1; background: var(--art) center 30% / 140% auto no-repeat;
+  /* 140% wide so the light/dark strips some art has at its sides never show. */
+  opacity: 0.75; transition: transform 0.5s var(--ease, ease), opacity 0.3s ease;
+  /* A long, eased fade so bright art (Leeroy's red) blends in as softly as the dark ones. */
+  --fade: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.08) 18%, rgba(0, 0, 0, 0.35) 38%, rgba(0, 0, 0, 0.75) 60%, #000 80%);
+  -webkit-mask-image: var(--fade); mask-image: var(--fade);
 }
 .mode-card::before {
   content: ''; position: absolute; inset: 0; z-index: -1;
@@ -94,7 +96,7 @@ h1, h2 { font-family: var(--display); letter-spacing: 0.02em; }
   transition: transform 0.25s var(--ease, ease), background-color 0.25s ease;
 }
 @media (hover: hover) {
-  .mode-card:hover .mode-art { transform: scale(1.36); opacity: 0.95; }
+  .mode-card:hover .mode-art { transform: scale(1.05); opacity: 0.95; }
   .mode-card:hover .mode-go { transform: translateX(3px); background: rgba(240, 199, 94, 0.18); }
 }
 
