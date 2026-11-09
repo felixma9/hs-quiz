@@ -52,7 +52,7 @@ export function Menu({ count, banner, children }: { count: number; banner?: Reac
         ))}
       </nav>
       <section className="pool-section">
-        <div className="section-label">Card pool</div>
+        <div className="section-label">Card pool · Gauntlet &amp; HSdle</div>
         {children}
       </section>
     </div>

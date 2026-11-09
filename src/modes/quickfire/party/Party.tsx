@@ -127,6 +127,8 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myTurnNow, state?.round]);
+  // A new turn starts with an empty speech bubble.
+  useEffect(() => setTyping(null), [state?.round]);
   const over = state?.phase === 'over';
   useEffect(() => {
     if (!over) return;
@@ -389,12 +391,23 @@ function Play({
         {state.players.map((p, i) => {
           const a = seatAngle(i);
           const boom = last?.kind === 'boom' && last.player === p.id;
+          // Bubbles on the left/right seats grow inward so they stay on screen.
+          const x = Math.sin((a * Math.PI) / 180);
+          const side = x < -0.35 ? 'left' : x > 0.35 ? 'right' : 'mid';
+          // Your own words are in your input box, so only other players get a bubble.
+          const speaking = p.id === state.turn && p.id !== me;
+          const words = speaking ? typed : '';
           return (
             <div
               key={p.id + (boom ? `-boom-${last!.n}` : '')}
               className={`seat ${p.id === state.turn ? 'active' : ''} ${p.lives === 0 ? 'out' : ''} ${boom ? 'boom' : ''} ${p.id === me ? 'me' : ''}`}
               style={{ '--a': `${a}deg` } as React.CSSProperties}
             >
+              {speaking && (
+                <span className={`bubble side-${side}`} key={`bubble-${state.round}`} aria-live="off">
+                  {words ? <span className="bubble-text">{words}</span> : <span className="bubble-dots" aria-label="thinking" />}
+                </span>
+              )}
               <span className="avatar" style={avatarStyle(p.id)}>
                 {p.name.slice(0, 1).toUpperCase()}
               </span>
@@ -442,12 +455,7 @@ function Play({
             Go
           </button>
         </form>
-      ) : (
-        <div className="watch-typing" aria-live="off">
-          {typed ? <span>{typed}</span> : <span className="muted">{current?.name ?? 'They'} is thinking…</span>}
-          <span className="caret" />
-        </div>
-      )}
+      ) : null}
 
       <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
     </>

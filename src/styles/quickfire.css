@@ -94,9 +94,6 @@
 .turn-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
 .party-prompt.mine .turn-label { color: var(--gold); }
 .party-prompt.mine { border-color: var(--gold-dim); }
-.watch-typing { display: flex; align-items: center; min-height: 52px; padding: 0 14px; border-radius: 8px; font-size: 1.05rem;
-  border: 1px dashed var(--glass-border, var(--border)); background: rgba(0, 0, 0, 0.2); }
-.caret { width: 2px; height: 1.2em; margin-left: 2px; background: var(--gold); }
 .party-event { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; text-align: center; font-size: 0.95rem; }
 .party-event.ok { color: #6aaa64; }
 .party-event.ok b { color: var(--text); }
@@ -188,3 +185,19 @@
 .turn-banner.mine .avatar { box-shadow: 0 0 0 2px #2a1a00; }
 .my-turn-glow { position: fixed; inset: 0; z-index: 30; pointer-events: none;
   box-shadow: inset 0 0 0 3px rgba(240, 199, 94, 0.85), inset 0 0 60px rgba(240, 199, 94, 0.35); }
+
+/* Speech bubble over whoever's up, showing what they're typing. */
+.seat { z-index: 1; }
+.seat.active { z-index: 4; }
+.bubble { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 58cqw;
+  padding: 6px 11px; border-radius: 14px; background: #fff; color: #15161f; font-weight: 700; font-size: 0.95rem; line-height: 1.2;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); overflow-wrap: anywhere; text-align: left; pointer-events: none; }
+.bubble::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -7px; border: 7px solid transparent; border-top-color: #fff; border-bottom: 0; }
+.bubble.side-left { left: 0; transform: none; }
+.bubble.side-left::after { left: 22px; }
+.bubble.side-right { left: auto; right: 0; transform: none; }
+.bubble.side-right::after { left: auto; right: 15px; }
+.bubble-text::after { content: ''; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: #15161f; }
+.bubble-dots { display: inline-block; width: 26px; height: 8px;
+  background: radial-gradient(circle, #8a8a99 3px, transparent 3.5px) 0 50% / 9px 8px repeat-x; }
+.table.compact .bubble { font-size: 0.85rem; max-width: 70cqw; }
