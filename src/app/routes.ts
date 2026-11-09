@@ -1,9 +1,10 @@
-export type Route = 'menu' | 'gauntlet' | 'hsdle' | 'card';
+export type Route = 'menu' | 'gauntlet' | 'hsdle' | 'quickfire' | 'card';
 
 export const ROUTE_TITLES: Record<Route, string> = {
   menu: 'HS Quiz',
   gauntlet: 'Gauntlet',
   hsdle: 'HSdle',
+  quickfire: 'Quickfire',
   card: 'HS Quiz',
 };
 
@@ -12,5 +13,5 @@ export function parseRoute(hash = location.hash): Route {
   const h = hash.replace(/^#\/?/, '');
   if (h.startsWith('card/')) return 'card';
   if (h === 'hsdle' || h === 'cardle') return 'hsdle'; // old links still work
-  return h === 'gauntlet' ? h : 'menu';
+  return h === 'gauntlet' || h === 'quickfire' ? h : 'menu';
 }

@@ -14,6 +14,7 @@ import { Menu } from './app/Menu';
 import { CardPreview } from './app/CardPreview';
 import { Gauntlet } from './modes/gauntlet/Gauntlet';
 import { Hsdle } from './modes/hsdle/Hsdle';
+import { Quickfire } from './modes/quickfire/Quickfire';
 
 export function App() {
   const [route, setRoute] = useState<Route>(() => parseRoute());
@@ -71,13 +72,14 @@ export function App() {
               <SharePanel excludedSets={excludedSets} excludedRarities={excludedRarities} onApply={applySetup} />
             </Menu>
           )}
-          {cards && (route === 'gauntlet' || route === 'hsdle') && pool.length === 0 && (
+          {cards && (route === 'gauntlet' || route === 'hsdle' || route === 'quickfire') && pool.length === 0 && (
             <div className="panel center">
               No cards match your sets and rarities. <a href="#/">Change them on the menu.</a>
             </div>
           )}
           {playable && route === 'gauntlet' && <Gauntlet cards={pool} />}
           {playable && route === 'hsdle' && <Hsdle cards={pool} />}
+          {playable && route === 'quickfire' && <Quickfire cards={pool} all={cards} />}
           {cards && route === 'card' && <CardPreview cards={cards} />}
         </main>
         <footer className="muted small">

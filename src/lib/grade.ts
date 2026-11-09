@@ -32,7 +32,7 @@ export function gradeEnum(guess: string, truth: string): Grade {
 }
 
 /** How many typos a name of this length allows. */
-function nameTolerance(len: number): number {
+export function nameTolerance(len: number): number {
   if (len <= 4) return 0;
   if (len <= 8) return 1;
   return 2;

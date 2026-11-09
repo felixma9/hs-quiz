@@ -12,6 +12,10 @@ export function Menu({ count, children }: { count: number; children: ReactNode }
         <h2>Gauntlet</h2>
         <p>One blank per card. Three lives. How far can you get?</p>
       </a>
+      <a className="mode-card" href="#/quickfire">
+        <h2>Quickfire</h2>
+        <p>60 seconds. "Name a minion with 4 Attack", "Finish the name: Chi…". How many can you name?</p>
+      </a>
       <a className="mode-card" href="#/hsdle">
         <h2>HSdle</h2>
         <p>Guess the daily minion. Every guess shows how close its mana, stats, keywords, set, rarity, tribe and class are.</p>

@@ -65,3 +65,8 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Quickfire: each prompt and message eases in. */
+.qf-prompt { animation: pop-in var(--fast) var(--ease) backwards; }
+.qf-msg.ok, .qf-msg.bad { animation: fade-in var(--fast) ease backwards; }
+.qf-chip:first-child { animation: pop-in var(--med) var(--ease) backwards; }
