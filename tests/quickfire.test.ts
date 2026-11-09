@@ -49,3 +49,26 @@ describe('quickfire prompts', () => {
     expect(findCard('zzzz qqq', cards)).toBeNull();
   });
 });
+
+describe('forgiving names', () => {
+  it('accepts part of a name', () => {
+    expect(findCard('grommash', cards)?.name).toBe('Grommash Hellscream');
+    expect(findCard('Grom hellscream', cards)?.name).toBe('Grommash Hellscream');
+    expect(findCard('gromash', cards)?.name).toBe('Grommash Hellscream'); // typo in the word
+    expect(findCard('leeroy', cards)?.name).toBe('Leeroy Jenkins');
+    expect(findCard('ragnaros', cards)?.name).toMatch(/^Ragnaros/);
+    expect(findCard('yeti', cards)?.name).toMatch(/Yeti/);
+  });
+  it('picks the card that fits the prompt when a part is ambiguous', () => {
+    expect(findCard('hellscream', cards)?.name).toBe('Grommash Hellscream'); // a real word beats a typo (Felscream)
+    const lightlord = (c: Card) => c.name === 'Ragnaros, Lightlord';
+    expect(findCard('ragnaros', cards, lightlord)?.name).toBe('Ragnaros, Lightlord');
+  });
+  it('still rejects nonsense and too-short guesses', () => {
+    expect(findCard('qzxv', cards)).toBeNull();
+    expect(findCard('gr', cards)).toBeNull();
+    // Just the start of a name (what a finish-the-name prompt shows) isn't enough.
+    expect(findCard('ragn', cards)).toBeNull();
+    expect(findCard('gromm', cards)).toBeNull();
+  });
+});

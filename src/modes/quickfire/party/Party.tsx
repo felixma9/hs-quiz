@@ -736,7 +736,7 @@ function SoundToggle() {
 
 /**
  * The turn timer: a rope laid round the middle of the table that burns down
- * (from the top, clockwise) with a flame and sparks at the burning end.
+ * (from the top, clockwise) with a flickering flame at the burning end.
  */
 function RopeRing({ frac }: { frac: number }) {
   const id = useId();
@@ -767,10 +767,8 @@ function RopeRing({ frac }: { frac: number }) {
       </svg>
       {frac > 0 && (
         <span className="rope-flame" style={{ left: at(fx), top: at(fy) }}>
+          <span className="flame-glow" />
           <span className="flame-core" />
-          <span className="spark s1" />
-          <span className="spark s2" />
-          <span className="spark s3" />
         </span>
       )}
     </>

@@ -202,17 +202,13 @@ html { scroll-behavior: smooth; }
 .turn-banner { animation: banner-in 0.35s var(--ease) backwards; }
 .my-turn-glow { animation: fade-in 0.25s ease backwards, glow-pulse 1.6s ease-in-out 0.25s infinite; }
 
-/* Rope flame: flicker, and sparks that pop up and drift off. */
+/* Rope flame: flicker and a breathing glow. */
 @keyframes flicker { 0%, 100% { transform: scale(1, 1) rotate(-2deg); } 25% { transform: scale(0.92, 1.08) rotate(3deg); }
   50% { transform: scale(1.05, 0.94) rotate(-4deg); } 75% { transform: scale(0.96, 1.05) rotate(2deg); } }
-@keyframes spark-a { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(-10px, -22px) scale(0.4); } }
-@keyframes spark-b { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(8px, -26px) scale(0.4); } }
-@keyframes spark-c { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(-3px, -30px) scale(0.3); } }
 .flame-core { animation: flicker 0.35s ease-in-out infinite; }
+@keyframes glow-breathe { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.15); } }
+.flame-glow { animation: glow-breathe 0.6s ease-in-out infinite; }
 .table.urgent .flame-core { animation-duration: 0.2s; }
-.spark.s1 { animation: spark-a 0.7s ease-out infinite; }
-.spark.s2 { animation: spark-b 0.9s ease-out 0.25s infinite; }
-.spark.s3 { animation: spark-c 0.8s ease-out 0.5s infinite; }
 
 /* Share panel and banner. */
 .shared-banner { animation: drop-in var(--med) var(--ease) backwards; }

@@ -204,7 +204,8 @@ export class PartyGame {
   /** A player's typed answer. Returns whether it was accepted. */
   answer(id: string, text: string): boolean {
     if (this.phase !== 'playing' || this.turn !== id || !this.prompt) return false;
-    const c = findCard(text, this.all);
+    const prompt = this.prompt;
+    const c = findCard(text, this.all, (x) => prompt.test(x) && !this.used.has(x.id));
     let why: string | null = null;
     if (!c) why = `No card called "${text.trim()}"`;
     else if (this.used.has(c.id)) why = `${c.name} was already used`;

@@ -189,11 +189,11 @@
 .rope-ring-shine { stroke: rgba(255, 240, 210, 0.35); stroke-width: 1.2; }
 .table.urgent .rope-ring-cord { stroke: #d39a5a; }
 .rope-flame { position: absolute; width: 0; height: 0; z-index: 2; pointer-events: none; }
+.flame-glow { position: absolute; left: -16px; top: -16px; width: 32px; height: 32px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 170, 60, 0.45), rgba(255, 120, 30, 0) 70%); }
 .flame-core { position: absolute; left: -9px; top: -20px; width: 18px; height: 26px; border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
   background: radial-gradient(ellipse at 50% 75%, #fff8d6 0 18%, #ffd35c 32%, #ff8a1f 58%, rgba(255, 70, 20, 0) 72%);
   filter: drop-shadow(0 0 6px rgba(255, 140, 40, 0.9)); transform-origin: 50% 85%; }
-.spark { position: absolute; left: -1px; top: -6px; width: 3px; height: 3px; border-radius: 50%; background: #ffd35c;
-  box-shadow: 0 0 4px #ff9a2e; opacity: 0; }
 .table.urgent .flame-core { width: 24px; left: -12px; height: 34px; top: -27px; }
 
 /* Solo practice: running score where the turn banner would be. */

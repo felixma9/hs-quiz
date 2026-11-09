@@ -242,10 +242,38 @@ export function makePrompt(pool: Card[], used: Set<string> = new Set(), rng: Rng
   };
 }
 
-/** The card the player meant, allowing a typo or two. Searches every card, not just the pool. */
-export function findCard(input: string, cards: Card[]): Card | null {
+/** Lowercase words of a name, accents and punctuation dropped ("Al'Akir" -> "alakir"). */
+const nameWords = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/['’]/g, '')
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+
+/**
+ * How well a typed word stands for a word of a card name: 2 = it's the word
+ * or the start of it, 1 = close with a small typo, 0 = no.
+ */
+function wordFit(typed: string, word: string): number {
+  if (word.startsWith(typed)) return typed.length >= 3 || typed === word ? 2 : 0;
+  if (typed.length < 4) return 0;
+  const head = word.slice(0, typed.length);
+  const tol = typed.length >= 8 ? 2 : 1;
+  return levenshtein(typed, head) <= tol || levenshtein(typed, word) <= (word.length >= 8 ? 2 : 1) ? 1 : 0;
+}
+
+/**
+ * The card the player meant. Forgiving: exact names, small typos, and partial
+ * names all work ("grommash" or "grom hells" find Grommash Hellscream). When a
+ * partial name could mean several cards, `prefer` (e.g. "fits the prompt and
+ * isn't used yet") picks between them. Searches every card, not just the pool.
+ */
+export function findCard(input: string, cards: Card[], prefer?: (c: Card) => boolean): Card | null {
   const g = normalizeName(input);
   if (g.length < 2) return null;
+  // 1. The whole name, allowing a typo or two.
   let best: Card | null = null;
   let bestD = Infinity;
   for (const c of cards) {
@@ -258,5 +286,36 @@ export function findCard(input: string, cards: Card[]): Card | null {
       bestD = d;
     }
   }
-  return best;
+  if (best) return best;
+  // 2. Part of the name: every typed word matches a word of the name, in order.
+  const typed = nameWords(input);
+  if (g.length < 4 || !typed.length) return null;
+  const partial: { c: Card; fit: number }[] = [];
+  for (const c of cards) {
+    const words = nameWords(c.name);
+    let i = 0;
+    let fit = 2;
+    let whole = false;
+    for (const t of typed) {
+      let f = 0;
+      while (i < words.length && !(f = wordFit(t, words[i]))) i++;
+      if (i >= words.length) {
+        fit = 0;
+        break;
+      }
+      const w = words[i++];
+      if (t === w || (t.length >= 5 && w.length >= 5 && levenshtein(t, w) <= (w.length >= 8 ? 2 : 1))) whole = true;
+      fit = Math.min(fit, f);
+    }
+    // Needs a complete word of the name, or most of it: just the first few
+    // letters (e.g. the hint in "Finish the name: Ragn…") isn't an answer.
+    const enough = whole || g.length >= normalizeName(c.name).length * 0.6;
+    if (fit && enough) partial.push({ c, fit });
+  }
+  if (!partial.length) return null;
+  // Prefer a card that answers the prompt, then real word matches over typos,
+  // then the shortest (most likely) name.
+  const ok = (c: Card) => Number(!!prefer?.(c));
+  partial.sort((x, y) => ok(y.c) - ok(x.c) || y.fit - x.fit || x.c.name.length - y.c.name.length);
+  return partial[0].c;
 }
