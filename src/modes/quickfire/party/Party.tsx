@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../../lib/types';
 import { Art, useArtCrop } from '../../hsdle/Art';
 import { Bold } from '../Bold';
@@ -147,6 +147,8 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myTurnNow, state?.round]);
+  const keyboardOpen = useKeyboardOpen();
+
   // Solo: best number of cards named, per lives/seconds setting.
   const soloBest = useSoloBest(mode.role === 'solo' ? state : null);
 
@@ -187,9 +189,10 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
   }
 
   const isHost = mode.role === 'host';
+  const kbClass = keyboardOpen && state.phase === 'playing' ? 'kb' : '';
   if (mode.role === 'solo') {
     return (
-      <div className="mode party solo">
+      <div className={`mode party solo ${kbClass}`}>
         <SoundToggle />
         {state.phase === 'lobby' && (
           <SoloSetup
@@ -224,7 +227,7 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
     );
   }
   return (
-    <div className="mode party">
+    <div className={`mode party ${kbClass}`}>
       <SoundToggle />
       {state.phase === 'lobby' && (
         <Lobby
@@ -492,6 +495,7 @@ function Play({
       <div className={`table ${myTurn ? 'compact' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
         <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
+          <RopeRing frac={frac} key={`rope-${state.round}`} />
           <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
             {Math.ceil(left)}
           </span>
@@ -542,7 +546,6 @@ function Play({
         })}
       </div>
 
-      <Rope frac={frac} urgent={urgent} key={`rope-${state.round}`} />
 
       <div className={`qf-prompt party-prompt ${myTurn ? 'mine' : ''}`} key={state.round}>
         <div className="qf-text">{state.prompt && <Bold text={state.prompt.text} />}</div>
@@ -732,24 +735,45 @@ function SoundToggle() {
 }
 
 /**
- * The turn timer as a rope burning down from the right: a twisted cord that
- * shortens, a charred tip, a flickering flame and a few sparks.
+ * The turn timer: a rope laid round the middle of the table that burns down
+ * (from the top, clockwise) with a flame and sparks at the burning end.
  */
-function Rope({ frac, urgent }: { frac: number; urgent: boolean }) {
-  const pct = `${(frac * 100).toFixed(2)}%`;
+function RopeRing({ frac }: { frac: number }) {
+  const id = useId();
+  const R = 44;
+  const C = 2 * Math.PI * R;
+  // Where the flame sits, in the SVG's 0-100 box.
+  const t = frac * 2 * Math.PI;
+  const fx = 50 + R * Math.sin(t);
+  const fy = 50 - R * Math.cos(t);
+  // The SVG overhangs the centre disc by 7% each side (114% wide).
+  const at = (v: number) => `${(-7 + v * 1.14).toFixed(2)}%`;
   return (
-    <div className={`rope ${urgent ? 'urgent' : ''}`} role="presentation">
-      <span className="rope-ash" />
-      <span className="rope-cord" style={{ width: pct }} />
+    <>
+      <svg className="rope-ring" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <mask id={`${id}-left`} maskUnits="userSpaceOnUse">
+            <circle cx="50" cy="50" r={R} fill="none" stroke="#fff" strokeWidth="9" strokeDasharray={C} strokeDashoffset={C * (1 - frac)}
+              transform="rotate(-90 50 50)" />
+          </mask>
+        </defs>
+        <circle className="rope-ring-ash" cx="50" cy="50" r={R} />
+        <g mask={`url(#${id}-left)`}>
+          <circle className="rope-ring-shadow" cx="50" cy="50" r={R + 0.6} />
+          <circle className="rope-ring-cord" cx="50" cy="50" r={R} />
+          <circle className="rope-ring-twist" cx="50" cy="50" r={R} />
+          <circle className="rope-ring-shine" cx="50" cy="50" r={R - 1.6} />
+        </g>
+      </svg>
       {frac > 0 && (
-        <span className="rope-flame" style={{ left: pct }}>
+        <span className="rope-flame" style={{ left: at(fx), top: at(fy) }}>
           <span className="flame-core" />
           <span className="spark s1" />
           <span className="spark s2" />
           <span className="spark s3" />
         </span>
       )}
-    </div>
+    </>
   );
 }
 
@@ -857,4 +881,25 @@ function SoloOver({
       </button>
     </div>
   );
+}
+
+/**
+ * Is the on-screen keyboard up? Compares the visible height with the tallest
+ * the window has been (works whether the browser shrinks the page or not).
+ */
+function useKeyboardOpen(): boolean {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv || !matchMedia('(pointer: coarse)').matches) return;
+    let tallest = Math.max(window.innerHeight, vv.height);
+    const on = () => {
+      tallest = Math.max(tallest, window.innerHeight, vv.height);
+      setOpen(vv.height < tallest * 0.75);
+    };
+    on();
+    vv.addEventListener('resize', on);
+    return () => vv.removeEventListener('resize', on);
+  }, []);
+  return open;
 }

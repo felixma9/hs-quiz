@@ -209,11 +209,10 @@ html { scroll-behavior: smooth; }
 @keyframes spark-b { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(8px, -26px) scale(0.4); } }
 @keyframes spark-c { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(-3px, -30px) scale(0.3); } }
 .flame-core { animation: flicker 0.35s ease-in-out infinite; }
-.rope.urgent .flame-core { animation-duration: 0.2s; }
+.table.urgent .flame-core { animation-duration: 0.2s; }
 .spark.s1 { animation: spark-a 0.7s ease-out infinite; }
 .spark.s2 { animation: spark-b 0.9s ease-out 0.25s infinite; }
 .spark.s3 { animation: spark-c 0.8s ease-out 0.5s infinite; }
-.rope { animation: fade-in 0.2s ease backwards; }
 
 /* Share panel and banner. */
 .shared-banner { animation: drop-in var(--med) var(--ease) backwards; }
