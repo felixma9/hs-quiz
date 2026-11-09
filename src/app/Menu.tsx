@@ -13,7 +13,7 @@ const MODES = [
   {
     href: '#/quickfire',
     name: 'Quickfire',
-    blurb: '60 seconds. "Name a minion with 4 Attack." "Finish the name: Chi…"',
+    blurb: 'Name as many cards as you can before the clock runs out.',
     art: 'NEW1_010', // Al'Akir the Windlord
   },
   {
