@@ -457,7 +457,7 @@ function Play({
   angle.current += delta;
 
   const left = Math.max(0, deadline - now) / 1000;
-  const frac = Math.min(1, left / state.settings.fuse);
+  const frac = Math.min(1, left / (state.turnSeconds || state.settings.fuse));
   const urgent = left <= 3;
   // Tick each of the last few seconds.
   const secs = Math.ceil(left);
@@ -496,6 +496,11 @@ function Play({
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
         <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
           <RopeRing frac={frac} key={`rope-${state.round}`} />
+          {state.streak >= 2 && (
+            <span className="speed-badge" key={`speed-${state.streak}`} title={`${state.streak} right in a row`}>
+              ⚡ {state.turnSeconds}s
+            </span>
+          )}
           <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
             {Math.ceil(left)}
           </span>

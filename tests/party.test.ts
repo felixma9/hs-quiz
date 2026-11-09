@@ -94,3 +94,27 @@ describe('quickfire party ranking', () => {
     expect(last.winner).toBe('C');
   });
 });
+
+describe('quickfire party speed-up', () => {
+  it('shortens the fuse on a streak and resets on a burnt fuse', async () => {
+    const { turnSeconds } = await import('../src/modes/quickfire/party/game');
+    expect(turnSeconds(12, 0)).toBe(12);
+    expect(turnSeconds(12, 3)).toBeLessThan(12);
+    expect(turnSeconds(12, 50)).toBe(4.8); // floor: 40%
+    expect(turnSeconds(8, 50)).toBe(3.2);
+    let t = 0;
+    let last!: PublicState;
+    const g = new PartyGame(all, all, (s) => (last = s), () => t);
+    ['A', 'B'].forEach((n) => g.addPlayer(n, n));
+    g.setSettings({ fuse: 12, lives: 3 });
+    g.start();
+    g.answer('A', solve(g));
+    g.answer('B', solve(g));
+    expect(last.streak).toBe(2);
+    expect(last.turnSeconds).toBeLessThan(12);
+    t += last.turnSeconds * 1000 + 1;
+    g.tick();
+    expect(last.streak).toBe(0);
+    expect(last.turnSeconds).toBe(12);
+  });
+});

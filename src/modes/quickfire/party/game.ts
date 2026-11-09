@@ -46,11 +46,24 @@ export interface PublicState {
   fuseLeft: number;
   /** Increases every turn, so clients can restart animations. */
   round: number;
+  /** Seconds on this turn's fuse (shorter during a streak). */
+  turnSeconds: number;
+  /** Right answers in a row, across all players; a burnt fuse resets it. */
+  streak: number;
   usedCount: number;
   last: PartyEvent | null;
   winner: string | null;
   /** Shown in the lobby: how many cards the host's pool has. */
   poolSize: number;
+}
+
+/**
+ * Each right answer in a row takes 8% off the next fuse, down to 40% of the
+ * chosen time (but never under 3 seconds). A burnt fuse resets it.
+ */
+export function turnSeconds(base: number, streak: number): number {
+  const floor = Math.min(base, Math.max(3, base * 0.4));
+  return Math.round(Math.max(floor, base * 0.92 ** streak) * 10) / 10;
 }
 
 type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
@@ -63,6 +76,8 @@ export class PartyGame {
   private prompt: Prompt | null = null;
   private fuseEndsAt = 0;
   private round = 0;
+  private streak = 0;
+  private turnSeconds = 0;
   private used = new Set<string>();
   private last: PartyEvent | null = null;
   private winner: string | null = null;
@@ -85,6 +100,8 @@ export class PartyGame {
       prompt: this.prompt ? { text: this.prompt.text, hint: this.prompt.hint } : null,
       fuseLeft: this.phase === 'playing' ? Math.max(0, this.fuseEndsAt - this.now()) : 0,
       round: this.round,
+      turnSeconds: this.turnSeconds,
+      streak: this.streak,
       usedCount: this.used.size,
       last: this.last,
       winner: this.winner,
@@ -147,6 +164,7 @@ export class PartyGame {
     }
     this.phase = 'playing';
     this.used = new Set();
+    this.streak = 0;
     this.winner = null;
     this.last = null;
     this.turn = null;
@@ -184,7 +202,8 @@ export class PartyGame {
     }
     this.turn = next.id;
     this.prompt = makePrompt(this.pool, this.used, this.rng);
-    this.fuseEndsAt = this.now() + this.settings.fuse * 1000;
+    this.turnSeconds = turnSeconds(this.settings.fuse, this.streak);
+    this.fuseEndsAt = this.now() + this.turnSeconds * 1000;
     this.round++;
   }
 
@@ -218,6 +237,7 @@ export class PartyGame {
     this.used.add(c.id);
     const p = this.players.find((x) => x.id === id)!;
     p.hits++;
+    this.streak++;
     this.event({ kind: 'hit', player: id, cardId: c.id });
     this.nextTurn();
     this.emit();
@@ -233,6 +253,7 @@ export class PartyGame {
       p.lives = Math.max(0, p.lives - 1);
       if (p.lives === 0) p.outAt = this.round;
       this.event({ kind: 'boom', player: p.id, out: p.lives === 0, example });
+      this.streak = 0;
     }
     if (!this.checkOver()) this.nextTurn();
     this.emit();

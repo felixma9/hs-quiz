@@ -210,6 +210,8 @@ html { scroll-behavior: smooth; }
 .flame-glow { animation: glow-breathe 0.6s ease-in-out infinite; }
 .table.urgent .flame-core { animation-duration: 0.2s; }
 
+.speed-badge { animation: qf-pop 0.3s var(--ease) backwards; }
+
 /* Share panel and banner. */
 .shared-banner { animation: drop-in var(--med) var(--ease) backwards; }
 .share-note.ok, .share-note.bad { animation: fade-in var(--fast) ease backwards; }
