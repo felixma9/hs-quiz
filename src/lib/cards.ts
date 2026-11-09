@@ -1,5 +1,5 @@
 import type { Card } from './types';
-import { ATTRS, type AttrKey } from './attributes';
+import { ATTRS, enumOptions, type AttrKey } from './attributes';
 
 export async function loadCards(): Promise<Card[]> {
   const res = await fetch(`${import.meta.env.BASE_URL}cards.json`);
@@ -53,4 +53,20 @@ export function pickHidden(card: Card, allowed: AttrKey[], rng = Math.random): A
     if (r <= 0) return a.key;
   }
   return opts[opts.length - 1].key;
+}
+
+/**
+ * Fields with only one possible answer among cards of the same type in the
+ * pool (e.g. rarity when only Legendaries are in play). Asking them would be free.
+ */
+export function giveaways(pool: Card[]): Set<string> {
+  const out = new Set<string>();
+  const types = new Set(pool.map((c) => c.type));
+  for (const t of types) {
+    const same = pool.filter((c) => c.type === t);
+    for (const a of ATTRS) {
+      if (a.kind === 'enum' && enumOptions(a.key, same).length < 2) out.add(`${t}:${a.key}`);
+    }
+  }
+  return out;
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
-import { pickHidden, randomCard } from '../../lib/cards';
+import { giveaways, pickHidden, randomCard } from '../../lib/cards';
 import type { Grade } from '../../lib/grade';
 import { load, save } from '../../lib/storage';
 import { GameCard } from '../../card/GameCard';
@@ -33,9 +33,10 @@ interface Round {
 }
 
 function newRound(pool: Card[], allowed: AttrKey[]): Round {
+  const skip = giveaways(pool);
   for (let i = 0; i < 50; i++) {
     const card = randomCard(pool);
-    const hidden = pickHidden(card, allowed);
+    const hidden = pickHidden(card, allowed.filter((k) => !skip.has(`${card.type}:${k}`)));
     if (hidden) return { card, hidden };
   }
   const card = randomCard(pool);
