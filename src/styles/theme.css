@@ -152,12 +152,7 @@ h1, h2 { font-family: var(--display); letter-spacing: 0.02em; }
   box-shadow: var(--shadow), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
 }
 .qf-text b { color: var(--gold-2); }
-.qf-bar { height: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
-.qf-bar span { border-radius: 999px; background: linear-gradient(90deg, #c9952f, var(--gold), var(--gold-2)); box-shadow: 0 0 10px rgba(240, 199, 94, 0.5); }
-.qf-bar span.urgent { background: linear-gradient(90deg, #b8333a, #e5484d); box-shadow: 0 0 10px rgba(229, 72, 77, 0.6); }
 .qf-thumb { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5); }
-.qf-log li { border-radius: 8px; background: var(--surface); }
-.qf-results h2 { font-size: 1.6rem; }
 
 /* ---- HSdle ---- */
 .tile { border-radius: 6px; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 3px 8px rgba(0, 0, 0, 0.35); }

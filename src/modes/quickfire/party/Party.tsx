@@ -2,7 +2,8 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../../lib/types';
 import { Art, useArtCrop } from '../../hsdle/Art';
-import { Bold } from '../Solo';
+import { Bold } from '../Bold';
+import { load, save } from '../../../lib/storage';
 import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
 import { FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, type PartySettings, type PublicState } from './game';
 import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './net';
@@ -16,7 +17,8 @@ interface Typing {
   wrong?: number;
 }
 
-export type PartyMode = { role: 'host' } | { role: 'guest'; code: string };
+/** Host or join a room, or play the same game alone (no network). */
+export type PartyMode = { role: 'host' } | { role: 'guest'; code: string } | { role: 'solo' };
 
 interface Props {
   mode: PartyMode;
@@ -30,7 +32,7 @@ interface Props {
 /** A Quickfire room: connection, then lobby / game / results for everyone. */
 export function Party({ mode, name, pool, all, onLeave }: Props) {
   const [state, setState] = useState<PublicState | null>(null);
-  const [me, setMe] = useState<string | null>(mode.role === 'host' ? HOST_ID : null);
+  const [me, setMe] = useState<string | null>(mode.role === 'guest' ? null : HOST_ID);
   const [code, setCode] = useState(mode.role === 'guest' ? mode.code : '');
   const [error, setError] = useState<string | null>(null);
   /** What the current player is typing; `wrong` marks a guess the host just rejected (shown in red until they type again). */
@@ -50,6 +52,13 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
   // Connect once.
   useEffect(() => {
     let live = true;
+    if (mode.role === 'solo') {
+      const g = new PartyGame(pool, all, receive);
+      game.current = g;
+      g.addPlayer(HOST_ID, name);
+      const tick = setInterval(() => g.tick(), 150);
+      return () => clearInterval(tick);
+    }
     if (mode.role === 'host') {
       const g = new PartyGame(pool, all, (s) => {
         receive(s);
@@ -85,7 +94,8 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
         host.current?.close();
       };
     }
-    joinRoom(mode.code, name, {
+    const code = mode.code;
+    joinRoom(code, name, {
       onMessage(msg) {
         if (msg.t === 'state') receive(msg.state);
         else if (msg.t === 'welcome') setMe(msg.id);
@@ -107,7 +117,7 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
   }, []);
 
   const answer = (text: string) => {
-    if (mode.role === 'host') game.current?.answer(HOST_ID, text);
+    if (mode.role !== 'guest') game.current?.answer(HOST_ID, text);
     else guest.current?.send({ t: 'answer', text });
   };
   const sendTyping = (text: string) => {
@@ -124,9 +134,8 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
     else if (e.kind === 'miss') {
       sfx.miss();
       setTyping({ id: e.player, text: e.guess, wrong: e.n });
-    }
-    else if (e.kind === 'boom') sfx.boom();
-    else if (e.kind === 'info' && e.text.endsWith('joined')) sfx.join();
+    } else if (e.kind === 'boom') sfx.boom();
+    else if (e.kind === 'info' && e.text.endsWith('joined') && mode.role !== 'solo') sfx.join();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastN]);
   const myTurnNow = state?.phase === 'playing' && state.turn === me;
@@ -138,12 +147,17 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myTurnNow, state?.round]);
+  // Solo: best number of cards named, per lives/seconds setting.
+  const soloBest = useSoloBest(mode.role === 'solo' ? state : null);
+
   // A new turn starts with an empty speech bubble.
   useEffect(() => setTyping(null), [state?.round]);
   const over = state?.phase === 'over';
   useEffect(() => {
     if (!over) return;
-    const t = setTimeout(() => (state?.winner === me ? sfx.win() : sfx.lose()), 500);
+    // Solo: the fanfare is for a new best (soloBest still holds the previous one here).
+    const won = mode.role === 'solo' ? (state?.players[0]?.hits ?? 0) > soloBest.best : state?.winner === me;
+    const t = setTimeout(() => (won ? sfx.win() : sfx.lose()), 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [over]);
@@ -173,14 +187,57 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
   }
 
   const isHost = mode.role === 'host';
+  if (mode.role === 'solo') {
+    return (
+      <div className="mode party solo">
+        <SoundToggle />
+        {state.phase === 'lobby' && (
+          <SoloSetup
+            state={state}
+            best={soloBest.best}
+            onSettings={(s) => game.current?.setSettings(s)}
+            onStart={() => {
+              unlock();
+              game.current?.start();
+            }}
+          />
+        )}
+        {state.phase === 'playing' && (
+          <Play solo state={state} me={me} deadline={deadline} typing={null} all={all} onAnswer={answer} onTyping={() => {}} />
+        )}
+        {state.phase === 'over' && (
+          <SoloOver
+            state={state}
+            best={soloBest.best}
+            isNew={soloBest.isNew}
+            onAgain={() => {
+              unlock();
+              game.current?.start();
+            }}
+            onSettings={() => game.current?.toLobby()}
+          />
+        )}
+        <button className="link party-leave" onClick={onLeave}>
+          Back
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="mode party">
       <SoundToggle />
       {state.phase === 'lobby' && (
-        <Lobby state={state} code={code} me={me} isHost={isHost} onSettings={(s) => game.current?.setSettings(s)} onStart={() => {
+        <Lobby
+          state={state}
+          code={code}
+          me={me}
+          isHost={isHost}
+          onSettings={(s) => game.current?.setSettings(s)}
+          onStart={() => {
             unlock();
             game.current?.start();
-          }} />
+          }}
+        />
       )}
       {state.phase === 'playing' && (
         <Play state={state} me={me} deadline={deadline} typing={typing} all={all} onAnswer={answer} onTyping={sendTyping} />
@@ -262,8 +319,20 @@ function Lobby({
       </div>
 
       <div className="party-settings">
-        <Setting label="Lives" options={LIVES_OPTIONS} value={state.settings.lives} disabled={!isHost} onPick={(v) => onSettings({ lives: v })} />
-        <Setting label="Seconds per turn" options={FUSE_OPTIONS} value={state.settings.fuse} disabled={!isHost} onPick={(v) => onSettings({ fuse: v })} />
+        <Setting
+          label="Lives"
+          options={LIVES_OPTIONS}
+          value={state.settings.lives}
+          disabled={!isHost}
+          onPick={(v) => onSettings({ lives: v })}
+        />
+        <Setting
+          label="Seconds per turn"
+          options={FUSE_OPTIONS}
+          value={state.settings.fuse}
+          disabled={!isHost}
+          onPick={(v) => onSettings({ fuse: v })}
+        />
         <div className="muted small">Every collectible card counts ({state.poolSize.toLocaleString()} cards).</div>
       </div>
 
@@ -273,20 +342,41 @@ function Lobby({
         </button>
       ) : (
         <div className="muted center waiting">
-          Waiting for the host to start<span className="dots" />
+          Waiting for the host to start
+          <span className="dots" />
         </div>
       )}
     </>
   );
 }
 
-function Setting({ label, options, value, disabled, onPick }: { label: string; options: number[]; value: number; disabled: boolean; onPick(v: number): void }) {
+function Setting({
+  label,
+  options,
+  value,
+  disabled,
+  onPick,
+}: {
+  label: string;
+  options: number[];
+  value: number;
+  disabled: boolean;
+  onPick(v: number): void;
+}) {
   return (
     <div className="setting">
       <span>{label}</span>
       <div className="seg" role="radiogroup" aria-label={label}>
         {options.map((o) => (
-          <button key={o} type="button" role="radio" aria-checked={o === value} className={o === value ? 'on' : ''} disabled={disabled} onClick={() => onPick(o)}>
+          <button
+            key={o}
+            type="button"
+            role="radio"
+            aria-checked={o === value}
+            className={o === value ? 'on' : ''}
+            disabled={disabled}
+            onClick={() => onPick(o)}
+          >
             {o}
           </button>
         ))}
@@ -298,6 +388,7 @@ function Setting({ label, options, value, disabled, onPick }: { label: string; o
 /* ---------------- Game ---------------- */
 
 function Play({
+  solo = false,
   state,
   me,
   deadline,
@@ -313,6 +404,8 @@ function Play({
   all: Card[];
   onAnswer(text: string): void;
   onTyping(text: string): void;
+  /** Practising alone: show the running score instead of whose turn it is. */
+  solo?: boolean;
 }) {
   const crop = useArtCrop();
   const [input, setInput] = useState('');
@@ -351,7 +444,10 @@ function Play({
   // The pointer turns the short way round to whoever's up.
   const n = state.players.length;
   const seatAngle = (i: number) => (n ? (i / n) * 360 : 0);
-  const turnIdx = Math.max(0, state.players.findIndex((p) => p.id === state.turn));
+  const turnIdx = Math.max(
+    0,
+    state.players.findIndex((p) => p.id === state.turn),
+  );
   const angle = useRef(0);
   const target = seatAngle(turnIdx);
   const delta = ((((target - angle.current) % 360) + 540) % 360) - 180;
@@ -372,20 +468,27 @@ function Play({
 
   // A buzz on phones that can when it becomes your turn.
   useEffect(() => {
-    if (myTurn) navigator.vibrate?.(60);
-  }, [myTurn, state.round]);
+    if (myTurn && !solo) navigator.vibrate?.(60);
+  }, [myTurn, state.round, solo]);
 
   return (
     <>
-      <div className={`turn-banner ${myTurn ? 'mine' : ''}`} key={`turn-${state.round}`} role="status">
-        {current && (
-          <span className="avatar" style={avatarStyle(current.id)}>
-            {current.name.slice(0, 1).toUpperCase()}
-          </span>
-        )}
-        <span className="turn-banner-text">{myTurn ? 'Your turn!' : `${current?.name ?? '…'}'s turn`}</span>
-      </div>
-      {myTurn && <div className="my-turn-glow" aria-hidden="true" />}
+      {solo ? (
+        <div className="solo-score" role="status">
+          <b key={state.players[0]?.hits}>{state.players[0]?.hits ?? 0}</b>
+          <span>card{state.players[0]?.hits === 1 ? '' : 's'}</span>
+        </div>
+      ) : (
+        <div className={`turn-banner ${myTurn ? 'mine' : ''}`} key={`turn-${state.round}`} role="status">
+          {current && (
+            <span className="avatar" style={avatarStyle(current.id)}>
+              {current.name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+          <span className="turn-banner-text">{myTurn ? 'Your turn!' : `${current?.name ?? '…'}'s turn`}</span>
+        </div>
+      )}
+      {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
       <div className={`table ${myTurn ? 'compact' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
         <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
@@ -535,7 +638,9 @@ function EventLine({
 
 function Over({ state, me, isHost, onAgain }: { state: PublicState; me: string; isHost: boolean; onAgain(): void }) {
   const winner = state.players.find((p) => p.id === state.winner);
-  const ranked = [...state.players].sort((a, b) => Number(b.id === state.winner) - Number(a.id === state.winner) || b.lives - a.lives || b.outAt - a.outAt || b.hits - a.hits);
+  const ranked = [...state.players].sort(
+    (a, b) => Number(b.id === state.winner) - Number(a.id === state.winner) || b.lives - a.lives || b.outAt - a.outAt || b.hits - a.hits,
+  );
   // Podium order: 2nd, 1st, 3rd.
   const podium = [ranked[1], ranked[0], ranked[2]].filter(Boolean);
   const rest = ranked.slice(3);
@@ -585,7 +690,8 @@ function Over({ state, me, isHost, onAgain }: { state: PublicState; me: string; 
         </button>
       ) : (
         <div className="muted center waiting">
-          Waiting for the host<span className="dots" />
+          Waiting for the host
+          <span className="dots" />
         </div>
       )}
     </div>
@@ -615,7 +721,11 @@ function SoundToggle() {
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 9h4l5-4v14l-5-4H4z" />
-        {off ? <path d="M17 9l5 6M22 9l-5 6" className="stroke" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" className="stroke" />}
+        {off ? (
+          <path d="M17 9l5 6M22 9l-5 6" className="stroke" />
+        ) : (
+          <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" className="stroke" />
+        )}
       </svg>
     </button>
   );
@@ -639,6 +749,112 @@ function Rope({ frac, urgent }: { frac: number; urgent: boolean }) {
           <span className="spark s3" />
         </span>
       )}
+    </div>
+  );
+}
+
+/* ---------------- Solo ---------------- */
+
+const soloKey = (s: PartySettings) => `hsq:quickfire:best:${s.lives}-${s.fuse}`;
+
+/** Remembers the best solo run for the current settings; `isNew` after a record. */
+function useSoloBest(state: PublicState | null) {
+  const [best, setBest] = useState(0);
+  const [isNew, setIsNew] = useState(false);
+  const key = state ? soloKey(state.settings) : '';
+  useEffect(() => {
+    if (key) setBest(load<number>(key, 0));
+  }, [key]);
+  const phase = state?.phase;
+  useEffect(() => {
+    if (!state) return;
+    if (phase === 'playing') setIsNew(false);
+    if (phase !== 'over') return;
+    const hits = state.players[0]?.hits ?? 0;
+    const prev = load<number>(key, 0);
+    if (hits > prev) {
+      save(key, hits);
+      setBest(hits);
+      setIsNew(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+  return { best, isNew };
+}
+
+function SoloSetup({
+  state,
+  best,
+  onSettings,
+  onStart,
+}: {
+  state: PublicState;
+  best: number;
+  onSettings(s: Partial<PartySettings>): void;
+  onStart(): void;
+}) {
+  return (
+    <>
+      <div className="solo-intro">
+        <h2>Practice</h2>
+        <p className="muted">
+          Same game, just you: name a card for each prompt before the rope burns down. Run out of time and you lose a life.
+        </p>
+      </div>
+      <div className="party-settings">
+        <Setting
+          label="Lives"
+          options={LIVES_OPTIONS}
+          value={state.settings.lives}
+          disabled={false}
+          onPick={(v) => onSettings({ lives: v })}
+        />
+        <Setting
+          label="Seconds per turn"
+          options={FUSE_OPTIONS}
+          value={state.settings.fuse}
+          disabled={false}
+          onPick={(v) => onSettings({ fuse: v })}
+        />
+        <div className="muted small">
+          Best with these settings: <b>{best}</b> card{best === 1 ? '' : 's'}
+        </div>
+      </div>
+      <button className="btn primary" onClick={onStart}>
+        Start
+      </button>
+    </>
+  );
+}
+
+function SoloOver({
+  state,
+  best,
+  isNew,
+  onAgain,
+  onSettings,
+}: {
+  state: PublicState;
+  best: number;
+  isNew: boolean;
+  onAgain(): void;
+  onSettings(): void;
+}) {
+  const hits = state.players[0]?.hits ?? 0;
+  return (
+    <div className="panel party-over solo-over">
+      <h2>Game over</h2>
+      <div className="qf-final">
+        <b className="qf-count done">{hits}</b>
+        <span className="muted small">card{hits === 1 ? '' : 's'} named</span>
+      </div>
+      {isNew ? <div className="qf-newbest">New best!</div> : <p className="muted small">Best: {best}</p>}
+      <button className="btn primary" onClick={onAgain}>
+        Play again
+      </button>
+      <button className="btn" onClick={onSettings}>
+        Change settings
+      </button>
     </div>
   );
 }

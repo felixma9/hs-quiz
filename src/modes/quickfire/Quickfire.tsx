@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { load, save } from '../../lib/storage';
-import { Solo } from './Solo';
 import { unlock } from '../../lib/sound';
 import { Party, type PartyMode } from './party/Party';
 import { cleanCode, roomFromLocation } from './party/net';
 
 const NAME_KEY = 'hsq:name';
 
-type View = { kind: 'home' } | { kind: 'solo' } | { kind: 'party'; mode: PartyMode };
+type View = { kind: 'home' } | { kind: 'party'; mode: PartyMode };
 
 /**
  * Quickfire: host or join a room and take turns naming cards before the fuse
@@ -43,17 +42,7 @@ export function Quickfire({ everything }: { everything: Card[] }) {
     setView({ kind: 'home' });
   };
 
-  if (view.kind === 'solo') {
-    return (
-      <>
-        <Solo cards={everything} all={everything} />
-        <button className="link party-leave" onClick={leave}>
-          ← Rooms
-        </button>
-      </>
-    );
-  }
-  if (view.kind === 'party') return <Party mode={view.mode} name={name.trim()} pool={everything} all={everything} onLeave={leave} />;
+  if (view.kind === 'party') return <Party mode={view.mode} name={name.trim() || 'You'} pool={everything} all={everything} onLeave={leave} />;
 
   const fullCode = cleanCode(code).length === 4;
   return (
@@ -109,8 +98,14 @@ export function Quickfire({ everything }: { everything: Card[] }) {
       </form>
 
       <div className="qf-or">or</div>
-      <button className="btn qf-solo" onClick={() => setView({ kind: 'solo' })}>
-        Practise solo (60 seconds)
+      <button
+        className="btn qf-solo"
+        onClick={() => {
+          unlock();
+          setView({ kind: 'party', mode: { role: 'solo' } });
+        }}
+      >
+        Practise solo
       </button>
     </div>
   );
