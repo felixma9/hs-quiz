@@ -9,9 +9,9 @@ import { newRound } from '../../gauntlet/round';
  * burns out. Run out of time and you lose a life; the last player standing
  * wins. Each card can be used once per game.
  *
- * Gauntlet VS is the same room with Gauntlet's cards: two players take turns
- * filling in a card's blank field. A wrong answer or a burnt fuse costs a life
- * and passes the same card to the other player to steal. A missed steal costs
+ * Gauntlet PvP (code name "vs") is the same room with Gauntlet's cards: 2 to 8
+ * players take turns filling in a card's blank field. A wrong answer or a burnt
+ * fuse costs a life and passes the same card to the next player to steal. A missed steal costs
  * nothing (everyone sees the answer and a new card comes up); every third
  * successful steal earns a life.
  *
@@ -35,8 +35,9 @@ export const FUSE_FOR: Record<RoomGame, { options: number[]; default: number }> 
   gauntlet: { options: [15, 20, 30], default: 20 },
 };
 export const FUSE_OPTIONS = FUSE_FOR.quickfire.options;
-/** Gauntlet VS is one on one. */
-export const VS_PLAYERS = 2;
+/** Gauntlet PvP: how many players (inclusive). */
+export const VS_MIN_PLAYERS = 2;
+export const VS_MAX_PLAYERS = 8;
 /** Gauntlet VS: card text takes a while to type, so those turns get this many times the seconds. */
 export const TEXT_TIME = 2;
 /** Gauntlet VS: successful steals for an extra life. */
@@ -81,8 +82,9 @@ export type PartyEvent =
       cardId?: string;
       attr?: AttrKey;
       guess?: string;
-      /** Gauntlet VS: the card goes to the other player to steal (the answer isn't shown yet). */
+      /** Gauntlet VS: the card goes to the next player (`to`) to steal (the answer isn't shown yet). */
       passed?: boolean;
+      to?: string;
       /** Gauntlet VS: a missed steal, which costs no life. */
       safe?: boolean;
       /** Gauntlet VS: both players missed this card. */
@@ -237,7 +239,8 @@ export class PartyGame {
 
   start() {
     if (this.phase === 'playing' || !this.players.some((p) => p.connected)) return;
-    if (this.isVs && this.players.filter((p) => p.connected).length !== VS_PLAYERS) return;
+    const n = this.players.filter((p) => p.connected).length;
+    if (this.isVs && (n < VS_MIN_PLAYERS || n > VS_MAX_PLAYERS)) return;
     this.players = this.players.filter((p) => p.connected);
     for (const p of this.players) {
       p.lives = this.settings.lives;
@@ -395,9 +398,21 @@ export class PartyGame {
   /** Gauntlet VS: a wrong answer (`guess`) or a burnt fuse. Steal, or show the answer and move on. */
   private missCard(p: PartyPlayer, guess?: string) {
     const c = this.card!;
-    const other = this.alive().find((x) => x.id !== p.id);
-    // The other player gets a go at this card, unless they already had one (or this miss ends the game).
-    const pass = !c.steal && !!other && p.lives > 1;
+    // The next player still in gets a go at this card, unless this was already the steal,
+    // or this miss knocks out the second-last player (game over).
+    const order = this.players;
+    const at = order.findIndex((x) => x.id === p.id);
+    let other: PartyPlayer | undefined;
+    for (let i = 1; i < order.length; i++) {
+      const q = order[(at + i) % order.length];
+      if (q.lives > 0 && q.connected) {
+        other = q;
+        break;
+      }
+    }
+    const othersLeft = this.alive().filter((x) => x.id !== p.id).length;
+    const endsGame = p.lives <= 1 && othersLeft <= 1;
+    const pass = !c.steal && !!other && !endsGame;
     const final = !pass;
     if (final) {
       this.used.add(c.card.id);
@@ -408,6 +423,7 @@ export class PartyGame {
       attr: c.hidden,
       guess,
       passed: pass,
+      to: pass ? other!.id : undefined,
       nobody: final && c.steal,
       example: final ? this.cardTruth() : undefined,
       reveal: final && c.hidden === 'text' ? String(ATTR.text.value(c.card) ?? '') : undefined,

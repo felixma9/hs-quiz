@@ -393,3 +393,12 @@
 .vs-reveal.hit-text { display: block; margin-top: 6px; }
 /* Room for the sound button (top right) now there's no banner above the scoreboard. */
 .vs-bar { padding-left: 42px; padding-right: 42px; }
+/* Gauntlet PvP with 3+ players: the rope on top, everyone in turn order underneath. */
+.vs-bar.many { grid-template-columns: 1fr; justify-items: center; gap: 4px; padding-bottom: 4px; }
+.vs-bar.many .vs-clock { margin-bottom: 24px; }
+.vs-seats { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 12px; }
+.vs-bar.many .vs-side { width: 62px; }
+.vs-bar.many .vs-side .avatar { width: 34px; height: 34px; font-size: 0.9rem; }
+.party.kb .vs-bar.many .vs-clock { margin-bottom: 20px; }
+.party.kb .vs-bar.many .vs-side .avatar { width: 26px; height: 26px; font-size: 0.75rem; }
+.party.kb .vs-bar.many .vs-name { display: none; }

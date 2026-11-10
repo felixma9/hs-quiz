@@ -170,16 +170,40 @@ describe('gauntlet vs', () => {
   /** The right answer to the current card, as a form would send it. */
   const truth = (_g: PartyGame, s: PublicState) => String(ATTR[s.card!.hidden].value(all.find((x) => x.id === s.card!.id)!) ?? '');
 
-  it('is one on one, with longer turns', () => {
+  it('needs 2 to 8 players, with longer turns', () => {
+    const solo = vsSetup(['A']);
+    solo.g.start();
+    expect(solo.state().phase).toBe('lobby');
     const { g, state } = vsSetup(['A', 'B', 'C']);
     expect(state().settings.fuse).toBe(20);
-    g.start();
-    expect(state().phase).toBe('lobby');
-    g.removePlayer('C');
     g.start();
     expect(state().phase).toBe('playing');
     expect(state().card).toBeTruthy();
     expect(state().prompt).toBeNull();
+  });
+
+  it('with 3+ players, a miss passes to the next player to steal, then play moves on', () => {
+    const { g, state } = vsSetup(['A', 'B', 'C']);
+    g.start();
+    expect(state().turn).toBe('A');
+    g.answer('A', 'zzzz wrong');
+    expect(state().last).toMatchObject({ kind: 'boom', player: 'A', passed: true, to: 'B' });
+    expect(state().turn).toBe('B');
+    g.answer('B', 'zzzz wrong');
+    expect(state().last).toMatchObject({ kind: 'boom', player: 'B', safe: true, nobody: true });
+    // A new card for the player after the stealer.
+    expect(state().turn).toBe('C');
+    expect(state().card!.steal).toBe(false);
+  });
+
+  it('keeps going when a player is knocked out with 2+ left', () => {
+    const { g, state } = vsSetup(['A', 'B', 'C']);
+    g.setSettings({ lives: 1 });
+    g.start();
+    g.answer('A', 'zzzz wrong');
+    expect(state().phase).toBe('playing');
+    expect(state().players[0].lives).toBe(0);
+    expect(state().last).toMatchObject({ out: true, passed: true, to: 'B' });
   });
 
   it('passes the turn on a right answer, and costs a life on a wrong one', () => {

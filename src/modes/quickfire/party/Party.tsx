@@ -7,7 +7,7 @@ import { Bold, ClassName } from '../Bold';
 import { ICON, rarityIcon } from '../../../app/icons';
 import { load, save } from '../../../lib/storage';
 import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
-import { FUSE_FOR, FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, STEALS_FOR_LIFE, VS_PLAYERS, type PartySettings, type PublicState, type RoomGame } from './game';
+import { FUSE_FOR, FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, STEALS_FOR_LIFE, VS_MAX_PLAYERS, VS_MIN_PLAYERS, type PartySettings, type PublicState, type RoomGame } from './game';
 import { ATTR, labelFor, plainText, pretty, type AttrKey } from '../../../lib/attributes';
 import { GameCard } from '../../../card/GameCard';
 import { preloadArt } from '../../../card/sunwell';
@@ -335,13 +335,13 @@ function Lobby({
   };
   const seats = Array.from({ length: state.settings.lives });
   const vs = state.settings.game === 'gauntlet';
-  const full = vs && state.players.length >= VS_PLAYERS;
-  const canStart = !vs || state.players.length === VS_PLAYERS;
+  const full = vs && state.players.length >= VS_MAX_PLAYERS;
+  const canStart = !vs || (state.players.length >= VS_MIN_PLAYERS && state.players.length <= VS_MAX_PLAYERS);
   return (
     <>
       <div className="room-code-box" style={{ '--art': `url(${ROOM_ART})` } as React.CSSProperties}>
         <span className="mode-art room-art" aria-hidden="true" />
-        <div className="section-label">{vs ? 'Gauntlet VS room' : 'Room code'}</div>
+        <div className="section-label">{vs ? 'Gauntlet PvP room' : 'Room code'}</div>
         <div className="room-code" aria-label={`Room code ${code.split('').join(' ')}`}>
           {code.split('').map((ch, i) => (
             <span key={i} style={{ animationDelay: `${i * 60}ms` }}>
@@ -357,7 +357,7 @@ function Lobby({
       <section className="lobby-panel">
         <div className="lobby-head">
           <span className="section-label">Players</span>
-          <span className="count-pill">{vs ? `${state.players.length}/${VS_PLAYERS}` : state.players.length}</span>
+          <span className="count-pill">{vs ? `${state.players.length}/${VS_MAX_PLAYERS}` : state.players.length}</span>
         </div>
         <ul className="party-players">
           {state.players.map((p) => (
@@ -385,7 +385,17 @@ function Lobby({
             <li className="party-player-row open-seat" aria-hidden="true">
               <span className="avatar">+</span>
               <span className="party-player-name">
-                {vs ? (isHost ? 'Share the code with your opponent' : 'Waiting for an opponent') : isHost ? 'Share the code to fill this seat' : 'Room for more'}
+                {vs
+                  ? state.players.length < VS_MIN_PLAYERS
+                    ? isHost
+                      ? 'Share the code with an opponent'
+                      : 'Waiting for an opponent'
+                    : isHost
+                      ? 'Share the code to fill this seat'
+                      : 'Room for more'
+                  : isHost
+                    ? 'Share the code to fill this seat'
+                    : 'Room for more'}
               </span>
             </li>
           )}
@@ -403,7 +413,7 @@ function Lobby({
             {(
               [
                 ['quickfire', 'Quickfire'],
-                ['gauntlet', 'Gauntlet VS'],
+                ['gauntlet', 'Gauntlet PvP'],
               ] as const
             ).map(([g, label]) => (
               <button
@@ -439,7 +449,7 @@ function Lobby({
         <div className="pool-note">
           <img className="setting-icon" src={MANA_ICON} alt="" />
           {vs
-            ? `1v1: take turns filling in a card's blank. Miss and you lose a life, and your opponent gets a free shot at stealing the same card (every ${STEALS_FOR_LIFE} steals earns a life). Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
+            ? `${VS_MIN_PLAYERS}–${VS_MAX_PLAYERS} players take turns filling in a card's blank. Miss and you lose a life, and the next player gets a free shot at stealing the same card (every ${STEALS_FOR_LIFE} steals earns a life). Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
             : `Every collectible card counts: ${state.poolSize.toLocaleString()} cards.`}
         </div>
       </section>
@@ -447,11 +457,11 @@ function Lobby({
       {isHost ? (
         <button className="btn primary" onClick={onStart} disabled={!canStart}>
           {vs
-            ? state.players.length < VS_PLAYERS
+            ? state.players.length < VS_MIN_PLAYERS
               ? 'Waiting for an opponent'
-              : state.players.length > VS_PLAYERS
-                ? `Gauntlet VS is 1v1 (${state.players.length} here)`
-                : 'Start Gauntlet VS'
+              : state.players.length > VS_MAX_PLAYERS
+                ? `Gauntlet PvP fits ${VS_MAX_PLAYERS} (${state.players.length} here)`
+                : 'Start Gauntlet PvP'
             : state.players.length > 1
               ? 'Start game'
               : 'Start (just you)'}
@@ -785,8 +795,11 @@ function VsBar({
   urgent: boolean;
 }) {
   const last = state.last;
-  const seated = state.players.filter((p) => p.lives > 0 || p.outAt > 0 || state.players.length <= VS_PLAYERS).slice(0, VS_PLAYERS);
-  const [a, b] = [...seated].sort((x, y) => Number(y.id === me) - Number(x.id === me));
+  // Everyone who started (late joiners only watch).
+  const seated = state.players.filter((p) => p.lives > 0 || p.outAt > 0 || state.players.length <= VS_MIN_PLAYERS);
+  const duel = seated.length <= 2;
+  // Two players: you on the left, them on the right. More: everyone in turn order under the rope.
+  const [a, b] = duel ? [...seated].sort((x, y) => Number(y.id === me) - Number(x.id === me)) : [];
   const side = (p: PublicState['players'][number]) => {
     const boom = last?.kind === 'boom' && last.player === p.id && !last.safe;
     return (
@@ -821,8 +834,8 @@ function VsBar({
     );
   };
   return (
-    <div className={`vs-bar ${urgent ? 'urgent' : ''} ${state.turn === me ? 'mine' : ''}`} role="status">
-      {a && side(a)}
+    <div className={`vs-bar ${duel ? '' : 'many'} ${urgent ? 'urgent' : ''} ${state.turn === me ? 'mine' : ''}`} role="status">
+      {duel && a && side(a)}
       <div className={`vs-clock ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'clock'}>
         <RopeRing deadline={deadline} total={total} key={`rope-${state.round}`} />
         <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
@@ -833,7 +846,8 @@ function VsBar({
           {state.turn === me ? 'Your turn' : `${state.players.find((x) => x.id === state.turn)?.name ?? '…'}'s turn`}
         </span>
       </div>
-      {b && side(b)}
+      {duel && b && side(b)}
+      {!duel && <div className="vs-seats">{seated.map((p) => side(p))}</div>}
     </div>
   );
 }
@@ -998,7 +1012,14 @@ function EventLine({
     if (last.passed) {
       body = (
         <span>
-          {what} {last.player === me ? 'Over to your opponent.' : <b className="steal-call">Your chance to steal!</b>}
+          {what}{' '}
+          {last.to === me ? (
+            <b className="steal-call">Your chance to steal!</b>
+          ) : last.to ? (
+            `Over to ${nameOf(last.to)} to steal.`
+          ) : (
+            'Over to your opponent.'
+          )}
         </span>
       );
     } else {
