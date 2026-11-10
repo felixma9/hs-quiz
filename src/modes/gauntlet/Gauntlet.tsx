@@ -7,6 +7,7 @@ import type { Grade } from '../../lib/grade';
 import { load, save } from '../../lib/storage';
 import { GameCard } from '../../card/GameCard';
 import { Art, useArtCrop } from '../hsdle/Art';
+import { zoomCard } from '../../app/CardZoom';
 import { TextDiff } from './TextDiff';
 import { loadSettings, saveSettings, type GauntletSettings as Settings } from './settings';
 
@@ -315,7 +316,10 @@ function RunStrip({ history }: { history: Played[] }) {
             style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
             title={x.card.name}
             aria-label={`${x.card.name}: ${x.ok ? 'right' : 'wrong'}`}
-            onClick={() => setOpen(open === i ? null : i)}
+            onClick={() => {
+              setOpen(i);
+              zoomCard(x.card, `Asked for the ${labelFor(ATTR[x.hidden], x.card).toLowerCase()}: ${x.ok ? 'right' : 'missed'}`);
+            }}
           >
             <Art card={x.card} crop={crop} className="named-art" />
             <span className="run-mark">{x.ok ? '✓' : '✗'}</span>
@@ -333,7 +337,7 @@ function RunStrip({ history }: { history: Played[] }) {
             )}
           </>
         ) : (
-          'Tap a card to see what was asked'
+          'Tap a card to see it'
         )}
       </div>
     </section>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Card } from '../../lib/types';
+import { zoomProps } from '../../app/CardZoom';
 
 
 /**
@@ -23,11 +24,24 @@ export function useArtCrop() {
 }
 
 /** The zoom that hides a card's padding, plus a little margin. */
-export function Art({ card, crop, alt = '', className = '' }: { card: Card; crop: Record<string, number>; alt?: string; className?: string }) {
+export function Art({
+  card,
+  crop,
+  alt = '',
+  className = '',
+  zoom = false,
+}: {
+  card: Card;
+  crop: Record<string, number>;
+  alt?: string;
+  className?: string;
+  /** Tap to see the whole card. Only where the card isn't a secret. */
+  zoom?: boolean;
+}) {
   const cut = Math.min(crop[card.id] ?? 0, 0.3);
   const scale = cut ? 1.04 / (1 - 2 * cut) : 1.08;
   return (
-    <span className={`art-crop ${className}`}>
+    <span className={`art-crop ${className} ${zoom ? 'zoomable' : ''}`} {...(zoom ? zoomProps(card) : {})}>
       <img src={thumb(card)} alt={alt} loading="lazy" style={{ transform: `scale(${scale.toFixed(3)})` }} />
     </span>
   );

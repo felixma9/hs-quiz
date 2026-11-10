@@ -56,7 +56,7 @@ export function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
           return (
             <div key={g.id} className={`board-row ${r === 0 ? 'newest' : ''}`} role="row">
               <button type="button" className={`board-cell name-cell ${on('name') ? 'selected' : ''}`} role="cell" title={g.name} onClick={() => tap(g.id, 'name')}>
-                <Art card={g} crop={crop} className="thumb" />
+                <Art card={g} crop={crop} className="thumb" zoom />
                 <span className="name-text">{g.name}</span>
               </button>
               {COLUMNS.map((c, i) => (

@@ -13,6 +13,7 @@ import { parseRoute, type Route } from './app/routes';
 import { TitleBar } from './app/TitleBar';
 import { Menu } from './app/Menu';
 import { CardPreview } from './app/CardPreview';
+import { CardZoomHost } from './app/CardZoom';
 import { Gauntlet } from './modes/gauntlet/Gauntlet';
 import { Hsdle } from './modes/hsdle/Hsdle';
 import { Quickfire } from './modes/quickfire/Quickfire';
@@ -65,6 +66,7 @@ export function App() {
   return (
     <>
       <TitleBar route={route} />
+      <CardZoomHost />
       <div className={`app app-${route}`}>
         <main>
           {error && <div className="panel feedback bad">{error}</div>}

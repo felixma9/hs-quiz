@@ -2,6 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../../lib/types';
 import { Art, useArtCrop } from '../../hsdle/Art';
+import { zoomCard } from '../../../app/CardZoom';
 import { Bold, ClassName } from '../Bold';
 import { ICON, rarityIcon } from '../../../app/icons';
 import { load, save } from '../../../lib/storage';
@@ -535,7 +536,10 @@ function Play({
   const [myWrong, setMyWrong] = useState(false);
   const [now, setNow] = useState(() => performance.now());
   const field = useRef<HTMLInputElement>(null);
-  const myTurn = state.turn === me;
+  // Gauntlet VS shows the finished card between turns: nobody's turn then.
+  const revealing = !!state.reveal;
+  const vs = !!state.card || revealing;
+  const myTurn = state.turn === me && !revealing;
   const current = state.players.find((p) => p.id === state.turn);
   const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
 
@@ -577,7 +581,7 @@ function Play({
 
   const left = Math.max(0, deadline - now) / 1000;
   const frac = Math.min(1, left / (state.turnSeconds || state.settings.fuse));
-  const urgent = left <= 3;
+  const urgent = left <= 3 && !revealing;
   // Tick each of the last few seconds.
   const secs = Math.ceil(left);
   useEffect(() => {
@@ -607,12 +611,14 @@ function Play({
               {current.name.slice(0, 1).toUpperCase()}
             </span>
           )}
-          <span className="turn-banner-text">{myTurn ? 'Your turn!' : `${current?.name ?? '…'}'s turn`}</span>
+          <span className="turn-banner-text">
+            {revealing ? 'Next card…' : myTurn ? 'Your turn!' : `${current?.name ?? '…'}'s turn`}
+          </span>
         </div>
       )}
       {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
-      {state.card ? (
-        <VsBar state={state} me={me} frac={frac} left={left} urgent={urgent} />
+      {vs ? (
+        <VsBar state={state} me={me} frac={revealing ? 0 : frac} left={left} urgent={urgent} />
       ) : (
       <div className={`table ${myTurn ? 'compact' : ''} ${solo ? 'solo' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
@@ -641,7 +647,7 @@ function Play({
           // Your own words are in your input box, so only other players get a bubble.
           const speaking = p.id === state.turn && p.id !== me;
           // Gauntlet VS shows their answer on the card instead.
-          const words = speaking && !state.card ? typed : '';
+          const words = speaking && !vs ? typed : '';
           const wrong = speaking && typing?.wrong && typing.id === p.id ? typing.wrong : 0;
           return (
             <div
@@ -684,7 +690,15 @@ function Play({
       </div>
       )}
 
-      {state.card ? (
+      {state.reveal ? (
+        <>
+          {/* The card below shows the text, so the event line skips its copy for now. */}
+          <div className="during-reveal">
+            <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
+          </div>
+          <VsReveal key={`reveal-${state.round}`} state={state} byId={byId} drawable={drawable} />
+        </>
+      ) : state.card ? (
         <>
         <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
         <VsCard
@@ -743,7 +757,7 @@ function Play({
       </>
       )}
 
-      {!state.card && <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />}
+      {!vs && <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />}
     </>
   );
 }
@@ -785,11 +799,45 @@ function VsBar({ state, me, frac, left, urgent }: { state: PublicState; me: stri
       {a && side(a)}
       <div className={`vs-clock ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'clock'}>
         <RopeRing frac={frac} key={`rope-${state.round}`} />
-        <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
-          {Math.ceil(left)}
-        </span>
+        {state.reveal ? (
+          <span className={`vs-result ${state.reveal.player ? 'ok' : 'bad'}`} aria-label={state.reveal.player ? 'Right' : 'Nobody got it'}>
+            {state.reveal.player ? '✓' : '✗'}
+          </span>
+        ) : (
+          <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
+            {Math.ceil(left)}
+          </span>
+        )}
       </div>
       {b && side(b)}
+    </div>
+  );
+}
+
+/** Gauntlet VS: the card that was just settled, shown whole with its answer filled in, until the next one comes up. */
+function VsReveal({
+  state,
+  byId,
+  drawable,
+}: {
+  state: PublicState;
+  byId: Map<string, Card>;
+  drawable: Card[];
+}) {
+  const r = state.reveal!;
+  const card = byId.get(r.id);
+  const none = useMemo(() => new Set<AttrKey>(), []);
+  if (!card) return null;
+  // The event line above says who got it and what the answer was.
+  return (
+    <div className={`vs-turn vs-reveal-card ${r.player ? 'ok' : 'bad'}`}>
+      <div className="vs-card">
+        <GameCard card={card} hidden={none} verdicts={{ [r.hidden]: r.player ? 'correct' : 'wrong' }} pool={drawable} />
+      </div>
+      {/* Drains while the card is shown; the next card comes up when it's empty. */}
+      <div className="vs-next" aria-hidden="true">
+        <span style={{ animationDuration: `${r.msLeft}ms` }} />
+      </div>
     </div>
   );
 }
@@ -902,7 +950,7 @@ function EventLine({
     cls = 'ok';
     body = (
       <>
-        {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" />}
+        {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" zoom />}
         {last.attr ? (
           <span>
             ✓ {who(last.player)} got {c?.name}'s {c ? labelFor(ATTR[last.attr], c).toLowerCase() : last.attr}
@@ -958,7 +1006,7 @@ function EventLine({
               {out}
             </span>
             <span className="vs-reveal">
-              {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" />}
+              {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" zoom />}
               <span>
                 <b>{c?.name}</b>
                 <span className="vs-reveal-text">{last.reveal || '(no text)'}</span>
@@ -969,7 +1017,7 @@ function EventLine({
       } else {
         body = (
           <>
-            {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" />}
+            {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" zoom />}
             <span>
               {what} {nobody}
               {last.example && (
@@ -1100,7 +1148,10 @@ function NamedCards({ state, me, all }: { state: PublicState; me: string; all: C
             className={`named-card ${x.ok === undefined ? '' : x.ok ? 'run-card ok' : 'run-card bad'} ${open === i ? 'on' : ''}`}
             style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
             title={x.card!.name}
-            onClick={() => setOpen(open === i ? null : i)}
+            onClick={() => {
+              setOpen(i);
+              zoomCard(x.card!, solo ? undefined : `${x.ok === undefined ? 'Named by' : x.ok ? 'Got right by' : 'Missed by'} ${who(x.player)}`);
+            }}
           >
             <Art card={x.card!} crop={crop} className="named-art" />
             {x.ok !== undefined && <span className="run-mark">{x.ok ? '✓' : '✗'}</span>}
@@ -1120,7 +1171,7 @@ function NamedCards({ state, me, all }: { state: PublicState; me: string; all: C
             {!solo && <> · {sel.ok === undefined ? 'named by' : sel.ok ? 'got right by' : 'missed by'} {who(sel.player)}</>}
           </>
         ) : (
-          'Tap a card to see its name.'
+          'Tap a card to see it.'
         )}
       </div>
     </section>

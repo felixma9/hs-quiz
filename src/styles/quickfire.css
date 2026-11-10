@@ -382,3 +382,12 @@
 }
 /* Two players: the podium is just 2nd and 1st, centred. */
 .podium.two { grid-template-columns: repeat(2, minmax(0, 150px)); justify-content: center; }
+/* Between turns: the finished card, with a bar that drains until the next card. */
+.during-reveal .vs-reveal { display: none; }
+.vs-result { font-size: 2rem; font-weight: 900; line-height: 1; }
+.vs-result.ok { color: #6aaa64; }
+.vs-result.bad { color: #e5484d; }
+.vs-reveal-card.ok .vs-ask { color: #6aaa64; }
+.vs-next { width: min(220px, 60vw); height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.vs-next span { display: block; height: 100%; width: 100%; background: var(--gold); transform-origin: left; animation: vs-drain linear forwards; }
+@keyframes vs-drain { to { transform: scaleX(0); } }
