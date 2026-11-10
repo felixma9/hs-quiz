@@ -16,7 +16,8 @@ type View = { kind: 'home' } | { kind: 'party'; mode: PartyMode };
  * burns out, or practise alone against the clock.
  */
 /** Quickfire always plays with every collectible card (the menu's card pool doesn't apply). */
-export function Quickfire({ everything }: { everything: Card[] }) {
+/** Gauntlet VS rooms use the menu's card pool (`pool`, or every drawable card if that's empty). */
+export function Quickfire({ everything, cards, pool }: { everything: Card[]; cards: Card[]; pool: Card[] }) {
   const [name, setName] = useState(() => load<string>(NAME_KEY, ''));
   const [code, setCode] = useState(() => roomFromLocation() ?? '');
   const [view, setView] = useState<View>({ kind: 'home' });
@@ -44,7 +45,18 @@ export function Quickfire({ everything }: { everything: Card[] }) {
     setView({ kind: 'home' });
   };
 
-  if (view.kind === 'party') return <Party mode={view.mode} name={name.trim() || 'You'} pool={everything} all={everything} onLeave={leave} />;
+  if (view.kind === 'party')
+    return (
+      <Party
+        mode={view.mode}
+        name={name.trim() || 'You'}
+        pool={everything}
+        all={everything}
+        drawable={cards}
+        vsPool={pool.length ? pool : cards}
+        onLeave={leave}
+      />
+    );
 
   const fullCode = cleanCode(code).length === 4;
   return (
@@ -59,7 +71,7 @@ export function Quickfire({ everything }: { everything: Card[] }) {
       </div>
       <p className="qf-home-intro">
         Take turns naming cards that fit the prompt before the rope burns out. Run out of time and you lose a life. Last one
-        standing wins.
+        standing wins. Or go head to head in <b>Gauntlet VS</b>: take turns filling in a card's blank against the rope.
       </p>
 
       <label className="qf-name">
@@ -79,9 +91,16 @@ export function Quickfire({ everything }: { everything: Card[] }) {
         {needName && !name.trim() && <span className="small bad-text">Pick a name first.</span>}
       </label>
 
-      <button className="btn primary qf-host" onClick={() => go({ role: 'host' })}>
-        Host a room
-      </button>
+      <div className="qf-host-row">
+        <button className="btn primary qf-host" onClick={() => go({ role: 'host' })}>
+          Host a room
+        </button>
+        <button className="btn qf-host-vs" onClick={() => go({ role: 'host', game: 'gauntlet' })}>
+          <img src={ICON.health} alt="" aria-hidden="true" />
+          Host Gauntlet VS
+          <small>1v1: fill in the blanks</small>
+        </button>
+      </div>
 
       <form
         className="qf-join"

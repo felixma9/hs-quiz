@@ -323,3 +323,33 @@
 .solo-stats small { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
 .solo-stats b { display: inline-flex; align-items: center; justify-content: center; gap: 2px; font-size: 1.1rem; }
 .stat-icon { width: 12px; height: 17px; object-fit: contain; }
+
+/* ---- Gauntlet VS ---- */
+.qf-host-row { display: grid; gap: 8px; }
+.qf-host-vs { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 10px; text-align: left; padding: 10px 16px; }
+.qf-host-vs img { grid-row: span 2; width: 22px; height: 28px; object-fit: contain; }
+.qf-host-vs small { font-size: 0.72rem; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.game-seg button { padding: 0 12px; font-size: 0.85rem; white-space: nowrap; }
+.vs-turn { display: grid; gap: 10px; justify-items: center; }
+.vs-ask { text-align: center; font-size: 0.95rem; color: var(--muted); max-width: 34ch; }
+.vs-ask b { color: var(--text); }
+.vs-turn.mine .vs-ask b { color: var(--gold); }
+.vs-card { width: 100%; display: grid; justify-items: center; }
+/* Smaller card than solo Gauntlet so the rope stays on screen. */
+.vs-card .game-card-frame { width: min(250px, 66vw); }
+.vs-turn:not(.mine) .vs-card { opacity: 0.92; }
+.vs-actions { width: 100%; display: grid; }
+.vs-actions .btn { min-height: 52px; }
+.named-card .run-mark { font-size: 0.7rem; }
+/* Keep the card and Submit on screen on phones: a smaller table in VS. */
+.table.vs { width: min(100%, 260px); }
+.table.vs.compact { width: 180px; }
+.table.vs:not(.compact) { margin-top: 34px; }
+@media (max-width: 600px) {
+  .table.vs, .table.vs.compact { width: 160px; margin: 26px auto 8px; }
+  .table.vs .seat-name { display: none; }
+  .vs-card .game-card-frame { width: min(220px, 58vw); }
+  .vs-turn { gap: 6px; }
+}
+/* Two players: the podium is just 2nd and 1st, centred. */
+.podium.two { grid-template-columns: repeat(2, minmax(0, 150px)); justify-content: center; }

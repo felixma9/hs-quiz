@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { PartyGame, type PublicState } from '../src/modes/quickfire/party/game';
 import type { Card } from '../src/lib/types';
+import { ATTR } from '../src/lib/attributes';
 
 const all: Card[] = JSON.parse(readFileSync('public/cards.json', 'utf8')).filter((c: Card) => c.type !== 'LOCATION');
 
@@ -157,5 +158,54 @@ describe('quickfire party results', () => {
     expect(last.named.map((x) => x.player)).toEqual(['A', 'B', 'A']);
     expect(last.players.find((p) => p.id === 'A')!.bestStreak).toBe(2);
     expect(last.players.find((p) => p.id === 'B')!.bestStreak).toBe(1);
+  });
+});
+
+describe('gauntlet vs', () => {
+  const vsSetup = (names = ['A', 'B']) => {
+    const s = setup(names);
+    s.g.setSettings({ game: 'gauntlet' });
+    return s;
+  };
+  /** The right answer to the current card, as a form would send it. */
+  const truth = (_g: PartyGame, s: PublicState) => String(ATTR[s.card!.hidden].value(all.find((x) => x.id === s.card!.id)!) ?? '');
+
+  it('is one on one, with longer turns', () => {
+    const { g, state } = vsSetup(['A', 'B', 'C']);
+    expect(state().settings.fuse).toBe(20);
+    g.start();
+    expect(state().phase).toBe('lobby');
+    g.removePlayer('C');
+    g.start();
+    expect(state().phase).toBe('playing');
+    expect(state().card).toBeTruthy();
+    expect(state().prompt).toBeNull();
+  });
+
+  it('passes the turn on a right answer, and costs a life on a wrong one', () => {
+    const { g, state } = vsSetup();
+    g.start();
+    expect(state().turn).toBe('A');
+    expect(g.answer('A', truth(g, state()))).toBe(true);
+    expect(state().last).toMatchObject({ kind: 'hit', player: 'A' });
+    expect(state().turn).toBe('B');
+    expect(g.answer('B', 'zzzz wrong')).toBe(false);
+    expect(state().last).toMatchObject({ kind: 'boom', player: 'B', guess: expect.any(String) });
+    expect(state().players[1].lives).toBe(2);
+    expect(state().turn).toBe('A');
+  });
+
+  it('burns a life on time out and lists every card played at the end', () => {
+    const { g, state, advance } = vsSetup();
+    g.setSettings({ lives: 1 });
+    g.start();
+    g.answer('A', truth(g, state()));
+    advance(20001);
+    expect(state().phase).toBe('over');
+    expect(state().winner).toBe('A');
+    expect(state().named.map((x) => [x.player, x.ok])).toEqual([
+      ['A', true],
+      ['B', false],
+    ]);
   });
 });

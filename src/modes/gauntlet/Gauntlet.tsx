@@ -2,7 +2,7 @@ import { ICON } from '../../app/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
-import { giveaways, pickHidden, randomCard } from '../../lib/cards';
+import { newRound, howTo, type Round } from './round';
 import type { Grade } from '../../lib/grade';
 import { load, save } from '../../lib/storage';
 import { GameCard } from '../../card/GameCard';
@@ -13,36 +13,9 @@ import { loadSettings, saveSettings, type GauntletSettings as Settings } from '.
 const LIVES = 3;
 const BEST_KEY = 'hsq:gauntlet:best';
 
-
-/** How to fill in each kind of blank on the card. */
-const HOW: Record<string, string> = {
-  number: 'tap the gem and type a number.',
-  name: 'tap the name banner and type.',
-  text: 'tap the text box and type (leave it blank if the card has none).',
-  class: 'tap the card frame to cycle classes, or pick from the list.',
-  rarity: 'tap the gem under the name to cycle rarities.',
-  tribe: 'tap the banner at the bottom of the card to cycle, or pick from the list.',
-};
-
-interface Round {
-  card: Card;
-  hidden: AttrKey;
-}
-
 /** One answered card, for the end-of-run summary. */
 interface Played extends Round {
   ok: boolean;
-}
-
-function newRound(pool: Card[], allowed: AttrKey[]): Round {
-  const skip = giveaways(pool);
-  for (let i = 0; i < 50; i++) {
-    const card = randomCard(pool);
-    const hidden = pickHidden(card, allowed.filter((k) => !skip.has(`${card.type}:${k}`)));
-    if (hidden) return { card, hidden };
-  }
-  const card = randomCard(pool);
-  return { card, hidden: 'name' };
 }
 
 export function Gauntlet({ cards }: { cards: Card[] }) {
@@ -259,7 +232,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
         >
           {!result && (
             <div className="ask">
-              Fill in the <b>{labelFor(attr, round.card).toLowerCase()}</b>: {HOW[attr.kind === 'enum' ? round.hidden : attr.kind]}
+              Fill in the <b>{labelFor(attr, round.card).toLowerCase()}</b>: {howTo(round.hidden)}
             </div>
           )}
           {result && <Feedback result={result} attrKey={round.hidden} card={round.card} truthPretty={pretty(round.hidden, truth)} answer={revealed ? undefined : answer} revealed={revealed} />}

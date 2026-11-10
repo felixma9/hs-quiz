@@ -6,7 +6,11 @@ import { Bold, ClassName } from '../Bold';
 import { ICON, rarityIcon } from '../../../app/icons';
 import { load, save } from '../../../lib/storage';
 import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
-import { FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, type PartySettings, type PublicState } from './game';
+import { FUSE_FOR, FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, VS_PLAYERS, type PartySettings, type PublicState, type RoomGame } from './game';
+import { ATTR, labelFor, pretty, type AttrKey } from '../../../lib/attributes';
+import { GameCard } from '../../../card/GameCard';
+import { howTo } from '../../gauntlet/round';
+import { loadSettings } from '../../gauntlet/settings';
 import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './net';
 
 const HOST_ID = 'host';
@@ -29,7 +33,7 @@ interface Typing {
 }
 
 /** Host or join a room, or play the same game alone (no network). */
-export type PartyMode = { role: 'host' } | { role: 'guest'; code: string } | { role: 'solo' };
+export type PartyMode = { role: 'host'; game?: RoomGame } | { role: 'guest'; code: string } | { role: 'solo' };
 
 interface Props {
   mode: PartyMode;
@@ -37,11 +41,15 @@ interface Props {
   /** Cards prompts are built from (every collectible card). */
   pool: Card[];
   all: Card[];
+  /** Cards the renderer can draw (Gauntlet VS name suggestions and tribe lists). */
+  drawable: Card[];
+  /** Gauntlet VS cards when this browser hosts (the menu's pool). */
+  vsPool: Card[];
   onLeave(): void;
 }
 
 /** A Quickfire room: connection, then lobby / game / results for everyone. */
-export function Party({ mode, name, pool, all, onLeave }: Props) {
+export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Props) {
   const [state, setState] = useState<PublicState | null>(null);
   const [me, setMe] = useState<string | null>(mode.role === 'guest' ? null : HOST_ID);
   const [code, setCode] = useState(mode.role === 'guest' ? mode.code : '');
@@ -71,11 +79,22 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
       return () => clearInterval(tick);
     }
     if (mode.role === 'host') {
-      const g = new PartyGame(pool, all, (s) => {
-        receive(s);
-        host.current?.send({ t: 'state', state: s });
-      });
+      // Gauntlet VS uses the host's Gauntlet settings (minions only, which fields can be blank).
+      const gs = loadSettings();
+      const minions = vsPool.filter((c) => c.type === 'MINION');
+      const g = new PartyGame(
+        pool,
+        all,
+        (s) => {
+          receive(s);
+          host.current?.send({ t: 'state', state: s });
+        },
+        undefined,
+        undefined,
+        { pool: gs.minionsOnly && minions.length ? minions : vsPool, allowed: gs.allowed },
+      );
       game.current = g;
+      if (mode.game) g.setSettings({ game: mode.game, fuse: FUSE_FOR[mode.game].default });
       hostRoom({
         onGuestMessage(id, msg) {
           if (msg.t === 'hello') {
@@ -84,7 +103,7 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
           } else if (msg.t === 'answer') g.answer(id, msg.text);
           else if (msg.t === 'typing') {
             setTyping({ id, text: msg.text });
-            host.current?.send({ t: 'typing', id, text: msg.text.slice(0, 60) });
+            host.current?.send({ t: 'typing', id, text: msg.text.slice(0, 400) });
           }
         },
         onGuestLeft: (id) => g.removePlayer(id),
@@ -132,7 +151,7 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
     else guest.current?.send({ t: 'answer', text });
   };
   const sendTyping = (text: string) => {
-    if (mode.role === 'host') host.current?.send({ t: 'typing', id: HOST_ID, text: text.slice(0, 60) });
+    if (mode.role === 'host') host.current?.send({ t: 'typing', id: HOST_ID, text: text.slice(0, 400) });
     else guest.current?.send({ t: 'typing', text });
   };
 
@@ -217,7 +236,7 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
           />
         )}
         {state.phase === 'playing' && (
-          <Play solo state={state} me={me} deadline={deadline} typing={null} all={all} onAnswer={answer} onTyping={() => {}} />
+          <Play solo state={state} me={me} deadline={deadline} typing={null} all={all} drawable={drawable} onAnswer={answer} onTyping={() => {}} />
         )}
         {state.phase === 'over' && (
           <SoloOver
@@ -255,7 +274,7 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
         />
       )}
       {state.phase === 'playing' && (
-        <Play state={state} me={me} deadline={deadline} typing={typing} all={all} onAnswer={answer} onTyping={sendTyping} />
+        <Play state={state} me={me} deadline={deadline} typing={typing} all={all} drawable={drawable} onAnswer={answer} onTyping={sendTyping} />
       )}
       {state.phase === 'over' && <Over state={state} me={me} isHost={isHost} all={all} onAgain={() => game.current?.toLobby()} />}
       <button className="link party-leave" onClick={onLeave}>
@@ -302,11 +321,14 @@ function Lobby({
     }
   };
   const seats = Array.from({ length: state.settings.lives });
+  const vs = state.settings.game === 'gauntlet';
+  const full = vs && state.players.length >= VS_PLAYERS;
+  const canStart = !vs || state.players.length === VS_PLAYERS;
   return (
     <>
       <div className="room-code-box" style={{ '--art': `url(${ROOM_ART})` } as React.CSSProperties}>
         <span className="mode-art room-art" aria-hidden="true" />
-        <div className="section-label">Room code</div>
+        <div className="section-label">{vs ? 'Gauntlet VS room' : 'Room code'}</div>
         <div className="room-code" aria-label={`Room code ${code.split('').join(' ')}`}>
           {code.split('').map((ch, i) => (
             <span key={i} style={{ animationDelay: `${i * 60}ms` }}>
@@ -322,7 +344,7 @@ function Lobby({
       <section className="lobby-panel">
         <div className="lobby-head">
           <span className="section-label">Players</span>
-          <span className="count-pill">{state.players.length}</span>
+          <span className="count-pill">{vs ? `${state.players.length}/${VS_PLAYERS}` : state.players.length}</span>
         </div>
         <ul className="party-players">
           {state.players.map((p) => (
@@ -346,10 +368,14 @@ function Lobby({
               </span>
             </li>
           ))}
-          <li className="party-player-row open-seat" aria-hidden="true">
-            <span className="avatar">+</span>
-            <span className="party-player-name">{isHost ? 'Share the code to fill this seat' : 'Room for more'}</span>
-          </li>
+          {!full && (
+            <li className="party-player-row open-seat" aria-hidden="true">
+              <span className="avatar">+</span>
+              <span className="party-player-name">
+                {vs ? (isHost ? 'Share the code with your opponent' : 'Waiting for an opponent') : isHost ? 'Share the code to fill this seat' : 'Room for more'}
+              </span>
+            </li>
+          )}
         </ul>
       </section>
 
@@ -357,6 +383,29 @@ function Lobby({
         <div className="lobby-head">
           <span className="section-label">Rules</span>
           {!isHost && <span className="muted small">set by the host</span>}
+        </div>
+        <div className="setting">
+          <span className="setting-label">Game</span>
+          <div className="seg game-seg" role="radiogroup" aria-label="Game">
+            {(
+              [
+                ['quickfire', 'Quickfire'],
+                ['gauntlet', 'Gauntlet VS'],
+              ] as const
+            ).map(([g, label]) => (
+              <button
+                key={g}
+                type="button"
+                role="radio"
+                aria-checked={state.settings.game === g}
+                className={state.settings.game === g ? 'on' : ''}
+                disabled={!isHost}
+                onClick={() => onSettings({ game: g })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         <Setting
           icon={<img className="setting-icon" src={HEALTH_ICON} alt="" />}
@@ -369,20 +418,30 @@ function Lobby({
         <Setting
           icon={<RopeIcon />}
           label="Seconds per turn"
-          options={FUSE_OPTIONS}
+          options={FUSE_FOR[state.settings.game].options}
           value={state.settings.fuse}
           disabled={!isHost}
           onPick={(v) => onSettings({ fuse: v })}
         />
         <div className="pool-note">
           <img className="setting-icon" src={MANA_ICON} alt="" />
-          Every collectible card counts: {state.poolSize.toLocaleString()} cards.
+          {vs
+            ? `1v1: take turns filling in a card's blank. A wrong answer or a burnt rope costs a life. Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
+            : `Every collectible card counts: ${state.poolSize.toLocaleString()} cards.`}
         </div>
       </section>
 
       {isHost ? (
-        <button className="btn primary" onClick={onStart}>
-          {state.players.length > 1 ? 'Start game' : 'Start (just you)'}
+        <button className="btn primary" onClick={onStart} disabled={!canStart}>
+          {vs
+            ? state.players.length < VS_PLAYERS
+              ? 'Waiting for an opponent'
+              : state.players.length > VS_PLAYERS
+                ? `Gauntlet VS is 1v1 (${state.players.length} here)`
+                : 'Start Gauntlet VS'
+            : state.players.length > 1
+              ? 'Start game'
+              : 'Start (just you)'}
         </button>
       ) : (
         <div className="waiting-pill" role="status">
@@ -455,6 +514,7 @@ function Play({
   deadline,
   typing,
   all,
+  drawable,
   onAnswer,
   onTyping,
 }: {
@@ -463,6 +523,7 @@ function Play({
   deadline: number;
   typing: Typing | null;
   all: Card[];
+  drawable: Card[];
   onAnswer(text: string): void;
   onTyping(text: string): void;
   /** Practising alone: show the running score instead of whose turn it is. */
@@ -550,7 +611,7 @@ function Play({
         </div>
       )}
       {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
-      <div className={`table ${myTurn ? 'compact' : ''} ${solo ? 'solo' : ''} ${urgent ? 'urgent' : ''}`}>
+      <div className={`table ${myTurn ? 'compact' : ''} ${solo ? 'solo' : ''} ${state.card ? 'vs' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
         <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
           <RopeRing frac={frac} key={`rope-${state.round}`} />
@@ -576,7 +637,8 @@ function Play({
           const side = x < -0.35 ? 'left' : x > 0.35 ? 'right' : 'mid';
           // Your own words are in your input box, so only other players get a bubble.
           const speaking = p.id === state.turn && p.id !== me;
-          const words = speaking ? typed : '';
+          // Gauntlet VS shows their answer on the card instead.
+          const words = speaking && !state.card ? typed : '';
           const wrong = speaking && typing?.wrong && typing.id === p.id ? typing.wrong : 0;
           return (
             <div
@@ -619,6 +681,20 @@ function Play({
       </div>
 
 
+      {state.card ? (
+        <VsCard
+          key={state.round}
+          state={state}
+          myTurn={myTurn}
+          who={current?.name ?? 'Someone'}
+          typed={typed}
+          byId={byId}
+          drawable={drawable}
+          onTyping={onTyping}
+          onAnswer={onAnswer}
+        />
+      ) : (
+      <>
       <div className={`qf-prompt party-prompt ${myTurn ? 'mine' : ''}`} key={state.round}>
         <div className="qf-text">{state.prompt && <Bold text={state.prompt.text} />}</div>
         {state.prompt?.hint && (
@@ -658,9 +734,94 @@ function Play({
           </button>
         </form>
       ) : null}
+      </>
+      )}
 
       <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
     </>
+  );
+}
+
+/** Gauntlet VS: this turn's card. The player whose turn it is fills in the blank; the other watches it fill in live. */
+function VsCard({
+  state,
+  myTurn,
+  who,
+  typed,
+  byId,
+  drawable,
+  onTyping,
+  onAnswer,
+}: {
+  state: PublicState;
+  myTurn: boolean;
+  who: string;
+  typed: string;
+  byId: Map<string, Card>;
+  drawable: Card[];
+  onTyping(text: string): void;
+  onAnswer(text: string): void;
+}) {
+  const [draft, setDraft] = useState('');
+  const [sent, setSent] = useState(false);
+  const card = byId.get(state.card!.id);
+  const key = state.card!.hidden;
+  const hidden = useMemo(() => new Set<AttrKey>([key]), [key]);
+  const editable = useMemo(() => new Set<AttrKey>(myTurn ? [key] : []), [key, myTurn]);
+  if (!card) return <div className="panel center muted">Card not found.</div>;
+  const attr = ATTR[key];
+  const label = labelFor(attr, card).toLowerCase();
+  const canSend = !sent && (attr.kind === 'text' || draft !== '');
+  const submit = () => {
+    if (!canSend) return;
+    setSent(true);
+    onAnswer(draft);
+  };
+  return (
+    <div className={`vs-turn ${myTurn ? 'mine' : ''}`}>
+      <div className="vs-ask">
+        {myTurn ? (
+          <>
+            Fill in the <b>{label}</b>: {howTo(key)}
+          </>
+        ) : (
+          <>
+            {who} is filling in the <b>{label}</b>
+          </>
+        )}
+      </div>
+      <div className="vs-card" data-card={card.id} data-hidden={key}>
+        <GameCard
+          card={card}
+          hidden={hidden}
+          draft={{ [key]: myTurn ? draft : typed }}
+          editable={editable}
+          onChange={
+            myTurn
+              ? (_, v) => {
+                  setDraft(v);
+                  onTyping(v);
+                }
+              : undefined
+          }
+          pool={drawable}
+          onEnter={submit}
+        />
+      </div>
+      {myTurn && (
+        <form
+          className="vs-actions"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit();
+          }}
+        >
+          <button type="submit" className="btn primary" disabled={!canSend}>
+            Submit
+          </button>
+        </form>
+      )}
+    </div>
   );
 }
 
@@ -687,9 +848,20 @@ function EventLine({
     body = (
       <>
         {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" />}
-        <span>
-          {who(last.player)}: <b>{c?.name}</b>
-        </span>
+        {last.attr ? (
+          <span>
+            ✓ {who(last.player)} got {c?.name}'s {c ? labelFor(ATTR[last.attr], c).toLowerCase() : last.attr}
+            {last.attr !== 'name' && last.attr !== 'text' && c && (
+              <>
+                : <b>{pretty(last.attr, ATTR[last.attr].value(c))}</b>
+              </>
+            )}
+          </span>
+        ) : (
+          <span>
+            {who(last.player)}: <b>{c?.name}</b>
+          </span>
+        )}
         {last.streak >= HOT && (
           <span className={`hot-callout ${hotClass(last.streak)}`}>
             🔥 {last.streak} in a row{last.streak >= 5 ? '!' : ''}
@@ -700,6 +872,34 @@ function EventLine({
   } else if (last.kind === 'miss') {
     cls = 'bad';
     body = <span>✗ {last.text}</span>;
+  } else if (last.kind === 'boom' && last.cardId) {
+    // Gauntlet VS: a wrong answer or a burnt rope, with the right answer.
+    const c = byId.get(last.cardId);
+    const field = c && last.attr ? labelFor(ATTR[last.attr], c).toLowerCase() : 'answer';
+    const out = last.out ? (last.player === me ? ' You are out!' : ` ${nameOf(last.player)} is out!`) : '';
+    cls = 'boom';
+    body = (
+      <>
+        {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" />}
+        <span>
+          {last.guess !== undefined ? (
+            <>
+              ✗ {who(last.player)} said <b>{last.guess}</b>.{' '}
+            </>
+          ) : (
+            <>💥 {who(last.player)} ran out of time. </>
+          )}
+          {last.example ? (
+            <>
+              {c?.name}'s {field} is <b>{last.example}</b>.
+            </>
+          ) : (
+            <>That was {c?.name}.</>
+          )}
+          {out}
+        </span>
+      </>
+    );
   } else if (last.kind === 'boom') {
     cls = 'boom';
     body = (
@@ -739,7 +939,7 @@ function Over({ state, me, isHost, all, onAgain }: { state: PublicState; me: str
         <span className="over-kicker">Game over</span>
         <h2>{winner ? (winner.id === me ? 'You win!' : `${winner.name} wins!`) : 'No winner'}</h2>
       </div>
-      <div className="podium">
+      <div className={`podium ${podium.length === 2 ? "two" : ""}`}>
         {podium.map((p) => {
           const n = place(p.id);
           return (
@@ -806,7 +1006,7 @@ function NamedCards({ state, me, all }: { state: PublicState; me: string; all: C
   return (
     <section className="named">
       <div className="lobby-head">
-        <span className="section-label">Cards named</span>
+        <span className="section-label">{state.settings.game === 'gauntlet' ? 'Cards played' : 'Cards named'}</span>
         <span className="count-pill">{list.length}</span>
       </div>
       <div className="named-strip">
@@ -814,13 +1014,15 @@ function NamedCards({ state, me, all }: { state: PublicState; me: string; all: C
           <button
             key={x.cardId}
             type="button"
-            className={`named-card ${open === i ? 'on' : ''}`}
+            className={`named-card ${x.ok === undefined ? '' : x.ok ? 'run-card ok' : 'run-card bad'} ${open === i ? 'on' : ''}`}
             style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
             title={x.card!.name}
             onClick={() => setOpen(open === i ? null : i)}
           >
             <Art card={x.card!} crop={crop} className="named-art" />
-            {!solo && (
+            {x.ok !== undefined && <span className="run-mark">{x.ok ? '✓' : '✗'}</span>}
+            {/* Gauntlet VS marks right/wrong instead; the caption says who. */}
+            {!solo && x.ok === undefined && (
               <span className="avatar mini" style={avatarStyle(x.player)}>
                 {nameOf(x.player).slice(0, 1).toUpperCase()}
               </span>
@@ -832,7 +1034,7 @@ function NamedCards({ state, me, all }: { state: PublicState; me: string; all: C
         {sel ? (
           <>
             <b>{sel.card!.name}</b>
-            {!solo && <> · named by {who(sel.player)}</>}
+            {!solo && <> · {sel.ok === undefined ? 'named by' : sel.ok ? 'got right by' : 'missed by'} {who(sel.player)}</>}
           </>
         ) : (
           'Tap a card to see its name.'

@@ -97,7 +97,7 @@ export function App() {
           )}
           {playable && route === 'gauntlet' && <Gauntlet cards={pool} />}
           {playable && route === 'hsdle' && <Hsdle cards={pool} />}
-          {cards && route === 'quickfire' && <Quickfire everything={everything} />}
+          {cards && route === 'quickfire' && <Quickfire everything={everything} cards={cards} pool={pool} />}
           {cards && route === 'card' && <CardPreview cards={cards} />}
         </main>
         <footer className="muted small">
