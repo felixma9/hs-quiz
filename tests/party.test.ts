@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { PartyGame, vsSeconds, type PublicState } from '../src/modes/quickfire/party/game';
+import { PartyGame, type PublicState } from '../src/modes/quickfire/party/game';
 import type { Card } from '../src/lib/types';
 import { ATTR } from '../src/lib/attributes';
 
@@ -307,11 +307,4 @@ describe('gauntlet vs rewards and pace', () => {
     expect(last.players[1].lives).toBe(6);
   });
 
-  it('shortens the rope a little each card', () => {
-    expect(vsSeconds(20, 0)).toBe(20);
-    expect(vsSeconds(20, 1)).toBeLessThan(20);
-    expect(vsSeconds(20, 10)).toBeLessThan(vsSeconds(20, 5));
-    expect(vsSeconds(20, 200)).toBe(10);
-    expect(vsSeconds(15, 200)).toBe(7.5);
-  });
 });

@@ -439,7 +439,7 @@ function Lobby({
         <div className="pool-note">
           <img className="setting-icon" src={MANA_ICON} alt="" />
           {vs
-            ? `1v1: take turns filling in a card's blank. Miss and you lose a life, and your opponent gets a free shot at stealing the same card (every ${STEALS_FOR_LIFE} steals earns a life). The rope gets a little shorter each card. Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
+            ? `1v1: take turns filling in a card's blank. Miss and you lose a life, and your opponent gets a free shot at stealing the same card (every ${STEALS_FOR_LIFE} steals earns a life). Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
             : `Every collectible card counts: ${state.poolSize.toLocaleString()} cards.`}
         </div>
       </section>
@@ -466,7 +466,7 @@ function Lobby({
   );
 }
 
-/** The rope as a little icon: a ring of cord with a flame at its end. */
+/** The rope as a little icon: a ring of cord with a flame at its end (the lobby's seconds setting). */
 function RopeIcon() {
   return (
     <svg className="setting-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -618,7 +618,7 @@ function Play({
           <b key={state.players[0]?.hits}>{state.players[0]?.hits ?? 0}</b>
           <span>card{state.players[0]?.hits === 1 ? '' : 's'}</span>
         </div>
-      ) : (
+      ) : vs ? null : (
         <div className={`turn-banner ${myTurn ? 'mine' : ''}`} key={`turn-${state.round}`} role="status">
           {current && (
             <span className="avatar" style={avatarStyle(current.id)}>
@@ -811,22 +811,26 @@ function VsBar({
             <img key={k} className={`life ${k < p.lives ? 'on' : ''}`} src={HEALTH_ICON} alt="" draggable={false} />
           ))}
         </span>
-        <span className="vs-hits">
-          {plural(p.hits, 'card')} ·{' '}
-          <span className="vs-steals" title={`Every ${STEALS_FOR_LIFE} steals earns a life`}>
-            {(p.steals ?? 0) % STEALS_FOR_LIFE}/{STEALS_FOR_LIFE} steals
-          </span>
+        {/* Steals toward the next extra life. */}
+        <span className="steal-pips" title={`${(p.steals ?? 0) % STEALS_FOR_LIFE} of ${STEALS_FOR_LIFE} steals for an extra life`}>
+          {Array.from({ length: STEALS_FOR_LIFE }, (_, k) => (
+            <i key={k} className={k < (p.steals ?? 0) % STEALS_FOR_LIFE ? 'on' : ''} />
+          ))}
         </span>
       </div>
     );
   };
   return (
-    <div className={`vs-bar ${urgent ? 'urgent' : ''}`}>
+    <div className={`vs-bar ${urgent ? 'urgent' : ''} ${state.turn === me ? 'mine' : ''}`} role="status">
       {a && side(a)}
       <div className={`vs-clock ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'clock'}>
         <RopeRing deadline={deadline} total={total} key={`rope-${state.round}`} />
         <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
           {Math.ceil(left)}
+        </span>
+        {/* Whose turn, in place of the big banner. */}
+        <span className="vs-turn-label" key={`turn-${state.round}`}>
+          {state.turn === me ? 'Your turn' : `${state.players.find((x) => x.id === state.turn)?.name ?? '…'}'s turn`}
         </span>
       </div>
       {b && side(b)}
@@ -1217,7 +1221,7 @@ function SoundToggle() {
 
 /**
  * The turn timer: a rope laid round the middle of the table that burns down
- * (from the top, clockwise) with a flickering flame at the burning end.
+ * (from the top, clockwise) with a glowing ember at the burning end.
  */
 /** The burning rope. It ticks on its own so only the ring redraws, not the whole screen. */
 function RopeRing({ deadline, total }: { deadline: number; total: number }) {
@@ -1240,30 +1244,30 @@ function RopeRing({ deadline, total }: { deadline: number; total: number }) {
   const frac = Math.min(1, Math.max(0, deadline - now) / 1000 / total);
   const R = 44;
   const C = 2 * Math.PI * R;
-  // The flame rides a ring the size of the SVG, turned (not moved) so the browser never re-lays out the page.
+  // Gold while there's time, then orange, then red.
+  const phase = frac > 0.5 ? 'calm' : frac > 0.25 ? 'warm' : 'hot';
+  // The ember rides a ring the size of the SVG, turned (not moved) so the browser never re-lays out the page.
   const deg = frac * 360;
   return (
     <>
-      <svg className="rope-ring" viewBox="0 0 100 100" aria-hidden="true">
+      <svg className={`rope-ring ${phase}`} viewBox="0 0 100 100" aria-hidden="true">
+        <circle className="rope-track" cx="50" cy="50" r={R} />
+        <g transform="rotate(-90 50 50)">
+          <circle className="rope-cord" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - frac)} />
+          {/* A fine braid over the cord, cut to the same length. */}
+          <circle className="rope-braid" cx="50" cy="50" r={R} strokeDasharray={`0.9 1.9`} mask={`url(#${id})`} />
+        </g>
         <defs>
-          <mask id={`${id}-left`} maskUnits="userSpaceOnUse">
-            <circle cx="50" cy="50" r={R} fill="none" stroke="#fff" strokeWidth="9" strokeDasharray={C} strokeDashoffset={C * (1 - frac)}
-              transform="rotate(-90 50 50)" />
+          <mask id={id} maskUnits="userSpaceOnUse">
+            <circle cx="50" cy="50" r={R} fill="none" stroke="#fff" strokeWidth="8" strokeDasharray={C} strokeDashoffset={C * (1 - frac)} />
           </mask>
         </defs>
-        <circle className="rope-ring-ash" cx="50" cy="50" r={R} />
-        <g mask={`url(#${id}-left)`}>
-          <circle className="rope-ring-shadow" cx="50" cy="50" r={R + 0.6} />
-          <circle className="rope-ring-cord" cx="50" cy="50" r={R} />
-          <circle className="rope-ring-twist" cx="50" cy="50" r={R} />
-          <circle className="rope-ring-shine" cx="50" cy="50" r={R - 1.6} />
-        </g>
       </svg>
       {frac > 0 && (
-        <span className="rope-orbit" style={{ transform: `rotate(${deg.toFixed(1)}deg)` }}>
-          <span className="rope-flame" style={{ top: `${50 - R}%`, transform: `rotate(${(-deg).toFixed(1)}deg)` }}>
-            <span className="flame-glow" />
-            <span className="flame-core" />
+        <span className={`rope-orbit ${phase}`} style={{ transform: `rotate(${deg.toFixed(1)}deg)` }}>
+          <span className="rope-ember" style={{ top: `${50 - R}%` }}>
+            <span className="ember-glow" />
+            <span className="ember-core" />
           </span>
         </span>
       )}

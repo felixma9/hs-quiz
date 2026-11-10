@@ -177,23 +177,20 @@
 .bubble-text.wrong::after { display: none; }
 .qf-input.wrong { color: #ff6b6f; border-color: rgba(229, 72, 77, 0.7); }
 
-/* ---- The rope: a twisted cord round the table centre, burning clockwise ---- */
-.rope-ring { position: absolute; inset: -7%; width: 114%; height: 114%; overflow: visible; pointer-events: none; }
+/* ---- The rope: a smooth cord round the clock that burns down clockwise, gold -> orange -> red, with a glowing ember at the end ---- */
+.rope-ring { position: absolute; inset: -7%; width: 114%; height: 114%; overflow: visible; pointer-events: none; --rope: #e8c27a; --rope-glow: rgba(232, 194, 122, 0.55); }
+.rope-ring.warm, .rope-orbit.warm { --rope: #f59e4b; --rope-glow: rgba(245, 158, 75, 0.6); }
+.rope-ring.hot, .rope-orbit.hot { --rope: #ff5b4f; --rope-glow: rgba(255, 91, 79, 0.7); }
 .rope-ring circle { fill: none; }
-.rope-ring-ash { stroke: rgba(150, 140, 125, 0.35); stroke-width: 1; stroke-dasharray: 0.6 2.2; stroke-linecap: round; }
-.rope-ring-shadow { stroke: rgba(0, 0, 0, 0.55); stroke-width: 7; }
-.rope-ring-cord { stroke: #c9a064; stroke-width: 6; }
-/* Short dark dashes across the cord read as the twist of the strands. */
-.rope-ring-twist { stroke: #7a5730; stroke-width: 6; stroke-dasharray: 1.1 2; }
-.rope-ring-shine { stroke: rgba(255, 240, 210, 0.35); stroke-width: 1.2; }
-.table.urgent .rope-ring-cord { stroke: #d39a5a; }
-.rope-flame { position: absolute; width: 0; height: 0; z-index: 2; pointer-events: none; }
-.flame-glow { position: absolute; left: -16px; top: -16px; width: 32px; height: 32px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 170, 60, 0.45), rgba(255, 120, 30, 0) 70%); }
-.flame-core { position: absolute; left: -9px; top: -20px; width: 18px; height: 26px; border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
-  background: radial-gradient(ellipse at 50% 75%, #fff8d6 0 18%, #ffd35c 32%, #ff8a1f 58%, rgba(255, 70, 20, 0) 72%);
-  filter: drop-shadow(0 0 6px rgba(255, 140, 40, 0.9)); transform-origin: 50% 85%; }
-.table.urgent .flame-core { width: 24px; left: -12px; height: 34px; top: -27px; }
+.rope-track { stroke: rgba(255, 255, 255, 0.07); stroke-width: 3; }
+.rope-cord { stroke: var(--rope); stroke-width: 5; stroke-linecap: round; filter: drop-shadow(0 0 2.5px var(--rope-glow)); transition: stroke 0.5s ease; }
+.rope-braid { stroke: rgba(0, 0, 0, 0.22); stroke-width: 5; }
+.rope-ember { position: absolute; left: 50%; width: 0; height: 0; z-index: 2; pointer-events: none; }
+.ember-glow { position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle, var(--rope-glow, rgba(255, 170, 60, 0.6)), transparent 70%); }
+.ember-core { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fff, #ffe7a3 35%, var(--rope, #f59e4b) 75%); box-shadow: 0 0 6px var(--rope-glow, rgba(255, 170, 60, 0.8)); }
+.rope-orbit { --rope: #e8c27a; --rope-glow: rgba(232, 194, 122, 0.55); }
 
 /* Solo practice: running score where the turn banner would be. */
 .solo-score { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin: 0 46px; }
@@ -340,30 +337,29 @@
 .vs-actions { width: 100%; display: grid; }
 .vs-actions .btn { min-height: 52px; }
 .named-card .run-mark { font-size: 0.7rem; }
-/* Scoreboard: you, the rope, your opponent. Much shorter than the round table, so the card fits on a phone. */
-.vs-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 10px 8px; border-radius: 16px;
-  background: var(--surface); border: 1px solid var(--glass-border, var(--border)); }
-.vs-side { display: grid; justify-items: center; gap: 3px; min-width: 0; opacity: 0.75; transition: opacity 0.3s ease; }
+/* Scoreboard: you, the rope, your opponent. Kept minimal: no box, no banner; the active side lights up. */
+.vs-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; padding: 4px 0 18px; }
+.vs-side { display: grid; justify-items: center; gap: 4px; min-width: 0; opacity: 0.55; transition: opacity 0.3s ease; }
 .vs-side.active { opacity: 1; }
-.vs-side.out { opacity: 0.4; filter: grayscale(1); }
+.vs-side.out { opacity: 0.3; filter: grayscale(1); }
 .vs-side .avatar-wrap { position: relative; }
-.vs-side .avatar { width: 42px; height: 42px; font-size: 1.1rem; transition: transform 0.3s var(--ease, ease), box-shadow 0.3s ease; }
-.vs-side.active .avatar { transform: scale(1.1); box-shadow: 0 0 0 3px var(--gold), 0 0 18px rgba(240, 199, 94, 0.6); }
-.vs-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; font-size: 0.85rem; }
-.vs-side.me .vs-name { color: var(--gold-2, var(--gold)); }
+.vs-side .avatar { width: 40px; height: 40px; font-size: 1.05rem; transition: transform 0.3s var(--ease, ease), box-shadow 0.3s ease; }
+.vs-side.active .avatar { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold), 0 0 16px rgba(240, 199, 94, 0.5); }
+.vs-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.8rem; color: var(--muted); }
+.vs-side.active .vs-name { color: var(--text); }
 .vs-side .seat-lives { display: flex; gap: 2px; }
-.vs-side .seat-lives .life { width: 13px; height: 17px; }
-.vs-hits { font-size: 0.7rem; color: var(--muted); }
+.vs-side .seat-lives .life { width: 12px; height: 16px; }
+.steal-pips { display: flex; gap: 4px; }
+.steal-pips i { width: 5px; height: 5px; border-radius: 50%; background: rgba(255, 255, 255, 0.14); }
+.steal-pips i.on { background: #ff8a5c; box-shadow: 0 0 5px rgba(255, 138, 92, 0.7); }
 .vs-hot { position: absolute; top: -8px; right: -18px; padding: 1px 5px; border-radius: 999px; font-size: 0.68rem; font-weight: 800;
   background: #3a1d0a; border: 1px solid #ff8a3d; color: #ffd38a; }
-.vs-clock { position: relative; width: 78px; height: 78px; margin: 6px; border-radius: 50%; display: grid; place-items: center;
-  background: #171826; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
-.vs-clock .fuse-count { font-size: 1.7rem; }
+.vs-clock { position: relative; width: 84px; height: 84px; margin: 6px; border-radius: 50%; display: grid; place-items: center; background: transparent; }
+.vs-clock .fuse-count { font-size: 1.8rem; font-weight: 700; }
 .vs-bar.urgent .fuse-count { color: #ff6b6f; }
-.vs-bar.urgent .rope-ring-cord { stroke: #d39a5a; }
-.vs-clock .flame-core { width: 13px; height: 19px; left: -6.5px; top: -15px; }
-.vs-clock .flame-glow { width: 24px; height: 24px; left: -12px; top: -12px; }
-.vs-bar.urgent .flame-core { width: 17px; height: 25px; left: -8.5px; top: -20px; }
+.vs-turn-label { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); white-space: nowrap;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.vs-bar.mine .vs-turn-label { color: var(--gold); }
 .steal-tag { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.08em; background: #ff8a5c; color: #2a0f00; vertical-align: 1px; }
 .steal-call { color: var(--gold-2, var(--gold)); }
@@ -382,18 +378,18 @@
 }
 /* Two players: the podium is just 2nd and 1st, centred. */
 .podium.two { grid-template-columns: repeat(2, minmax(0, 150px)); justify-content: center; }
-.vs-steals { white-space: nowrap; }
 .bonus-life { color: #ff8a8d; white-space: nowrap; }
 .bonus-life .stat-icon { vertical-align: -2px; }
 .vs-side .seat-lives { flex-wrap: wrap; justify-content: center; max-width: 100px; }
 /* Keyboard open: no full-screen pulsing glow (it repaints the whole screen while you scroll), and a tighter VS scoreboard. */
 .party.kb .my-turn-glow { display: none; }
-.party.kb .vs-bar { padding: 4px; }
+.party.kb .vs-bar { padding: 0 0 14px; }
 .party.kb .vs-side .avatar { width: 30px; height: 30px; font-size: 0.85rem; }
-.party.kb .vs-hits { display: none; }
+.party.kb .steal-pips { display: none; }
 .party.kb .vs-clock { width: 56px; height: 56px; margin: 4px; }
 .party.kb .vs-clock .fuse-count { font-size: 1.25rem; }
 /* The flame's carrier: same box as the rope SVG, rotated as the rope burns. */
 .rope-orbit { position: absolute; inset: -7%; pointer-events: none; z-index: 2; will-change: transform; }
-.rope-orbit .rope-flame { left: 50%; }
 .vs-reveal.hit-text { display: block; margin-top: 6px; }
+/* Room for the sound button (top right) now there's no banner above the scoreboard. */
+.vs-bar { padding-left: 42px; padding-right: 42px; }

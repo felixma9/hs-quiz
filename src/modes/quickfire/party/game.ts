@@ -13,7 +13,7 @@ import { newRound } from '../../gauntlet/round';
  * filling in a card's blank field. A wrong answer or a burnt fuse costs a life
  * and passes the same card to the other player to steal. A missed steal costs
  * nothing (everyone sees the answer and a new card comes up); every third
- * successful steal earns a life. The rope gets a little shorter each card.
+ * successful steal earns a life.
  *
  * Only the host runs this. Everyone else gets PublicState snapshots.
  */
@@ -41,14 +41,6 @@ export const VS_PLAYERS = 2;
 export const TEXT_TIME = 2;
 /** Gauntlet VS: successful steals for an extra life. */
 export const STEALS_FOR_LIFE = 3;
-/**
- * Gauntlet VS: each new card's rope is 3% shorter than the last, down to
- * half the chosen time (never under 6 seconds).
- */
-export function vsSeconds(base: number, cardsDealt: number): number {
-  const floor = Math.min(base, Math.max(6, base * 0.5));
-  return Math.round(Math.max(floor, base * 0.97 ** cardsDealt) * 10) / 10;
-}
 
 /** Gauntlet VS cards: the host's card pool and which fields can be blank. */
 export interface VsOptions {
@@ -151,8 +143,6 @@ export class PartyGame {
   private upcoming: { card: Card; hidden: AttrKey } | null = null;
   /** Gauntlet VS: fields with only one possible answer in the pool. */
   private free: Set<string> | null = null;
-  /** Gauntlet VS: new cards dealt this game (the rope shortens as it grows). */
-  private dealt = 0;
   private fuseEndsAt = 0;
   private round = 0;
   private streak = 0;
@@ -265,7 +255,6 @@ export class PartyGame {
     this.last = null;
     this.turn = null;
     this.upcoming = null;
-    this.dealt = 0;
     this.nextTurn();
     this.emit();
   }
@@ -308,7 +297,7 @@ export class PartyGame {
       this.upcoming = newRound(this.vs.pool, this.vs.allowed, this.rng, new Set([...this.used, r.card.id]), this.free);
       this.prompt = null;
       // No speed-up: filling in a card takes as long as it takes. Card text gets extra time.
-      this.turnSeconds = vsSeconds(this.settings.fuse, this.dealt++) * (r.hidden === 'text' ? TEXT_TIME : 1);
+      this.turnSeconds = this.settings.fuse * (r.hidden === 'text' ? TEXT_TIME : 1);
     } else {
       this.card = null;
       this.prompt = makePrompt(this.pool, this.used, this.rng);
