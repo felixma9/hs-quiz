@@ -12,7 +12,7 @@ export interface Round {
 export const HOW: Record<string, string> = {
   number: 'tap the gem and type a number.',
   name: 'tap the name banner and type.',
-  text: 'tap the text box and type (leave it blank if the card has none).',
+  text: 'tap the text box and type the gist (shorthand like "dmg" is fine; leave it blank if the card has none).',
   class: 'tap the card frame to cycle classes, or pick from the list.',
   rarity: 'tap the gem under the name to cycle rarities.',
   tribe: 'tap the banner at the bottom of the card to cycle, or pick from the list.',

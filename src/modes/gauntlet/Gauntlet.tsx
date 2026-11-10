@@ -49,7 +49,8 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
   const submit = () => {
     if (result || over) return next();
     if (attr.kind !== 'text' && !answer) return;
-    const g = gradeAttr(round.hidden, answer, round.card);
+    // Card text is graded as forgivingly as in Gauntlet PvP.
+    const g = gradeAttr(round.hidden, answer, round.card, true);
     setResult(g);
     const ok = g.verdict === 'correct';
     setHistory((h) => [...h, { ...round, ok }]);
@@ -274,7 +275,7 @@ function Feedback({
       <div className="feedback-head">{ok ? '✓ Correct!' : revealed ? 'Revealed (−1 life)' : '✗ Not quite'}</div>
       {attrKey === 'text' ? (
         <>
-          {!revealed && <div className="small">Match: {Math.round((result.score ?? 0) * 100)}% (need 70% and the right numbers)</div>}
+          {!revealed && <div className="small">You got {Math.round((result.score ?? 0) * 100)}% of the key words (about 40% passes)</div>}
           <div className="truth">
             <TextDiff truth={plainText(card.text)} matched={result.truthMatched} />
           </div>

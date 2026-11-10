@@ -7,6 +7,10 @@ import { boxStyle, layoutFor } from './layout';
 import { BLANK, drawCard, truth, type Shown } from './sunwell';
 import { NameEditor } from './NameEditor';
 import { ClassPicker, TribePicker } from './Pickers';
+import { useTapPick } from './tap';
+
+/** Symbols that are a pain to reach on phone keyboards, offered above the card text box. */
+const SYMBOLS = ['+', '-', '/', ':', '(', ')', ','];
 
 interface Props {
   card: Card;
@@ -33,6 +37,16 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
   const canvas = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
   const [active, setActive] = useState<AttrKey | null>(null);
+  const textBox = useRef<HTMLTextAreaElement>(null);
+  const keys = useTapPick();
+  /** Put a symbol where the cursor is, keeping the keyboard up. */
+  const insert = (sym: string) => {
+    const el = textBox.current;
+    if (!el) return;
+    el.focus();
+    el.setRangeText(sym, el.selectionStart, el.selectionEnd, 'end');
+    set('text', el.value);
+  };
 
   const shown: Shown = {};
   for (const k of Object.keys(ATTR) as AttrKey[]) {
@@ -169,14 +183,25 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
           />
         )}
         {active === 'text' && layout.text && (
+          <div className="symbol-keys" style={{ bottom: `calc(100% - ${boxStyle(layout.text).top} + 4px)` }} {...keys.list}>
+            {SYMBOLS.map((k) => (
+              <button key={k} type="button" aria-label={`Type ${k}`} {...keys.option(() => insert(k))}>
+                {k}
+              </button>
+            ))}
+          </div>
+        )}
+        {active === 'text' && layout.text && (
           <textarea
+            ref={textBox}
             className="card-edit card-edit-text"
             style={boxStyle(layout.text)}
             autoFocus
             value={draft.text ?? ''}
             placeholder="Card text (leave blank if none)"
             onChange={(e) => set('text', e.target.value)}
-            onBlur={() => setActive(null)}
+            // Close a moment after losing focus, unless a finger is on the symbol keys.
+            onBlur={() => setTimeout(() => !keys.pressing.current && document.activeElement !== textBox.current && setActive(null), 150)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
