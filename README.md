@@ -56,7 +56,7 @@ Much of the art is padded with light bars. `python3 -I scripts/measure-art.py` d
 
 ## Decor
 
-Buttons, panels and icons are styled after Hearthstone's own UI, where everything looks like a physical object (carved wood, gold trim, glowing gems), in CSS only (`src/styles/hs-ui.css`). The site uses the card-frame gems from `public/sunwell/` as icons around the site: the mana crystal in the title, health drops for lives, rarity gems on the pool chips and mode cards, and mana/attack/health gems on the numbers in Quickfire prompts. Class icons from `public/class-icons/` appear on the Gauntlet class chip, HSdle class tiles and Quickfire prompts. To use your own logo or background, put `logo.png` and/or `background.jpg` in `public/decor/`; only add images you have the right to use on a public site.
+The UI stays minimal with light Hearthstone touches (thin gold edges, a green main button like Play, gold rings round icons), in CSS only (`src/styles/hs-ui.css`). The site uses the card-frame gems from `public/sunwell/` as icons around the site: the mana crystal in the title, health drops for lives, rarity gems on the pool chips and mode cards, and mana/attack/health gems on the numbers in Quickfire prompts. Class icons from `public/class-icons/` appear on the Gauntlet class chip, HSdle class tiles and Quickfire prompts. To use your own logo or background, put `logo.png` and/or `background.jpg` in `public/decor/`; only add images you have the right to use on a public site.
 
 ## Class icons
 
