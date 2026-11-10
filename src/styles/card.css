@@ -78,3 +78,6 @@
     background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 14px;
   }
 }
+
+/* Touch screens: suggestions open above the name (the keyboard covers what's below), best match nearest the field. */
+.card-edit-name .suggest.up { top: auto; bottom: 100%; margin: 0 0 4px; display: flex; flex-direction: column-reverse; max-height: min(240px, 40vh); }

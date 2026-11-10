@@ -2,6 +2,10 @@ import { useMemo } from 'react';
 import type { Card } from '../lib/types';
 import { normalizeName } from '../lib/fuzzy';
 import { boxStyle, type Box } from './layout';
+import { useTapPick } from './tap';
+
+/** Touch screens: the keyboard covers whatever is below the field, so suggestions open above it. */
+const touch = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 
 /** Typing a card name over the name banner, with suggestions from the pool. */
 export function NameEditor({
@@ -26,6 +30,11 @@ export function NameEditor({
     return [...starts, ...inside].slice(0, 6);
   }, [value, names]);
   const exact = matches.length === 1 && normalizeName(matches[0]) === normalizeName(value);
+  const tap = useTapPick();
+  const pick = (m: string) => {
+    onChange(m);
+    onDone(false);
+  };
 
   return (
     <div className="card-edit-name" style={boxStyle(box)}>
@@ -38,7 +47,8 @@ export function NameEditor({
         placeholder="Card name"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onBlur={() => setTimeout(() => onDone(false), 150)}
+        // Close a moment after losing focus, unless a finger is on a suggestion.
+        onBlur={() => setTimeout(() => !tap.pressing.current && onDone(false), 150)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
@@ -47,17 +57,10 @@ export function NameEditor({
         }}
       />
       {matches.length > 0 && !exact && (
-        <ul className="suggest">
+        <ul className={`suggest ${touch ? 'up' : ''}`} {...tap.list}>
           {matches.map((m) => (
             <li key={m}>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  onChange(m);
-                  onDone(false);
-                }}
-              >
+              <button type="button" {...tap.option(() => pick(m))}>
                 {m}
               </button>
             </li>

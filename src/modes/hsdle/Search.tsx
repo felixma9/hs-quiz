@@ -2,12 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { normalizeName } from '../../lib/fuzzy';
 import { Art, useArtCrop } from './Art';
+import { useTapPick } from '../../card/tap';
 
 /** Type-ahead search over minion names; Enter or tap picks one. */
 
 export function Search({ minions, exclude, onPick }: { minions: Card[]; exclude: string[]; onPick(c: Card): void }) {
   const crop = useArtCrop();
   const [q, setQ] = useState('');
+  const tap = useTapPick();
   const [hi, setHi] = useState(0);
   const input = useRef<HTMLInputElement>(null);
   const matches = useMemo(() => {
@@ -52,15 +54,14 @@ export function Search({ minions, exclude, onPick }: { minions: Card[]; exclude:
         }}
       />
       {matches.length > 0 && (
-        <ul className="search-list">
+        <ul className="search-list" {...tap.list}>
           {matches.map((c, i) => (
             <li key={c.id}>
               <button
                 type="button"
                 className={i === hi ? 'hi' : ''}
-                onMouseDown={(e) => e.preventDefault()}
                 onMouseEnter={() => setHi(i)}
-                onClick={() => pick(c)}
+                {...tap.option(() => pick(c))}
               >
                 <Art card={c} crop={crop} className="thumb" />
                 <span>{c.name}</span>
