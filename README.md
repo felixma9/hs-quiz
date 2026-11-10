@@ -52,7 +52,7 @@ Art is loaded from `art.hearthstonejson.com` (art only, so it doesn't give the a
 
 ## Art cropping
 
-Much of the art is padded with light bars. `python3 -I scripts/measure-art.py` downloads each minion's small art once, measures the bars and writes `public/art-crop.json`; HSdle's art and thumbnails zoom in just enough per card. Rerun it after `npm run cards` (it only measures new cards).
+Much of the art is padded with light bars. `python3 -I scripts/measure-art.py` downloads each card's small art once, measures the bars and writes `public/art-crop.json`; HSdle's art and thumbnails zoom in just enough per card. Rerun it after `npm run cards` (it only measures new cards).
 
 ## Decor
 
@@ -68,7 +68,8 @@ Cards are drawn on a canvas by HearthSim's [Sunwell](https://github.com/HearthSi
 
 Sunwell is older than some of the game, so:
 - **Locations** can't be drawn and are left out of the game.
-- **Demon Hunter and multiclass cards** use the neutral frame. The class is shown in a chip under the card.
+- **Demon Hunter** has no Sunwell frame, so we made fel-green ones by recoloring the Death Knight frames (and the Warlock hero frame) with `scripts/make-dh-frames.py`.
+- **Multiclass cards** use the neutral frame. The class is shown in a chip under the card.
 - **Newer tribes** such as Undead and Naga: we set the tribe banner text ourselves.
 - **Spell schools** are shown in a chip under the card.
 - **Fonts:** the real card fonts are proprietary, so Merriweather and Libre Franklin stand in.

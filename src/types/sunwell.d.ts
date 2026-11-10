@@ -8,6 +8,8 @@ declare module 'sunwell/dist/sunwell.web.js' {
     raceBannerCoords: Record<string, number>;
     raceTextCoords: Record<string, number>;
     target: unknown;
+    baseCardFrameAsset: string;
+    getCardFrameAsset(): string;
     costGem?: Gem;
     attackGem?: Gem;
     healthGem?: Gem;

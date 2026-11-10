@@ -137,6 +137,11 @@ export async function drawCard(canvas: HTMLCanvasElement, card: Card, shown: Sho
     Object.assign(getSunwell().options, fitText(String(props.text ?? ''), card.type, BODY_FONT));
     const sw = getSunwell().createCard(props, RENDER_WIDTH, false, canvas, () => isLive() && onReady());
     sw.raceText = raceText;
+    if (props.cardClass === 'DEMONHUNTER') {
+      // Sunwell is older than Demon Hunter and would draw the neutral frame.
+      // Our DH frames are recolored from other class frames (scripts/make-dh-frames.py).
+      sw.getCardFrameAsset = () => `${sw.baseCardFrameAsset}demonhunter`;
+    }
     if (card.type === 'SPELL') {
       // Reuse the minion tribe banner as the spell-school banner, at the bottom of the card.
       sw.raceBannerAsset = 'race-banner';

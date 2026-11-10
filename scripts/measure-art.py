@@ -1,7 +1,7 @@
-"""Measure the light strips at the edges of each minion's art.
+"""Measure the light strips at the edges of each card's art.
 
 Some card art (mostly older cards) is padded with white/light bars. This
-downloads the small 256px art for every minion in public/cards.json, finds how
+downloads the small 256px art for every card in public/cards.json, finds how
 far the light edge runs in from each side, and writes the crop each card needs
 to public/art-crop.json as {card id: fraction of the width to cut per side}.
 Cards already measured are skipped, so rerunning after an update is cheap.
@@ -52,10 +52,10 @@ def measure(card_id: str) -> tuple[str, float | None]:
 
 def main() -> None:
     cards = json.loads(CARDS.read_text())
-    ids = [c['id'] for c in cards if c['type'] == 'MINION']
+    ids = [c['id'] for c in cards]
     known: dict[str, float] = json.loads(OUT.read_text()) if OUT.exists() else {}
     todo = [i for i in ids if i not in known and f'!{i}' not in known]
-    print(f'{len(ids)} minions, {len(todo)} to measure', flush=True)
+    print(f'{len(ids)} cards, {len(todo)} to measure', flush=True)
     done = 0
     with ThreadPoolExecutor(max_workers=8) as pool:
         for card_id, crop in pool.map(measure, todo):
