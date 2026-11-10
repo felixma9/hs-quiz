@@ -10,6 +10,7 @@ import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
 import { FUSE_FOR, FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, VS_PLAYERS, type PartySettings, type PublicState, type RoomGame } from './game';
 import { ATTR, labelFor, pretty, type AttrKey } from '../../../lib/attributes';
 import { GameCard } from '../../../card/GameCard';
+import { preloadArt } from '../../../card/sunwell';
 import { howTo } from '../../gauntlet/round';
 import { loadSettings } from '../../gauntlet/settings';
 import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './net';
@@ -182,6 +183,13 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
 
   // Solo: best number of cards named, per lives/seconds setting.
   const soloBest = useSoloBest(mode.role === 'solo' ? state : null);
+
+  // Gauntlet VS: load the next card's art during this turn, so it shows up straight away.
+  const nextCard = state?.nextCard;
+  useEffect(() => {
+    const c = nextCard ? all.find((x) => x.id === nextCard) : undefined;
+    if (c) preloadArt(c);
+  }, [nextCard, all]);
 
   // A new turn starts with an empty speech bubble.
   useEffect(() => setTyping(null), [state?.round]);

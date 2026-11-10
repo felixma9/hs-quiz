@@ -95,6 +95,8 @@ export interface PublicState {
   prompt: { text: string; hint?: string } | null;
   /** Gauntlet VS: this turn's card and its blank field. */
   card: { id: string; hidden: AttrKey; steal: boolean } | null;
+  /** Gauntlet VS: the card after this one, so everyone can load its art during this turn. */
+  nextCard: string | null;
   /** Milliseconds left on the fuse when this snapshot was sent. */
   fuseLeft: number;
   /** Increases every turn, so clients can restart animations. */
@@ -130,6 +132,8 @@ export class PartyGame {
   private turn: string | null = null;
   private prompt: Prompt | null = null;
   private card: { card: Card; hidden: AttrKey; steal: boolean } | null = null;
+  /** Gauntlet VS: picked a turn ahead (see nextCard). */
+  private upcoming: { card: Card; hidden: AttrKey } | null = null;
   /** Gauntlet VS: fields with only one possible answer in the pool. */
   private free: Set<string> | null = null;
   private fuseEndsAt = 0;
@@ -163,6 +167,7 @@ export class PartyGame {
       turn: this.turn,
       prompt: this.prompt ? { text: this.prompt.text, hint: this.prompt.hint } : null,
       card: this.card ? { id: this.card.card.id, hidden: this.card.hidden, steal: this.card.steal } : null,
+      nextCard: this.phase === 'playing' && this.upcoming ? this.upcoming.card.id : null,
       fuseLeft: this.phase === 'playing' ? Math.max(0, this.fuseEndsAt - this.now()) : 0,
       round: this.round,
       turnSeconds: this.turnSeconds,
@@ -241,6 +246,7 @@ export class PartyGame {
     this.winner = null;
     this.last = null;
     this.turn = null;
+    this.upcoming = null;
     this.nextTurn();
     this.emit();
   }
@@ -277,8 +283,10 @@ export class PartyGame {
     this.turn = next.id;
     if (this.isVs) {
       this.free ??= giveaways(this.vs.pool);
-      const r = newRound(this.vs.pool, this.vs.allowed, this.rng, this.used, this.free);
+      const r = this.upcoming ?? newRound(this.vs.pool, this.vs.allowed, this.rng, this.used, this.free);
       this.card = { card: r.card, hidden: r.hidden, steal: false };
+      // Pick the one after now, so its art can load while this card is played.
+      this.upcoming = newRound(this.vs.pool, this.vs.allowed, this.rng, new Set([...this.used, r.card.id]), this.free);
       this.prompt = null;
       // No speed-up: filling in a card takes as long as it takes. Card text gets extra time.
       this.turnSeconds = this.settings.fuse * (r.hidden === 'text' ? TEXT_TIME : 1);

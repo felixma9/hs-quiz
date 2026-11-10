@@ -263,3 +263,20 @@ describe('gauntlet vs steals', () => {
     expect(state().card!.steal).toBe(false);
   });
 });
+
+describe('gauntlet vs next card', () => {
+  it('announces the next card a turn ahead, then deals it', () => {
+    let last!: PublicState;
+    const g = new PartyGame(all, all, (s) => (last = s));
+    g.addPlayer('A', 'A');
+    g.addPlayer('B', 'B');
+    g.setSettings({ game: 'gauntlet' });
+    g.start();
+    const next = last.nextCard;
+    expect(next).toBeTruthy();
+    expect(next).not.toBe(last.card!.id);
+    const truth = String(ATTR[last.card!.hidden].value(all.find((x) => x.id === last.card!.id)!) ?? '');
+    g.answer('A', truth);
+    expect(last.card!.id).toBe(next);
+  });
+});

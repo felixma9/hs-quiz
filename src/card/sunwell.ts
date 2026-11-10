@@ -72,6 +72,11 @@ function loadArt(card: Card) {
   return p;
 }
 
+/** Start loading a card's art now (e.g. the next card, during this turn) so it draws without a wait. */
+export function preloadArt(card: Card) {
+  void loadArt(card);
+}
+
 /** What to draw for each attribute: the truth, the player's guess, or undefined (blank). */
 export type Shown = Partial<Record<AttrKey, string>>;
 
