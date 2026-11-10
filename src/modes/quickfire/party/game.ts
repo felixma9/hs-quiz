@@ -34,6 +34,8 @@ export const FUSE_FOR: Record<RoomGame, { options: number[]; default: number }> 
 export const FUSE_OPTIONS = FUSE_FOR.quickfire.options;
 /** Gauntlet VS is one on one. */
 export const VS_PLAYERS = 2;
+/** Gauntlet VS: card text takes a while to type, so those turns get this many times the seconds. */
+export const TEXT_TIME = 2;
 
 /** Gauntlet VS cards: the host's card pool and which fields can be blank. */
 export interface VsOptions {
@@ -261,8 +263,8 @@ export class PartyGame {
       const r = newRound(this.vs.pool, this.vs.allowed, this.rng, this.used, this.free);
       this.card = { card: r.card, hidden: r.hidden };
       this.prompt = null;
-      // No speed-up: filling in a card takes as long as it takes.
-      this.turnSeconds = this.settings.fuse;
+      // No speed-up: filling in a card takes as long as it takes. Card text gets extra time.
+      this.turnSeconds = this.settings.fuse * (r.hidden === 'text' ? TEXT_TIME : 1);
     } else {
       this.card = null;
       this.prompt = makePrompt(this.pool, this.used, this.rng);
@@ -318,7 +320,7 @@ export class PartyGame {
   /** Gauntlet VS: one try. Right passes the turn; wrong costs a life too. */
   private answerCard(id: string, text: string): boolean {
     const { card, hidden } = this.card!;
-    const g = gradeAttr(hidden, text, card);
+    const g = gradeAttr(hidden, text, card, true);
     const p = this.players.find((x) => x.id === id)!;
     const ok = g.verdict === 'correct';
     this.used.add(card.id);
@@ -332,7 +334,7 @@ export class PartyGame {
       const kind = ATTR[hidden].kind;
       const guess =
         kind === 'text'
-          ? `${Math.round((g.score ?? 0) * 100)}% of the text`
+          ? `${Math.round((g.score ?? 0) * 100)}% of the key words`
           : kind === 'number'
             ? text.trim() || 'nothing'
             : kind === 'enum'

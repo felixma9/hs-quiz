@@ -136,7 +136,8 @@ export function enumOptions(attr: AttrKey, cards: Card[]): { value: string; labe
  * Grade a raw input against a card. Raw input is always a string from a form
  * field; an empty number field means "none".
  */
-export function gradeAttr(key: AttrKey, raw: string, card: Card): Grade {
+/** `lenient`: Gauntlet VS grades card text much more loosely (see gradeText). */
+export function gradeAttr(key: AttrKey, raw: string, card: Card, lenient = false): Grade {
   const attr = ATTR[key];
   const truth = attr.value(card);
   switch (attr.kind) {
@@ -147,7 +148,7 @@ export function gradeAttr(key: AttrKey, raw: string, card: Card): Grade {
     case 'name':
       return gradeName(raw, String(truth));
     case 'text':
-      return gradeText(raw, String(truth ?? ''));
+      return gradeText(raw, String(truth ?? ''), lenient);
     case 'enum':
       return gradeEnum(raw, String(truth));
   }

@@ -782,11 +782,12 @@ function VsCard({
       <div className="vs-ask">
         {myTurn ? (
           <>
-            Fill in the <b>{label}</b>: {howTo(key)}
+            Fill in the <b>{label}</b>: {key === 'text' ? 'tap the text box and type what you remember. The gist is enough: about 40% of the key words, any order (blank if the card has none). Double time.' : howTo(key)}
           </>
         ) : (
           <>
             {who} is filling in the <b>{label}</b>
+            {key === 'text' && ' (double time)'}
           </>
         )}
       </div>

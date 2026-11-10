@@ -103,3 +103,18 @@ describe('order, filler and plurals', () => {
     expect(gradeText('Give a minion +2', 'Give a minion +1/+2.').verdict).not.toBe('correct');
   });
 });
+
+describe('lenient text (Gauntlet VS)', () => {
+  const truth = 'Battlecry: Deal 3 damage to an enemy minion. Draw a card.';
+  it('passes on the gist', () => {
+    expect(gradeText('deal damage draw card', truth, true).verdict).toBe('correct');
+    expect(gradeText('battlecry deal 2 damage to a minion', truth, true).verdict).toBe('correct');
+  });
+  it('is stricter without it', () => {
+    expect(gradeText('deal damage draw card', truth).verdict).not.toBe('correct');
+  });
+  it("doesn't pass nonsense or keyword spam", () => {
+    expect(gradeText('summon a 2/2 copy', truth, true).verdict).not.toBe('correct');
+    expect(gradeText('deathrattle taunt rush charge lifesteal discover freeze silence armor damage', truth, true).verdict).not.toBe('correct');
+  });
+});

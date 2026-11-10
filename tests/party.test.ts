@@ -200,12 +200,26 @@ describe('gauntlet vs', () => {
     g.setSettings({ lives: 1 });
     g.start();
     g.answer('A', truth(g, state()));
-    advance(20001);
+    advance(state().turnSeconds * 1000 + 1);
     expect(state().phase).toBe('over');
     expect(state().winner).toBe('A');
     expect(state().named.map((x) => [x.player, x.ok])).toEqual([
       ['A', true],
       ['B', false],
     ]);
+  });
+});
+
+describe('gauntlet vs text turns', () => {
+  it('get double time', () => {
+    let last!: PublicState;
+    const textCards = all.filter((c) => c.type === 'MINION' && c.text);
+    const g = new PartyGame(all, all, (s) => (last = s), () => 0, Math.random, { pool: textCards, allowed: ['text'] });
+    g.addPlayer('A', 'A');
+    g.addPlayer('B', 'B');
+    g.setSettings({ game: 'gauntlet', fuse: 20 });
+    g.start();
+    expect(last.card?.hidden).toBe('text');
+    expect(last.turnSeconds).toBe(40);
   });
 });

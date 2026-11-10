@@ -14,6 +14,8 @@ export interface Grade {
 
 export const TEXT_PASS = 0.7;
 export const TEXT_CLOSE = 0.4;
+/** Gauntlet VS (against the rope): share of the card's key words you need. */
+export const TEXT_PASS_LENIENT = 0.4;
 
 export function gradeNumber(guess: number | null, truth: number | null): Grade {
   if (guess === truth) return { verdict: 'correct' };
@@ -52,13 +54,13 @@ export function gradeName(guess: string, truth: string): Grade {
  * Score = meaningful words matched / meaningful words in the longer of the
  * two texts. The numbers must all be there (in any order) for a pass.
  */
-export function gradeText(guess: string, truth: string): Grade {
+export function gradeText(guess: string, truth: string, lenient = false): Grade {
   const tw = words(truth);
   const gw = words(guess);
   if (!tw.length) return { verdict: gw.length ? 'wrong' : 'correct', score: gw.length ? 0 : 1, truthMatched: [] };
   if (!gw.length) return { verdict: 'wrong', score: 0, truthMatched: tw.map(() => false) };
 
-  const { inTruth } = matchWords(tw, gw);
+  const { inTruth, usedGuess: hitInGuess } = matchWords(tw, gw);
   const meaningful = (w: string) => !FILLER.has(w);
   // If a text is all filler (unlikely), count every word.
   const tKeep = tw.some(meaningful) ? meaningful : () => true;
@@ -66,6 +68,15 @@ export function gradeText(guess: string, truth: string): Grade {
   const matched = tw.filter((w, i) => tKeep(w) && inTruth[i]).length;
   const tCount = tw.filter(tKeep).length;
   const gCount = gw.filter(gKeep).length;
+  if (lenient) {
+    // Against the rope: score is the share of the card's key words you got (in any order);
+    // extra words and wrong numbers are fine. Just don't pad the answer with every
+    // keyword you can think of: at least a quarter of your words have to be on the card.
+    const recall = matched / tCount;
+    const hits = gw.filter((w, i) => gKeep(w) && hitInGuess[i]).length;
+    const precise = hits / Math.max(1, gCount) >= 0.25;
+    return { verdict: recall >= TEXT_PASS_LENIENT && precise ? 'correct' : recall >= TEXT_CLOSE / 2 ? 'close' : 'wrong', score: recall, truthMatched: inTruth };
+  }
   const score = matched / Math.max(tCount, gCount);
 
   const isNum = (w: string) => /^\d+$/.test(w);
