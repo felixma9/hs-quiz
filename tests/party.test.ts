@@ -191,7 +191,19 @@ describe('gauntlet vs', () => {
     expect(state().turn).toBe('B');
     g.answer('B', 'zzzz wrong');
     expect(state().last).toMatchObject({ kind: 'boom', player: 'B', safe: true, nobody: true });
-    // A new card for the player after the stealer.
+    // A missed steal: the stealer takes their own turn with a new card.
+    expect(state().turn).toBe('B');
+    expect(state().card!.steal).toBe(false);
+    expect(state().players[1].lives).toBe(3);
+  });
+
+  it('with 3+ players, a right steal moves play on to the player after the stealer', () => {
+    const { g, state } = vsSetup(['A', 'B', 'C']);
+    g.start();
+    g.answer('A', 'zzzz wrong');
+    const s = state();
+    const truth = String(ATTR[s.card!.hidden].value(all.find((x) => x.id === s.card!.id)!) ?? '');
+    expect(g.answer('B', truth)).toBe(true);
     expect(state().turn).toBe('C');
     expect(state().card!.steal).toBe(false);
   });
@@ -278,6 +290,18 @@ describe('gauntlet vs steals', () => {
     expect(state().players[0].lives).toBe(2);
     expect(state().card!.id).not.toBe(card);
     expect(state().card!.steal).toBe(false);
+    expect(state().turn).toBe('B');
+  });
+
+  it('gives a steal half the time, and the next card full time again', () => {
+    const { g, state } = vs();
+    const full = state().turnSeconds;
+    g.answer('A', 'zzzz wrong');
+    expect(state().card!.steal).toBe(true);
+    expect(state().turnSeconds).toBe(full * 0.5);
+    g.answer('B', 'zzzz wrong');
+    expect(state().card!.steal).toBe(false);
+    expect([20, 40]).toContain(state().turnSeconds);
   });
 
   it('passes on a burnt rope too, and a steal can win the card', () => {

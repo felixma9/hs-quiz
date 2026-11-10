@@ -449,7 +449,7 @@ function Lobby({
         <div className="pool-note">
           <img className="setting-icon" src={MANA_ICON} alt="" />
           {vs
-            ? `${VS_MIN_PLAYERS}–${VS_MAX_PLAYERS} players take turns filling in a card's blank. Miss and you lose a life, and the next player gets a free shot at stealing the same card (every ${STEALS_FOR_LIFE} steals earns a life). Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
+            ? `${VS_MIN_PLAYERS}–${VS_MAX_PLAYERS} players take turns filling in a card's blank. Miss and you lose a life, and the next player gets a free shot at stealing the same card with half the time. A missed steal costs nothing and they take their own turn next (every ${STEALS_FOR_LIFE} steals earns a life). Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
             : `Every collectible card counts: ${state.poolSize.toLocaleString()} cards.`}
         </div>
       </section>

@@ -40,6 +40,8 @@ export const VS_MIN_PLAYERS = 2;
 export const VS_MAX_PLAYERS = 8;
 /** Gauntlet VS: card text takes a while to type, so those turns get this many times the seconds. */
 export const TEXT_TIME = 2;
+/** Gauntlet VS: a steal gets this share of the turn's seconds. */
+export const STEAL_TIME = 0.5;
 /** Gauntlet VS: successful steals for an extra life. */
 export const STEALS_FOR_LIFE = 3;
 
@@ -277,14 +279,15 @@ export class PartyGame {
     return this.players.filter((p) => p.lives > 0 && p.connected);
   }
 
-  private nextTurn() {
+  /** `stay`: the current player keeps the turn, with a new card (after a missed steal). */
+  private nextTurn(stay = false) {
     const alive = this.alive();
     if (!alive.length) return;
     const order = this.players;
     // From the current player (or before the first, at the start of a game).
     const from = order.findIndex((p) => p.id === this.turn);
     let next = alive[0];
-    for (let i = 1; i <= order.length; i++) {
+    for (let i = stay ? 0 : 1; i <= order.length; i++) {
       const p = order[(from + i + order.length) % order.length];
       if (p.lives > 0 && p.connected) {
         next = p;
@@ -355,8 +358,9 @@ export class PartyGame {
 
   /**
    * Gauntlet VS: one try. Right passes the turn with a new card. Wrong costs a
-   * life and passes the same card to the other player to steal; a missed steal
-   * shows the answer and a new card comes up.
+   * life and passes the same card to the next player to steal. A right steal
+   * moves play on; a missed steal shows the answer and the stealer takes their
+   * own turn with a new card (no life lost).
    */
   private answerCard(id: string, text: string): boolean {
     const { card, hidden, steal } = this.card!;
@@ -438,9 +442,11 @@ export class PartyGame {
       // Same card, new fuse, other player.
       this.turn = other.id;
       this.card = { ...c, steal: true };
+      // A steal gets half the turn's time.
+      this.turnSeconds = this.turnSeconds * STEAL_TIME;
       this.fuseEndsAt = this.now() + this.turnSeconds * 1000;
       this.round++;
-    } else this.nextTurn();
+    } else this.nextTurn(c.steal && p.lives > 0 && p.connected);
   }
 
   /** The right answer to this turn's card, for the event line (not the whole text). */

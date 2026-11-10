@@ -1,0 +1,137 @@
+/*
+ * Hearthstone-style controls. In the game every piece of UI is a physical
+ * object: carved wood, polished gold and bronze trim, glowing gems, parchment.
+ * This layer gives our buttons, panels and icons that feel with CSS only
+ * (no game assets). Loaded last so it refines everything before it.
+ */
+:root {
+  /* Polished gold trim: bright at the top, dark at the bottom, like lit metal. */
+  --trim: linear-gradient(180deg, #fff1b8 0%, #e2b34f 22%, #9c6a1e 52%, #d9a640 78%, #6e4a14 100%);
+  --trim-dim: linear-gradient(180deg, #b79a62 0%, #7c6236 45%, #4a3a1e 100%);
+  /* Dark carved wood for secondary buttons. */
+  --wood: linear-gradient(180deg, #5a3a22 0%, #3b2414 55%, #2a190d 100%);
+  --wood-hi: linear-gradient(180deg, #6a4528 0%, #472c18 55%, #321e10 100%);
+  /* The green gem of the Play / End Turn buttons. */
+  --gem-green: radial-gradient(120% 90% at 50% 0%, #9be36a 0%, #4fa83a 38%, #2c7424 72%, #1d5218 100%);
+  --gem-green-hi: radial-gradient(120% 90% at 50% 0%, #b4f283 0%, #61bd47 38%, #348629 72%, #22601c 100%);
+  --label: 'Merriweather', Georgia, serif;
+  --ink: #1a0f05;
+}
+
+/* ---- Buttons ---- */
+.btn {
+  position: relative; font-family: var(--label); font-weight: 900; letter-spacing: 0.05em; color: #f8e9c4;
+  border: 2px solid transparent; border-radius: 12px;
+  background: var(--wood) padding-box, var(--trim-dim) border-box;
+  box-shadow: inset 0 1px 0 rgba(255, 226, 170, 0.22), inset 0 -3px 6px rgba(0, 0, 0, 0.45), 0 3px 0 #120a04, 0 6px 14px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 0 var(--ink), 0 0 1px var(--ink), 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+.btn.primary {
+  color: #fff; border-width: 3px;
+  background: var(--gem-green) padding-box, var(--trim) border-box;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -6px 12px rgba(0, 40, 0, 0.45), 0 3px 0 #2a1a06, 0 8px 18px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 0 #0c2a08, 0 0 2px #0c2a08, 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+/* The glossy highlight across the top of the gem. */
+.btn.primary::before {
+  content: ''; position: absolute; left: 14px; right: 14px; top: 2px; height: 30%; border-radius: 8px 8px 50% 50% / 8px 8px 100% 100%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0)); pointer-events: none;
+}
+.btn:disabled { opacity: 1; filter: grayscale(0.85) brightness(0.6); box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.45); }
+.btn.primary:disabled { box-shadow: inset 0 -6px 12px rgba(0, 0, 0, 0.45); }
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5), 0 1px 0 #120a04; }
+@media (hover: hover) {
+  .btn:hover:not(:disabled) { filter: none; background: var(--wood-hi) padding-box, var(--trim) border-box; }
+  .btn.primary:hover:not(:disabled) {
+    background: var(--gem-green-hi) padding-box, var(--trim) border-box;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), inset 0 -6px 12px rgba(0, 40, 0, 0.4), 0 3px 0 #2a1a06,
+      0 0 18px rgba(130, 230, 90, 0.45), 0 8px 18px rgba(0, 0, 0, 0.5);
+  }
+}
+/* Reveal: a quieter wooden button with its red cost. */
+.btn.reveal { color: #e9d9b4; background: var(--wood) padding-box, var(--trim-dim) border-box; border: 2px solid transparent; }
+.btn.reveal .cost { color: #ff7a6e; }
+
+/* ---- Inputs: a dark inlaid slot with a bronze rim ---- */
+.in {
+  border: 1px solid #5c4524; border-radius: 10px; background: linear-gradient(180deg, #0d0b08, #17130d);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 220, 150, 0.08);
+}
+.in:focus { outline: 0; border-color: #d9a640; box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7), 0 0 0 3px rgba(240, 199, 94, 0.18), 0 0 12px rgba(240, 199, 94, 0.2); }
+
+/* ---- Panels: dark stone with a thin gold inlay ---- */
+.mode-card, .pool-section, .qf-prompt, .qf-hero {
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 0 0 1px #0a0704, inset 0 0 0 1px rgba(240, 199, 94, 0.22), inset 0 1px 0 rgba(255, 230, 170, 0.12), var(--shadow);
+}
+.mode-card { border-color: #5e4726; border-radius: 14px; }
+.pool-section, .qf-prompt { border-color: #3e3020; background-color: rgba(24, 19, 13, 0.55); }
+.qf-hero { border-color: #5e4726; }
+@media (hover: hover) {
+  .mode-card:hover { border-color: #b88a3a; box-shadow: 0 0 0 1px #0a0704, inset 0 0 0 1px rgba(255, 220, 130, 0.4), 0 0 22px rgba(240, 199, 94, 0.18), var(--shadow); }
+}
+.mode-card h2 { text-shadow: 0 2px 0 var(--ink), 0 0 2px var(--ink), 0 2px 12px rgba(0, 0, 0, 0.7); }
+
+/* The round "go" knob on each mode: a gold-rimmed blue gem. */
+.mode-go {
+  width: 42px; height: 42px; color: #fff; border: 2px solid transparent;
+  background: radial-gradient(90% 90% at 50% 25%, #8fd0ff 0%, #2f7fd6 45%, #143e8a 100%) padding-box, var(--trim) border-box;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), inset 0 -4px 8px rgba(0, 10, 40, 0.5), 0 3px 8px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+@media (hover: hover) {
+  .mode-card:hover .mode-go { background: radial-gradient(90% 90% at 50% 25%, #b5e2ff 0%, #4a97ea 45%, #1a4ea4 100%) padding-box, var(--trim) border-box;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45), 0 0 14px rgba(110, 180, 255, 0.55), 0 3px 8px rgba(0, 0, 0, 0.6); }
+}
+
+/* ---- Chips and toggles: small bronze-rimmed plaques ---- */
+.rarity-chip, .chip, .class-btn, .option-list button, .clue-btn, .give-up {
+  border: 1px solid #5c4524; background: linear-gradient(180deg, #2c2116, #1a130c);
+  box-shadow: inset 0 1px 0 rgba(255, 226, 170, 0.12), 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.rarity-chip.on, .class-btn.on, .option-list button.on, .clue-btn.on {
+  border-color: #e2b34f; background: linear-gradient(180deg, #4a3618, #2a1d0d);
+  box-shadow: inset 0 1px 0 rgba(255, 236, 180, 0.25), 0 0 10px rgba(240, 199, 94, 0.25);
+}
+.clue-btn.unlocked { border-color: #b88a3a; }
+.give-up.armed { background: linear-gradient(180deg, #a23b3b, #6e2222); border-color: #e07a6a; }
+/* Grading colors on the card's chips stay as they were. */
+.chip.v-correct { border: 2px solid var(--ok); }
+.chip.v-close { border: 2px solid var(--close); }
+.chip.v-wrong { border: 2px solid var(--bad); }
+.chip.editable { border: 1px dashed rgba(240, 199, 94, 0.7); }
+
+/* Quick symbol keys above the card text: little brass keys. */
+.symbol-keys button {
+  color: #f8e9c4; border: 1px solid transparent; background: var(--wood) padding-box, var(--trim-dim) border-box;
+  box-shadow: 0 2px 0 #120a04, 0 3px 6px rgba(0, 0, 0, 0.5); text-shadow: 0 1px 0 var(--ink);
+}
+.symbol-keys button:active { color: #fff; background: var(--gem-green) padding-box, var(--trim) border-box; }
+
+/* ---- Tabs: the selected one gets a gold underline that glows ---- */
+.tabs button { font-family: var(--label); font-weight: 900; }
+.tabs button.on { color: var(--gold-2); border-bottom-color: #e2b34f; text-shadow: 0 0 10px rgba(240, 199, 94, 0.45); }
+
+/* ---- Icons: set in metal like gems ---- */
+.chip-class-icon, .class-tile-icon, .class-inline img {
+  box-shadow: 0 0 0 1.5px #c99a3e, 0 0 0 2.5px #2a1a08, 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+/* Round card art (results strips, HSdle) in a gold setting. */
+.art-crop { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6); }
+.named-art { border: 2px solid transparent; background: var(--trim-dim) border-box; box-shadow: 0 0 0 1px #0a0704, 0 4px 10px rgba(0, 0, 0, 0.55); }
+.named-card.on .named-art { background: var(--trim) border-box; box-shadow: 0 0 0 1px #0a0704, 0 0 12px rgba(240, 199, 94, 0.45); }
+.run-card.ok .named-art { background: linear-gradient(180deg, #b6f08a, #3f8f33) border-box; }
+.run-card.bad .named-art { background: linear-gradient(180deg, #ff9a8a, #8f2a2a) border-box; }
+.run-card.on .named-art { background: var(--trim) border-box; }
+.mode-icon, .qf-hero-icons img { filter: drop-shadow(0 0 1px #000) drop-shadow(0 3px 5px rgba(0, 0, 0, 0.7)); }
+
+/* Title bar: a gold trim line instead of a flat hairline. */
+.top::after { height: 2px; background: linear-gradient(90deg, transparent, #9c6a1e 15%, #f0c75e 50%, #9c6a1e 85%, transparent); opacity: 0.8; }
+.top-back { color: #f0d9a0; box-shadow: inset 0 0 0 1px rgba(201, 154, 62, 0.55); }
+.top-back:hover { background: rgba(240, 199, 94, 0.1); }
+.zoom-close { border: 2px solid transparent; background: var(--wood) padding-box, var(--trim) border-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled) { transform: none; }
+}
