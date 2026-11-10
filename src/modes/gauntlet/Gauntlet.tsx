@@ -6,6 +6,7 @@ import { giveaways, pickHidden, randomCard } from '../../lib/cards';
 import type { Grade } from '../../lib/grade';
 import { load, save } from '../../lib/storage';
 import { GameCard } from '../../card/GameCard';
+import { Art, useArtCrop } from '../hsdle/Art';
 import { TextDiff } from './TextDiff';
 import { loadSettings, saveSettings, type GauntletSettings as Settings } from './settings';
 
@@ -26,6 +27,11 @@ const HOW: Record<string, string> = {
 interface Round {
   card: Card;
   hidden: AttrKey;
+}
+
+/** One answered card, for the end-of-run summary. */
+interface Played extends Round {
+  ok: boolean;
 }
 
 function newRound(pool: Card[], allowed: AttrKey[]): Round {
@@ -50,6 +56,11 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
   const [lives, setLives] = useState(LIVES);
   const [best, setBest] = useState<number>(() => load(BEST_KEY, 0));
   const [showSettings, setShowSettings] = useState(false);
+  const [history, setHistory] = useState<Played[]>([]);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  // Best score before this run, so the end screen can say "New best!".
+  const [startBest, setStartBest] = useState(best);
 
   const over = lives === 0;
   const attr = ATTR[round.hidden];
@@ -66,7 +77,11 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     if (attr.kind !== 'text' && !answer) return;
     const g = gradeAttr(round.hidden, answer, round.card);
     setResult(g);
-    if (g.verdict === 'correct') {
+    const ok = g.verdict === 'correct';
+    setHistory((h) => [...h, { ...round, ok }]);
+    setStreak(ok ? streak + 1 : 0);
+    if (ok) setBestStreak((b) => Math.max(b, streak + 1));
+    if (ok) {
       const s = score + 1;
       setScore(s);
       if (s > best) {
@@ -83,6 +98,8 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     if (result || over) return;
     setResult({ verdict: 'wrong' });
     setRevealed(true);
+    setHistory((h) => [...h, { ...round, ok: false }]);
+    setStreak(0);
     setLives((l) => l - 1);
   };
 
@@ -90,6 +107,10 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     const p = s.minionsOnly ? cards.filter((c) => c.type === 'MINION') : cards;
     setScore(0);
     setLives(LIVES);
+    setHistory([]);
+    setStreak(0);
+    setBestStreak(0);
+    setStartBest(best);
     setRound(newRound(p, s.allowed));
     setAnswer('');
     setResult(null);
@@ -187,14 +208,45 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
       </div>
 
       {over && result ? (
-        <div className="panel center">
+        <div className="panel center party-over gauntlet-over">
           <Feedback result={result} attrKey={round.hidden} card={round.card} truthPretty={pretty(round.hidden, truth)} revealed={revealed} />
-          <h2>Game over</h2>
-          <p>
-            You cleared <b>{score}</b> card{score === 1 ? '' : 's'}. Best: {best}.
-          </p>
+          <div className="over-head">
+            <span className="over-kicker">Game over</span>
+            <h2>{score > startBest ? 'New best!' : score ? 'Nice run' : 'Out of lives'}</h2>
+          </div>
+          <div className={`solo-final ${score > startBest ? 'record' : ''}`}>
+            <b className="qf-count done">{score}</b>
+            <span>{score === 1 ? 'card' : 'cards'}</span>
+          </div>
+          <div className="solo-stats">
+            <span>
+              <small>Best</small>
+              <b>{best}</b>
+            </span>
+            <span>
+              <small>Longest streak</small>
+              <b>{bestStreak}</b>
+            </span>
+            <span>
+              <small>Correct</small>
+              <b>
+                {score}
+                <i className="of">/{history.length}</i>
+              </b>
+            </span>
+          </div>
+          <RunStrip history={history} />
           <button className="btn primary" onClick={() => restart()}>
             Play again
+          </button>
+          <button
+            className="btn"
+            onClick={() => {
+              setShowSettings(true);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            Change settings
           </button>
         </div>
       ) : (
@@ -266,6 +318,52 @@ function Feedback({
         )
       )}
     </div>
+  );
+}
+
+/** Every card from the run as a strip of art, marked right or wrong. Tap one for what was asked. */
+function RunStrip({ history }: { history: Played[] }) {
+  const crop = useArtCrop();
+  const [open, setOpen] = useState<number | null>(null);
+  if (!history.length) return null;
+  const sel = open !== null ? history[open] : null;
+  return (
+    <section className="named">
+      <div className="lobby-head">
+        <span className="section-label">This run</span>
+        <span className="count-pill">{history.length}</span>
+      </div>
+      <div className="named-strip">
+        {history.map((x, i) => (
+          <button
+            key={i}
+            type="button"
+            className={`named-card run-card ${x.ok ? 'ok' : 'bad'} ${open === i ? 'on' : ''}`}
+            style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
+            title={x.card.name}
+            aria-label={`${x.card.name}: ${x.ok ? 'right' : 'wrong'}`}
+            onClick={() => setOpen(open === i ? null : i)}
+          >
+            <Art card={x.card} crop={crop} className="named-art" />
+            <span className="run-mark">{x.ok ? '✓' : '✗'}</span>
+          </button>
+        ))}
+      </div>
+      <div className="named-caption muted small">
+        {sel ? (
+          <>
+            <b>{sel.card.name}</b> · {labelFor(ATTR[sel.hidden], sel.card).toLowerCase()} {sel.ok ? 'right' : 'missed'}
+            {sel.hidden !== 'name' && sel.hidden !== 'text' && (
+              <>
+                : <b>{pretty(sel.hidden, ATTR[sel.hidden].value(sel.card))}</b>
+              </>
+            )}
+          </>
+        ) : (
+          'Tap a card to see what was asked'
+        )}
+      </div>
+    </section>
   );
 }
 

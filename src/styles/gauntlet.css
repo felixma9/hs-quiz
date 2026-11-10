@@ -26,3 +26,15 @@
 .btn.reveal { background: transparent; border: 1px solid var(--border, #3a3a3c); color: var(--muted); }
 .btn.reveal .cost { color: #e5484d; margin-left: 4px; white-space: nowrap; }
 .btn.reveal:hover { color: var(--text); }
+
+/* Game over: reuses the Quickfire results pieces (score ring, stat tiles, art strip). */
+.gauntlet-over { margin-top: 4px; }
+.gauntlet-over .feedback { text-align: center; }
+.solo-stats .of { font-style: normal; font-size: 0.8rem; font-weight: 600; color: var(--muted); align-self: flex-end; margin-bottom: 2px; }
+.run-card.ok .named-art { border-color: rgba(83, 141, 78, 0.9); }
+.run-card.bad .named-art { border-color: rgba(229, 72, 77, 0.65); filter: saturate(0.55) brightness(0.8); }
+.run-card.on .named-art { border-color: var(--gold); filter: none; }
+.run-mark { position: absolute; right: -3px; bottom: -3px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 0.8rem; font-weight: 900; line-height: 1; color: #fff; box-shadow: 0 0 0 2px var(--bg); }
+.run-card.ok .run-mark { background: var(--ok); }
+.run-card.bad .run-mark { background: #e5484d; }
