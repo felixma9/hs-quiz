@@ -104,6 +104,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
             g.addPlayer(id, msg.name.slice(0, 20) || 'Player');
           } else if (msg.t === 'answer') g.answer(id, msg.text);
           else if (msg.t === 'typing') {
+            g.typing(id, msg.text);
             setTyping({ id, text: msg.text });
             host.current?.send({ t: 'typing', id, text: msg.text.slice(0, 400) });
           }
@@ -153,6 +154,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
     else guest.current?.send({ t: 'answer', text });
   };
   const sendTyping = (text: string) => {
+    if (mode.role !== 'guest') game.current?.typing(HOST_ID, text);
     if (mode.role === 'host') host.current?.send({ t: 'typing', id: HOST_ID, text: text.slice(0, 400) });
     else guest.current?.send({ t: 'typing', text });
   };
@@ -249,7 +251,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
           />
         )}
         {state.phase === 'playing' && (
-          <Play solo state={state} me={me} deadline={deadline} typing={null} all={all} drawable={drawable} onAnswer={answer} onTyping={() => {}} />
+          <Play solo state={state} me={me} deadline={deadline} typing={null} all={all} drawable={drawable} onAnswer={answer} onTyping={sendTyping} />
         )}
         {state.phase === 'over' && (
           <SoloOver

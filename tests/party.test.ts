@@ -34,6 +34,23 @@ describe('quickfire party', () => {
     expect(state().players[0].hits).toBe(1);
   });
 
+  it('takes a right card typed but not sent when the rope burns out', () => {
+    const { g, state, advance } = setup(['A', 'B']);
+    g.start();
+    g.typing('A', solve(g));
+    advance(state().turnSeconds * 1000 + 1);
+    expect(state().last).toMatchObject({ kind: 'hit', player: 'A' });
+    expect(state().players[0].lives).toBe(state().players[1].lives);
+  });
+
+  it('still burns when the typed text is not a right card', () => {
+    const { g, state, advance } = setup(['A', 'B']);
+    g.start();
+    g.typing('A', 'definitely not a card');
+    advance(state().turnSeconds * 1000 + 1);
+    expect(state().last).toMatchObject({ kind: 'boom', player: 'A' });
+  });
+
   it("won't take the same card twice", () => {
     const { g, state } = setup(['A', 'B']);
     g.start();
@@ -302,6 +319,27 @@ describe('gauntlet vs steals', () => {
     g.answer('B', 'zzzz wrong');
     expect(state().card!.steal).toBe(false);
     expect([20, 40]).toContain(state().turnSeconds);
+  });
+
+  it('takes the typed answer when the rope burns before they submit', () => {
+    const { g, state, advance } = vs();
+    const s = state();
+    const truth = String(ATTR[s.card!.hidden].value(all.find((x) => x.id === s.card!.id)!) ?? '');
+    g.typing('A', truth);
+    advance(s.turnSeconds * 1000 + 1);
+    expect(state().last).toMatchObject({ kind: 'hit', player: 'A' });
+    expect(state().players[0].lives).toBe(3);
+  });
+
+  it('grades a wrong typed answer as a wrong answer, and ignores typing from last turn', () => {
+    const { g, state, advance } = vs();
+    g.typing('A', 'zzzz wrong');
+    advance(state().turnSeconds * 1000 + 1);
+    expect(state().last).toMatchObject({ kind: 'boom', player: 'A', guess: expect.any(String), passed: true });
+    // B hasn't typed this turn: a plain time-out.
+    g.typing('A', 'old');
+    advance(state().turnSeconds * 1000 + 1);
+    expect(state().last).toMatchObject({ kind: 'boom', player: 'B', guess: undefined });
   });
 
   it('passes on a burnt rope too, and a steal can win the card', () => {

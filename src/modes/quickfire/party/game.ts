@@ -149,6 +149,8 @@ export class PartyGame {
   private free: Set<string> | null = null;
   private fuseEndsAt = 0;
   private round = 0;
+  /** What the current player has typed so far this turn; used if the fuse burns before they submit. */
+  private draft: { id: string; round: number; text: string } | null = null;
   private streak = 0;
   private turnSeconds = 0;
   private used = new Set<string>();
@@ -327,6 +329,18 @@ export class PartyGame {
     return false;
   }
 
+  /** What a player has typed so far (sent as they type). Graded if their fuse burns out. */
+  typing(id: string, text: string) {
+    if (this.phase !== 'playing' || this.turn !== id) return;
+    this.draft = { id, round: this.round, text };
+  }
+
+  /** The current player's unsent answer, if they typed one this turn. */
+  private pending(): string {
+    const d = this.draft;
+    return d && d.id === this.turn && d.round === this.round ? d.text.trim() : '';
+  }
+
   /** A player's typed answer. Returns whether it was accepted. */
   answer(id: string, text: string): boolean {
     if (this.phase !== 'playing' || this.turn !== id) return false;
@@ -467,12 +481,26 @@ export class PartyGame {
   tick() {
     if (this.phase !== 'playing' || this.now() < this.fuseEndsAt) return;
     const p = this.players.find((x) => x.id === this.turn);
-    const example = this.prompt?.answers.find((c) => !this.used.has(c.id))?.name;
+    // Out of time with an answer typed but not sent: take it as their answer.
+    const typed = this.pending();
+    this.draft = null;
     if (p && this.card) {
-      this.missCard(p);
-      this.emit();
+      if (typed) this.answerCard(p.id, typed);
+      else {
+        this.missCard(p);
+        this.emit();
+      }
       return;
     }
+    if (p && typed && this.prompt) {
+      const prompt = this.prompt;
+      const c = findCard(typed, this.all, (x) => prompt.test(x) && !this.used.has(x.id));
+      if (c && !this.used.has(c.id) && prompt.test(c)) {
+        this.answer(p.id, typed);
+        return;
+      }
+    }
+    const example = this.prompt?.answers.find((c) => !this.used.has(c.id))?.name;
     if (p) this.loseLife(p, { example });
     if (!this.checkOver()) this.nextTurn();
     this.emit();
