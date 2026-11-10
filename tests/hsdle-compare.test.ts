@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { compare } from '../src/modes/hsdle/compare';
 import { filterPool } from '../src/pool/pool';
 import type { Card } from '../src/lib/types';
@@ -49,5 +50,30 @@ describe('card pool filter', () => {
     ];
     expect(filterPool(cards, [], ['COMMON']).map((c) => c.id)).toEqual(['b', 'c']);
     expect(filterPool(cards, ['NAXX'], ['COMMON']).map((c) => c.id)).toEqual(['b']);
+  });
+});
+
+describe('set timeline', () => {
+  const cards: Card[] = JSON.parse(readFileSync('public/cards.json', 'utf8'));
+  const byName = (n: string) => cards.find((c) => c.name === n)!;
+  const byId = (id: string) => cards.find((c) => c.id === id)!;
+
+  it('calls the old Basic set Basic, not Legacy', () => {
+    expect(compare(byName('Fireball'), byName('Leeroy Jenkins')).set.label).toBe('Basic');
+  });
+
+  it('places Core and Event cards where they came out', () => {
+    const barrens = cards.find((c) => c.set === 'THE_BARRENS')!;
+    const alterac = cards.find((c) => c.set === 'ALTERAC_VALLEY')!;
+    const coreLaunch = cards.find((c) => c.set === 'CORE' && c.id.startsWith('CS3_'))!;
+    // A first-Core card (March 2021) is older than Barrens; Alterac is newer.
+    expect(compare(barrens, coreLaunch).set.arrow).toBe('down');
+    expect(compare(alterac, coreLaunch).set.arrow).toBe('down');
+    // A Cataclysm event card is from 2026, newer than anything from 2020.
+    const event = cards.find((c) => c.set === 'EVENT' && c.id.startsWith('CATA_'))!;
+    const cata = cards.find((c) => c.set === 'CATACLYSM')!;
+    expect(compare(cards.find((c) => c.set === 'DARKMOON_FAIRE')!, event).set.arrow).toBe('up');
+    expect(compare(cata, event).set).toMatchObject({ verdict: 'close', arrow: undefined });
+    expect(byId('CS3_007')).toBeTruthy();
   });
 });

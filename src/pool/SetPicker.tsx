@@ -8,6 +8,9 @@ interface Props {
   onChange(excluded: string[]): void;
 }
 
+const ORDER = Object.keys(SETS);
+const order = (s: string) => (ORDER.includes(s) ? ORDER.indexOf(s) : ORDER.length);
+
 export function SetPicker({ cards, excluded, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const ex = new Set(excluded);
@@ -23,7 +26,8 @@ export function SetPicker({ cards, excluded, onChange }: Props) {
     }
     return [...byYear.entries()]
       .sort((a, b) => b[0] - a[0])
-      .map(([year, sets]) => ({ year, sets: sets.sort((a, b) => setName(a.set).localeCompare(setName(b.set))) }));
+      // Within a year, in release order (SETS is listed chronologically).
+      .map(([year, sets]) => ({ year, sets: sets.sort((a, b) => order(a.set) - order(b.set)) }));
   }, [cards]);
 
   const all = years.flatMap((y) => y.sets.map((s) => s.set));

@@ -1,6 +1,7 @@
 /** Set code -> display name and release year (used for "close" clues). New sets must also be appended to SHARE_SETS in src/pool/shareCode.ts (a test checks). */
 export const SETS: Record<string, { name: string; year: number }> = {
-  LEGACY: { name: 'Legacy', year: 2014 },
+  // HearthstoneJSON's LEGACY is the original Basic set (Fireball, Chillwind Yeti). The game now files Basic and Classic both under "Legacy".
+  LEGACY: { name: 'Basic', year: 2014 },
   EXPERT1: { name: 'Classic', year: 2014 },
   NAXX: { name: 'Curse of Naxxramas', year: 2014 },
   GVG: { name: 'Goblins vs Gnomes', year: 2014 },
@@ -24,6 +25,8 @@ export const SETS: Record<string, { name: string; year: number }> = {
   BLACK_TEMPLE: { name: 'Ashes of Outland', year: 2020 },
   SCHOLOMANCE: { name: 'Scholomance Academy', year: 2020 },
   DARKMOON_FAIRE: { name: 'Madness at the Darkmoon Faire', year: 2020 },
+  // Core launched in March 2021, before Barrens. It's refreshed every year and always in Standard, so the set picker files it with the newest year (see CORE_YEAR).
+  CORE: { name: 'Core', year: 2026 },
   THE_BARRENS: { name: 'Forged in the Barrens', year: 2021 },
   STORMWIND: { name: 'United in Stormwind', year: 2021 },
   ALTERAC_VALLEY: { name: 'Fractured in Alterac Valley', year: 2021 },
@@ -44,9 +47,38 @@ export const SETS: Record<string, { name: string; year: number }> = {
   CATACLYSM: { name: 'Cataclysm', year: 2026 },
   ESCAPEFROM_VIOLET_HOLD: { name: 'Escape from Violet Hold', year: 2026 },
   BE: { name: 'Reign of the Black Empire', year: 2026 },
-  CORE: { name: 'Core', year: 2021 },
-  EVENT: { name: 'Event', year: 2020 },
+  // Event cards here are all from 2025-26 events (see released()).
+  EVENT: { name: 'Event', year: 2025 },
 };
+
+/** Year the Core set launched (cards first printed in that first Core, CS3_*). */
+const CORE_YEAR = 2021;
+
+/**
+ * Core and Event cards came out alongside other sets. Their IDs say which,
+ * so the timeline can place them there.
+ */
+const BY_PREFIX: [RegExp, string][] = [
+  [/^CS3_/, 'CORE'],
+  [/^RLK_/, 'PATH_OF_ARTHAS'],
+  [/^TTN_/, 'TITANS'],
+  [/^(CORE_)?EDR_/, 'EMERALD_DREAM'],
+  [/^TLC_/, 'THE_LOST_CITY'],
+  [/^TIME_/, 'TIME_TRAVEL'],
+  [/^(CORE_)?CATA_/, 'CATACLYSM'],
+  [/^JAIL_/, 'ESCAPEFROM_VIOLET_HOLD'],
+  [/^BE_/, 'BE'],
+];
+
+const ORDER = Object.keys(SETS);
+
+/** When a card first came out: its place in the release order and its year. */
+export function released(card: { id: string; set: string }): { rank: number; year: number } {
+  let at = card.set;
+  if (card.set === 'CORE' || card.set === 'EVENT') at = BY_PREFIX.find(([re]) => re.test(card.id))?.[1] ?? card.set;
+  const i = ORDER.indexOf(at);
+  return { rank: i < 0 ? ORDER.length : i, year: at === 'CORE' ? CORE_YEAR : (SETS[at]?.year ?? 0) };
+}
 
 export function setName(code: string): string {
   return SETS[code]?.name ?? code;

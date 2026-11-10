@@ -1,5 +1,5 @@
 import type { Card } from '../../lib/types';
-import { SETS, setName } from '../../data/sets';
+import { released, setName } from '../../data/sets';
 import { pretty } from '../../lib/attributes';
 
 /**
@@ -29,15 +29,6 @@ export const COLUMNS: { key: ColumnKey; label: string }[] = [
 ];
 
 const RARITY_ORDER = ['FREE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY'];
-const SET_ORDER = Object.keys(SETS);
-
-/** Release position of a set: by year, then by its place in the (chronological) set list. */
-function setRank(set: string): number {
-  const year = SETS[set]?.year ?? 0;
-  const i = SET_ORDER.indexOf(set);
-  return year * 1000 + (i < 0 ? 999 : i);
-}
-
 const arrow = (guess: number, answer: number): Tile['arrow'] => (answer > guess ? 'up' : answer < guess ? 'down' : undefined);
 
 function numberTile(guess: number | undefined, answer: number | undefined): Tile {
@@ -61,7 +52,9 @@ function listTile(guess: string[], answer: string[], label: (v: string) => strin
 const classesOf = (c: Card) => c.classes ?? [c.cardClass];
 
 export function compare(guess: Card, answer: Card): Record<ColumnKey, Tile> {
-  const sameYear = SETS[guess.set] && SETS[guess.set]?.year === SETS[answer.set]?.year;
+  const g = released(guess);
+  const a = released(answer);
+  const sameYear = g.year > 0 && g.year === a.year;
   return {
     cost: numberTile(guess.cost, answer.cost),
     health: numberTile(guess.health, answer.health),
@@ -69,7 +62,7 @@ export function compare(guess: Card, answer: Card): Record<ColumnKey, Tile> {
     keywords: listTile(guess.keywords ?? [], answer.keywords ?? [], (k) => k),
     set: {
       verdict: guess.set === answer.set ? 'correct' : sameYear ? 'close' : 'wrong',
-      arrow: guess.set === answer.set ? undefined : arrow(setRank(guess.set), setRank(answer.set)),
+      arrow: guess.set === answer.set || g.rank === a.rank ? undefined : arrow(g.rank, a.rank),
       label: setName(guess.set),
     },
     rarity: {
