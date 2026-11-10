@@ -128,6 +128,8 @@ export function enumOptions(attr: AttrKey, cards: Card[]): { value: string; labe
     // Single values first, then combos (dual tribes, multiclass).
     list.sort((a, b) => Number(a.includes('+')) - Number(b.includes('+')) || pretty(attr, a).localeCompare(pretty(attr, b)));
     if (attr === 'tribe') list = ['NONE', ...list.filter((v) => v !== 'NONE')];
+    // Neutral first: the first tap on a card's frame picks it, and it heads the class list.
+    if (attr === 'class' && list.includes('NEUTRAL')) list = ['NEUTRAL', ...list.filter((v) => v !== 'NEUTRAL')];
   }
   return list.map((v) => ({ value: v, label: pretty(attr, v) }));
 }
