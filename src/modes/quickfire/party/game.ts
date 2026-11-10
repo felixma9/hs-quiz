@@ -11,8 +11,9 @@ import { newRound } from '../../gauntlet/round';
  *
  * Gauntlet VS is the same room with Gauntlet's cards: two players take turns
  * filling in a card's blank field. A wrong answer or a burnt fuse costs a life
- * and passes the same card to the other player to steal; if they miss too,
- * everyone sees the answer and a new card comes up.
+ * and passes the same card to the other player to steal. A missed steal costs
+ * nothing (everyone sees the answer and a new card comes up); every third
+ * successful steal earns a life. The rope gets a little shorter each card.
  *
  * Only the host runs this. Everyone else gets PublicState snapshots.
  */
@@ -38,6 +39,16 @@ export const FUSE_OPTIONS = FUSE_FOR.quickfire.options;
 export const VS_PLAYERS = 2;
 /** Gauntlet VS: card text takes a while to type, so those turns get this many times the seconds. */
 export const TEXT_TIME = 2;
+/** Gauntlet VS: successful steals for an extra life. */
+export const STEALS_FOR_LIFE = 3;
+/**
+ * Gauntlet VS: each new card's rope is 3% shorter than the last, down to
+ * half the chosen time (never under 6 seconds).
+ */
+export function vsSeconds(base: number, cardsDealt: number): number {
+  const floor = Math.min(base, Math.max(6, base * 0.5));
+  return Math.round(Math.max(floor, base * 0.97 ** cardsDealt) * 10) / 10;
+}
 
 /** Gauntlet VS cards: the host's card pool and which fields can be blank. */
 export interface VsOptions {
@@ -58,11 +69,13 @@ export interface PartyPlayer {
   streak: number;
   /** Their longest streak this game. */
   bestStreak: number;
+  /** Gauntlet VS: cards they stole this game (every STEALS_FOR_LIFE earns a life). */
+  steals?: number;
 }
 
 export type PartyEvent =
   /** Right answer. In Gauntlet VS, `attr` is the field that was blank. */
-  | { kind: 'hit'; player: string; cardId: string; streak: number; attr?: AttrKey; n: number }
+  | { kind: 'hit'; player: string; cardId: string; streak: number; attr?: AttrKey; stole?: boolean; bonusLife?: boolean; n: number }
   | { kind: 'miss'; player: string; text: string; guess: string; n: number }
   /**
    * A life lost: the fuse burnt out, or (Gauntlet VS) a wrong answer, when
@@ -78,6 +91,8 @@ export type PartyEvent =
       guess?: string;
       /** Gauntlet VS: the card goes to the other player to steal (the answer isn't shown yet). */
       passed?: boolean;
+      /** Gauntlet VS: a missed steal, which costs no life. */
+      safe?: boolean;
       /** Gauntlet VS: both players missed this card. */
       nobody?: boolean;
       /** Gauntlet VS: nobody got a card's text; this is the real text. */
@@ -136,6 +151,8 @@ export class PartyGame {
   private upcoming: { card: Card; hidden: AttrKey } | null = null;
   /** Gauntlet VS: fields with only one possible answer in the pool. */
   private free: Set<string> | null = null;
+  /** Gauntlet VS: new cards dealt this game (the rope shortens as it grows). */
+  private dealt = 0;
   private fuseEndsAt = 0;
   private round = 0;
   private streak = 0;
@@ -195,7 +212,7 @@ export class PartyGame {
       existing.name = name;
     } else {
       // Late joiners watch until the next game.
-      this.players.push({ id, name, lives: this.phase === 'lobby' ? this.settings.lives : 0, connected: true, hits: 0, outAt: 0, streak: 0, bestStreak: 0 });
+      this.players.push({ id, name, lives: this.phase === 'lobby' ? this.settings.lives : 0, connected: true, hits: 0, outAt: 0, streak: 0, bestStreak: 0, steals: 0 });
     }
     this.event({ kind: 'info', text: `${name} joined` });
     this.emit();
@@ -238,6 +255,7 @@ export class PartyGame {
       p.outAt = 0;
       p.streak = 0;
       p.bestStreak = 0;
+      p.steals = 0;
     }
     this.phase = 'playing';
     this.used = new Set();
@@ -247,6 +265,7 @@ export class PartyGame {
     this.last = null;
     this.turn = null;
     this.upcoming = null;
+    this.dealt = 0;
     this.nextTurn();
     this.emit();
   }
@@ -289,7 +308,7 @@ export class PartyGame {
       this.upcoming = newRound(this.vs.pool, this.vs.allowed, this.rng, new Set([...this.used, r.card.id]), this.free);
       this.prompt = null;
       // No speed-up: filling in a card takes as long as it takes. Card text gets extra time.
-      this.turnSeconds = this.settings.fuse * (r.hidden === 'text' ? TEXT_TIME : 1);
+      this.turnSeconds = vsSeconds(this.settings.fuse, this.dealt++) * (r.hidden === 'text' ? TEXT_TIME : 1);
     } else {
       this.card = null;
       this.prompt = makePrompt(this.pool, this.used, this.rng);
@@ -348,7 +367,7 @@ export class PartyGame {
    * shows the answer and a new card comes up.
    */
   private answerCard(id: string, text: string): boolean {
-    const { card, hidden } = this.card!;
+    const { card, hidden, steal } = this.card!;
     const g = gradeAttr(hidden, text, card, true);
     const p = this.players.find((x) => x.id === id)!;
     const ok = g.verdict === 'correct';
@@ -358,7 +377,15 @@ export class PartyGame {
       p.hits++;
       p.streak++;
       p.bestStreak = Math.max(p.bestStreak, p.streak);
-      this.event({ kind: 'hit', player: id, cardId: card.id, streak: p.streak, attr: hidden });
+      let bonusLife = false;
+      if (steal) {
+        p.steals = (p.steals ?? 0) + 1;
+        if (p.steals % STEALS_FOR_LIFE === 0) {
+          p.lives++;
+          bonusLife = true;
+        }
+      }
+      this.event({ kind: 'hit', player: id, cardId: card.id, streak: p.streak, attr: hidden, stole: steal, bonusLife });
       if (!this.checkOver()) this.nextTurn();
     } else {
       const kind = ATTR[hidden].kind;
@@ -387,7 +414,7 @@ export class PartyGame {
       this.used.add(c.card.id);
       this.named.push({ player: p.id, cardId: c.card.id, ok: false });
     }
-    this.loseLife(p, {
+    const extra = {
       cardId: c.card.id,
       attr: c.hidden,
       guess,
@@ -395,7 +422,12 @@ export class PartyGame {
       nobody: final && c.steal,
       example: final ? this.cardTruth() : undefined,
       reveal: final && c.hidden === 'text' ? String(ATTR.text.value(c.card) ?? '') : undefined,
-    });
+    };
+    if (c.steal) {
+      // A missed steal costs nothing but the streak.
+      p.streak = 0;
+      this.event({ kind: 'boom', player: p.id, out: false, safe: true, ...extra });
+    } else this.loseLife(p, extra);
     if (this.checkOver()) return;
     if (pass && other) {
       // Same card, new fuse, other player.

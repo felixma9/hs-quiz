@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { PartyGame, type PublicState } from '../src/modes/quickfire/party/game';
+import { PartyGame, vsSeconds, type PublicState } from '../src/modes/quickfire/party/game';
 import type { Card } from '../src/lib/types';
 import { ATTR } from '../src/lib/attributes';
 
@@ -248,6 +248,10 @@ describe('gauntlet vs steals', () => {
     expect(state().card).toMatchObject({ id: card, steal: true });
     g.answer('B', 'zzzz wrong');
     expect(state().last).toMatchObject({ kind: 'boom', player: 'B', passed: false, nobody: true });
+    // A missed steal costs no life.
+    expect(state().last).toMatchObject({ safe: true });
+    expect(state().players[1].lives).toBe(3);
+    expect(state().players[0].lives).toBe(2);
     expect(state().card!.id).not.toBe(card);
     expect(state().card!.steal).toBe(false);
   });
@@ -278,5 +282,36 @@ describe('gauntlet vs next card', () => {
     const truth = String(ATTR[last.card!.hidden].value(all.find((x) => x.id === last.card!.id)!) ?? '');
     g.answer('A', truth);
     expect(last.card!.id).toBe(next);
+  });
+});
+
+describe('gauntlet vs rewards and pace', () => {
+  it('gives a life for every third steal', () => {
+    let t = 0;
+    let last!: PublicState;
+    const g = new PartyGame(all, all, (s) => (last = s), () => t);
+    g.addPlayer('A', 'A');
+    g.addPlayer('B', 'B');
+    g.setSettings({ game: 'gauntlet', lives: 5 });
+    g.start();
+    const truth = () => String(ATTR[last.card!.hidden].value(all.find((x) => x.id === last.card!.id)!) ?? '');
+    for (let i = 0; i < 3; i++) {
+      // Whoever's up misses; B steals. Then A's card (or B's) moves on.
+      while (last.turn !== 'A') g.answer(last.turn!, truth());
+      g.answer('A', 'zzzz wrong');
+      expect(last.turn).toBe('B');
+      g.answer('B', truth());
+      expect(last.last).toMatchObject({ kind: 'hit', stole: true, bonusLife: i === 2 });
+    }
+    expect(last.players[1].steals).toBe(3);
+    expect(last.players[1].lives).toBe(6);
+  });
+
+  it('shortens the rope a little each card', () => {
+    expect(vsSeconds(20, 0)).toBe(20);
+    expect(vsSeconds(20, 1)).toBeLessThan(20);
+    expect(vsSeconds(20, 10)).toBeLessThan(vsSeconds(20, 5));
+    expect(vsSeconds(20, 200)).toBe(10);
+    expect(vsSeconds(15, 200)).toBe(7.5);
   });
 });

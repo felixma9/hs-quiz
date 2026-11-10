@@ -7,7 +7,7 @@ import { Bold, ClassName } from '../Bold';
 import { ICON, rarityIcon } from '../../../app/icons';
 import { load, save } from '../../../lib/storage';
 import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
-import { FUSE_FOR, FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, VS_PLAYERS, type PartySettings, type PublicState, type RoomGame } from './game';
+import { FUSE_FOR, FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, STEALS_FOR_LIFE, VS_PLAYERS, type PartySettings, type PublicState, type RoomGame } from './game';
 import { ATTR, labelFor, pretty, type AttrKey } from '../../../lib/attributes';
 import { GameCard } from '../../../card/GameCard';
 import { preloadArt } from '../../../card/sunwell';
@@ -166,7 +166,11 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
     else if (e.kind === 'miss') {
       sfx.miss();
       setTyping({ id: e.player, text: e.guess, wrong: e.n });
-    } else if (e.kind === 'boom') sfx.boom();
+    } else if (e.kind === 'boom') {
+      // A missed steal costs no life: just the miss sound.
+      if (e.safe) sfx.miss();
+      else sfx.boom();
+    }
     else if (e.kind === 'info' && e.text.endsWith('joined') && mode.role !== 'solo') sfx.join();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastN]);
@@ -435,7 +439,7 @@ function Lobby({
         <div className="pool-note">
           <img className="setting-icon" src={MANA_ICON} alt="" />
           {vs
-            ? `1v1: take turns filling in a card's blank. Miss and you lose a life, and your opponent gets a chance to steal the same card. Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
+            ? `1v1: take turns filling in a card's blank. Miss and you lose a life, and your opponent gets a free shot at stealing the same card (every ${STEALS_FOR_LIFE} steals earns a life). The rope gets a little shorter each card. Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
             : `Every collectible card counts: ${state.poolSize.toLocaleString()} cards.`}
         </div>
       </section>
@@ -766,7 +770,7 @@ function VsBar({ state, me, frac, left, urgent }: { state: PublicState; me: stri
   const seated = state.players.filter((p) => p.lives > 0 || p.outAt > 0 || state.players.length <= VS_PLAYERS).slice(0, VS_PLAYERS);
   const [a, b] = [...seated].sort((x, y) => Number(y.id === me) - Number(x.id === me));
   const side = (p: PublicState['players'][number]) => {
-    const boom = last?.kind === 'boom' && last.player === p.id;
+    const boom = last?.kind === 'boom' && last.player === p.id && !last.safe;
     return (
       <div
         key={p.id + (boom ? `-boom-${last!.n}` : '')}
@@ -784,11 +788,17 @@ function VsBar({ state, me, frac, left, urgent }: { state: PublicState; me: stri
         </span>
         <span className="vs-name">{p.id === me ? 'You' : p.name}</span>
         <span className="seat-lives" aria-label={`${p.lives} lives`}>
-          {Array.from({ length: state.settings.lives }, (_, k) => (
+          {/* Extra lives from steals add hearts beyond the starting ones. */}
+          {Array.from({ length: Math.max(state.settings.lives, p.lives) }, (_, k) => (
             <img key={k} className={`life ${k < p.lives ? 'on' : ''}`} src={HEALTH_ICON} alt="" draggable={false} />
           ))}
         </span>
-        <span className="vs-hits">{plural(p.hits, 'card')}</span>
+        <span className="vs-hits">
+          {plural(p.hits, 'card')} ·{' '}
+          <span className="vs-steals" title={`Every ${STEALS_FOR_LIFE} steals earns a life`}>
+            {(p.steals ?? 0) % STEALS_FOR_LIFE}/{STEALS_FOR_LIFE} steals
+          </span>
+        </span>
       </div>
     );
   };
@@ -917,11 +927,17 @@ function EventLine({
         {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" zoom />}
         {last.attr ? (
           <span>
-            ✓ {who(last.player)} got {c?.name}'s {c ? labelFor(ATTR[last.attr], c).toLowerCase() : last.attr}
+            {last.stole ? '🗡' : '✓'} {who(last.player)} {last.stole ? 'stole' : 'got'} {c?.name}'s {c ? labelFor(ATTR[last.attr], c).toLowerCase() : last.attr}
             {last.attr !== 'name' && last.attr !== 'text' && c && (
               <>
                 : <b>{pretty(last.attr, ATTR[last.attr].value(c))}</b>
               </>
+            )}
+            {last.bonusLife && (
+              <b className="bonus-life">
+                {' '}
+                +1 <img className="stat-icon" src={HEALTH_ICON} alt="life" /> ({STEALS_FOR_LIFE} steals)
+              </b>
             )}
           </span>
         ) : (
@@ -960,7 +976,7 @@ function EventLine({
       );
     } else {
       const out = last.out ? (last.player === me ? ' You are out!' : ` ${nameOf(last.player)} is out!`) : '';
-      const nobody = last.nobody ? 'Nobody got it. ' : '';
+      const nobody = last.nobody ? `${last.safe ? 'No life lost. ' : ''}Nobody got it. ` : '';
       if (last.reveal !== undefined) {
         cls = 'boom reveal';
         body = (

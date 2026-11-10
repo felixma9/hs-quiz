@@ -382,3 +382,7 @@
 }
 /* Two players: the podium is just 2nd and 1st, centred. */
 .podium.two { grid-template-columns: repeat(2, minmax(0, 150px)); justify-content: center; }
+.vs-steals { white-space: nowrap; }
+.bonus-life { color: #ff8a8d; white-space: nowrap; }
+.bonus-life .stat-icon { vertical-align: -2px; }
+.vs-side .seat-lives { flex-wrap: wrap; justify-content: center; max-width: 100px; }
