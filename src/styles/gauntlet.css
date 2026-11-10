@@ -1,5 +1,7 @@
 /* Gauntlet: score bar, settings, answer feedback. */
-.hud { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.92rem; color: var(--muted); }
+.hud { display: grid; grid-template-columns: 1fr auto auto 1fr; align-items: start; column-gap: clamp(20px, 8vw, 44px); font-size: 0.92rem; color: var(--muted); }
+.hud > :first-child { align-self: center; justify-self: start; }
+.hud > :last-child { align-self: center; justify-self: end; }
 .hud b { color: var(--text); }
 .stat { display: flex; flex-direction: column; align-items: center; line-height: 1; gap: 3px; }
 .stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }

@@ -33,7 +33,7 @@
 .qf-join .btn { min-width: 96px; }
 .qf-or { text-align: center; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.14em; }
 .qf-solo { background: transparent; }
-.party-leave { justify-self: center; font-size: 0.9rem; margin-top: 4px; }
+.party-leave { justify-self: center; font-size: 0.9rem; margin-top: 4px; padding: 10px 18px; }
 
 /* ---- Lobby ---- */
 .party { gap: 14px; }
@@ -96,7 +96,7 @@
 .table.urgent .needle { background: linear-gradient(180deg, #ff8a8d, rgba(229, 72, 77, 0) 70%); }
 
 .seat { position: absolute; left: 50%; top: 50%; display: grid; justify-items: center; gap: 2px; width: 26cqw;
-  transform: translate(-50%, -50%) rotate(var(--a)) translateY(-36cqw) rotate(calc(-1 * var(--a)));
+  transform: translate(-50%, -50%) rotate(var(--a)) translateY(-42cqw) rotate(calc(-1 * var(--a)));
   transition: opacity 0.3s ease; }
 .seat .avatar { width: 15cqw; height: 15cqw; font-size: 6.5cqw; transition: transform 0.3s var(--ease, ease), box-shadow 0.3s ease; }
 .seat-name { font-size: 3.6cqw; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -105,6 +105,7 @@
 .seat-lives .life { width: max(11px, 3.8cqw); height: auto; display: block; filter: grayscale(1) brightness(0.45); opacity: 0.5;
   transition: filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease; }
 .seat-lives .life.on { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); opacity: 1; }
+.seat.active .avatar-wrap { margin: 1.4cqw 0; }
 .seat.active .avatar { transform: scale(1.18); box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(240, 199, 94, 0.65); }
 .seat.active .seat-name { color: var(--gold); }
 .seat.me .seat-name { font-weight: 800; }
@@ -245,3 +246,14 @@
 .hot-callout { padding: 1px 8px; border-radius: 999px; font-weight: 800; font-size: 0.82rem; color: #ffb347;
   background: rgba(255, 120, 40, 0.14); border: 1px solid rgba(255, 150, 60, 0.4); }
 .hot-callout.hot-3 { color: #fff; background: #e8611f; border-color: transparent; }
+
+/* Seats sit far enough out that names and lives clear the rope; the margins
+   leave room for the top and bottom seats (and the top seat's bubble). */
+.table, .table.compact { margin: 22px auto 14px; }
+/* Watching: the top seat may have a typing bubble above it. */
+.table:not(.compact) { margin-top: 40px; }
+/* Solo: the one seat is you, so no name tag. */
+.table.solo .seat-name { display: none; }
+@media (min-width: 700px) and (min-height: 760px) {
+  .table.compact { width: 250px; }
+}

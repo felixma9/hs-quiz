@@ -19,7 +19,7 @@ const RARITY_FILE: Record<string, string> = {
   LEGENDARY: 'rarity-legendary',
 };
 export const rarityIcon = (r: string) => `${BASE}sunwell/${RARITY_FILE[r] ?? 'rarity-common'}.webp`;
-export const classIcon = (cls: string) => `${BASE}class-icons/${cls}.png`;
+export const classIcon = (cls: string) => `${BASE}class-icons/${cls}.webp`;
 
 /** A stat drawn the way the card shows it: the number on its gem. */
 export function StatGem({ kind, n }: { kind: 'mana' | 'attack' | 'health'; n: number | string }) {

@@ -499,7 +499,7 @@ function Play({
         </div>
       )}
       {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
-      <div className={`table ${myTurn ? 'compact' : ''} ${urgent ? 'urgent' : ''}`}>
+      <div className={`table ${myTurn ? 'compact' : ''} ${solo ? 'solo' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
         <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
           <RopeRing frac={frac} key={`rope-${state.round}`} />

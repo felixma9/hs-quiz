@@ -30,7 +30,8 @@ function part(text: string, before: string): ReactNode {
   if ((m = text.match(/^(\d+) (Attack|Health)$/))) {
     return (
       <span className="stat-word">
-        <StatGem kind={m[2] === 'Attack' ? 'attack' : 'health'} n={m[1]} /> {m[2]}
+        <StatGem kind={m[2] === 'Attack' ? 'attack' : 'health'} n={m[1]} />
+        {m[2]}
       </span>
     );
   }
@@ -54,11 +55,29 @@ function part(text: string, before: string): ReactNode {
 /** Render a prompt's **bold** markers, with stat gems and class icons. */
 export function Bold({ text }: { text: string }) {
   const parts = text.split('**');
-  return (
-    <>
-      {parts.map((p, i) => (
-        <Fragment key={i}>{i % 2 ? <b>{part(p, parts[i - 1] ?? '')}</b> : p}</Fragment>
-      ))}
-    </>
-  );
+  const out: ReactNode[] = [];
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i];
+    if (i % 2) {
+      out.push(<b key={i}>{part(p, parts[i - 1] ?? '')}</b>);
+      continue;
+    }
+    // A number gem stays on the same line as the word before it ("costs 4").
+    const next = parts[i + 1];
+    const m = next !== undefined && /^\d+$/.test(next) ? p.match(/^(.*?)(\S+) $/s) : null;
+    if (!m) {
+      out.push(<Fragment key={i}>{p}</Fragment>);
+      continue;
+    }
+    out.push(
+      <Fragment key={i}>
+        {m[1]}
+        <span className="nowrap">
+          {m[2]} <b>{part(next, p)}</b>
+        </span>
+      </Fragment>,
+    );
+    i++;
+  }
+  return <>{out}</>;
 }

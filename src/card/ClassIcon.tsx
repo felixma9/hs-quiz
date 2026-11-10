@@ -5,8 +5,8 @@ import { badge } from '../data/classes';
 const missing = new Set<string>();
 
 /**
- * A class icon. If the site owner has added public/class-icons/<CLASS>.png
- * (e.g. DRUID.png), that image is shown; otherwise the original badge
+ * A class icon. If the site owner has added public/class-icons/<CLASS>.webp
+ * (e.g. DRUID.webp), that image is shown; otherwise the original badge
  * (a color and a symbol). Nothing ships in that folder by default.
  */
 export function ClassIcon({ cls, small = false }: { cls: string; small?: boolean }) {
@@ -22,7 +22,7 @@ export function ClassIcon({ cls, small = false }: { cls: string; small?: boolean
   return (
     <img
       className={`class-icon custom ${small ? 'small' : ''}`}
-      src={`${import.meta.env.BASE_URL}class-icons/${cls}.png`}
+      src={`${import.meta.env.BASE_URL}class-icons/${cls}.webp`}
       alt=""
       onError={() => {
         missing.add(cls);

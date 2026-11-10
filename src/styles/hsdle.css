@@ -138,3 +138,12 @@
   .clue-btn { width: 100%; }
   .tile-label.rarity-label { display: grid; -webkit-line-clamp: unset; }
 }
+
+/* Wide screens: the board fits, so the name column needn't be a sticky panel. */
+@media (min-width: 760px) {
+  .board-row .name-cell { position: static; background: none; box-shadow: none; }
+}
+
+/* The header's name cell matches the other column heads (the name-button rule above clears its padding and rule). */
+.board-head .board-cell.name-cell { padding-bottom: 4px; border-bottom: 2px solid var(--border); align-items: flex-end; font-size: 0.68rem; line-height: normal; }
+@media (max-width: 600px) { .board-head .board-cell.name-cell { padding-bottom: 3px; } }
