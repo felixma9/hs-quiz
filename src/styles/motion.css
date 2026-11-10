@@ -142,12 +142,9 @@ html { scroll-behavior: smooth; }
 .qf-form .btn { transition: transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1), opacity var(--fast) ease, filter var(--fast) ease; }
 .qf-form .btn.primary:disabled { transform: scale(0.92); }
 .qf-form .btn:active:not(:disabled) { transform: scale(0.9); transition-duration: 0.06s; }
-/* Solo results: big count, "New best!" pops. */
-.qf-final { display: grid; justify-items: center; gap: 2px; }
+/* Solo results: the count bumps in. */
 .qf-count { font-size: 3.4rem; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
 .qf-count.done { animation: score-bump 0.3s var(--ease) 1; }
-.qf-newbest { justify-self: center; padding: 3px 12px; border-radius: 999px; background: rgba(240, 178, 50, 0.16); color: #f0b232;
-  font-weight: 800; letter-spacing: 0.04em; animation: qf-pop 0.35s var(--ease) 0.5s backwards; }
 
 /* Menu: the three modes rise in one after another. */
 .mode-list > .mode-card { animation: rise-in 0.35s var(--ease) backwards; }
@@ -234,3 +231,10 @@ html { scroll-behavior: smooth; }
   }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
+
+/* Lobby and results */
+.pulse-dot { animation: pulse-ring 1.6s ease-out infinite; }
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(240, 199, 94, 0.6); } 80%, 100% { box-shadow: 0 0 0 8px rgba(240, 199, 94, 0); } }
+.named-card { animation: qf-pop 0.3s var(--ease) backwards; }
+.podium-gem { animation: qf-pop 0.35s var(--ease) 0.55s backwards; }
+.solo-final { animation: qf-pop 0.4s var(--ease) backwards; }

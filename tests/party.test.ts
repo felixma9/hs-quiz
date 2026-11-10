@@ -138,3 +138,24 @@ describe('quickfire party hot streaks', () => {
     expect(last.players.find((p) => p.id === 'A')!.streak).toBe(2);
   });
 });
+
+describe('quickfire party results', () => {
+  it('keeps each best streak and the cards named, sent once the game is over', () => {
+    let t = 0;
+    let last!: PublicState;
+    const g = new PartyGame(all, all, (s) => (last = s), () => t);
+    ['A', 'B'].forEach((n) => g.addPlayer(n, n));
+    g.setSettings({ fuse: 12, lives: 1 });
+    g.start();
+    g.answer('A', solve(g));
+    g.answer('B', solve(g));
+    g.answer('A', solve(g));
+    expect(last.named).toEqual([]); // not sent mid-game
+    t += 60_000;
+    g.tick(); // B burns out: A wins
+    expect(last.phase).toBe('over');
+    expect(last.named.map((x) => x.player)).toEqual(['A', 'B', 'A']);
+    expect(last.players.find((p) => p.id === 'A')!.bestStreak).toBe(2);
+    expect(last.players.find((p) => p.id === 'B')!.bestStreak).toBe(1);
+  });
+});

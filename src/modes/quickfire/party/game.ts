@@ -29,6 +29,8 @@ export interface PartyPlayer {
   outAt: number;
   /** This player's right answers in a row (their burnt fuse resets it). */
   streak: number;
+  /** Their longest streak this game. */
+  bestStreak: number;
 }
 
 export type PartyEvent =
@@ -57,6 +59,8 @@ export interface PublicState {
   winner: string | null;
   /** Shown in the lobby: how many cards the host's pool has. */
   poolSize: number;
+  /** Every card named this game, in order (only sent once the game is over). */
+  named: { player: string; cardId: string }[];
 }
 
 /**
@@ -81,6 +85,7 @@ export class PartyGame {
   private streak = 0;
   private turnSeconds = 0;
   private used = new Set<string>();
+  private named: PublicState['named'] = [];
   private last: PartyEvent | null = null;
   private winner: string | null = null;
   private n = 0;
@@ -108,6 +113,7 @@ export class PartyGame {
       last: this.last,
       winner: this.winner,
       poolSize: this.pool.length,
+      named: this.phase === 'over' ? [...this.named] : [],
     };
   }
 
@@ -126,7 +132,7 @@ export class PartyGame {
       existing.name = name;
     } else {
       // Late joiners watch until the next game.
-      this.players.push({ id, name, lives: this.phase === 'lobby' ? this.settings.lives : 0, connected: true, hits: 0, outAt: 0, streak: 0 });
+      this.players.push({ id, name, lives: this.phase === 'lobby' ? this.settings.lives : 0, connected: true, hits: 0, outAt: 0, streak: 0, bestStreak: 0 });
     }
     this.event({ kind: 'info', text: `${name} joined` });
     this.emit();
@@ -164,9 +170,11 @@ export class PartyGame {
       p.hits = 0;
       p.outAt = 0;
       p.streak = 0;
+      p.bestStreak = 0;
     }
     this.phase = 'playing';
     this.used = new Set();
+    this.named = [];
     this.streak = 0;
     this.winner = null;
     this.last = null;
@@ -241,6 +249,8 @@ export class PartyGame {
     const p = this.players.find((x) => x.id === id)!;
     p.hits++;
     p.streak++;
+    p.bestStreak = Math.max(p.bestStreak, p.streak);
+    this.named.push({ player: id, cardId: c.id });
     this.streak++;
     this.event({ kind: 'hit', player: id, cardId: c.id, streak: p.streak });
     this.nextTurn();

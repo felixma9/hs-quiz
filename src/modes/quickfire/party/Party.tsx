@@ -3,6 +3,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { Card } from '../../../lib/types';
 import { Art, useArtCrop } from '../../hsdle/Art';
 import { Bold, ClassName } from '../Bold';
+import { ICON, rarityIcon } from '../../../app/icons';
 import { load, save } from '../../../lib/storage';
 import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
 import { FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, type PartySettings, type PublicState } from './game';
@@ -10,7 +11,10 @@ import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './n
 
 const HOST_ID = 'host';
 /** Hearthstone's health drop (from the card frame assets), one per life. */
-const HEALTH_ICON = `${import.meta.env.BASE_URL}sunwell/health.webp`;
+const HEALTH_ICON = ICON.health;
+const MANA_ICON = ICON.mana;
+/** Card art behind the room code: Al'Akir, as on the Quickfire home screen. */
+const ROOM_ART = 'https://art.hearthstonejson.com/v1/512x/NEW1_010.jpg';
 
 /** Right answers in a row before a player counts as on a hot streak. */
 const HOT = 2;
@@ -220,6 +224,7 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
             state={state}
             best={soloBest.best}
             isNew={soloBest.isNew}
+            all={all}
             onAgain={() => {
               unlock();
               game.current?.start();
@@ -252,7 +257,7 @@ export function Party({ mode, name, pool, all, onLeave }: Props) {
       {state.phase === 'playing' && (
         <Play state={state} me={me} deadline={deadline} typing={typing} all={all} onAnswer={answer} onTyping={sendTyping} />
       )}
-      {state.phase === 'over' && <Over state={state} me={me} isHost={isHost} onAgain={() => game.current?.toLobby()} />}
+      {state.phase === 'over' && <Over state={state} me={me} isHost={isHost} all={all} onAgain={() => game.current?.toLobby()} />}
       <button className="link party-leave" onClick={onLeave}>
         {isHost ? 'Close room' : 'Leave room'}
       </button>
@@ -296,9 +301,11 @@ function Lobby({
       /* the code is on screen anyway */
     }
   };
+  const seats = Array.from({ length: state.settings.lives });
   return (
     <>
-      <div className="room-code-box">
+      <div className="room-code-box" style={{ '--art': `url(${ROOM_ART})` } as React.CSSProperties}>
+        <span className="mode-art room-art" aria-hidden="true" />
         <div className="section-label">Room code</div>
         <div className="room-code" aria-label={`Room code ${code.split('').join(' ')}`}>
           {code.split('').map((ch, i) => (
@@ -307,29 +314,52 @@ function Lobby({
             </span>
           ))}
         </div>
-        <button className="btn small" onClick={invite}>
+        <button className="btn small invite-btn" onClick={invite}>
           {copied ? 'Link copied' : 'Invite friends'}
         </button>
       </div>
 
-      <div className="party-players">
-        <div className="section-label">Players ({state.players.length})</div>
-        <ul>
+      <section className="lobby-panel">
+        <div className="lobby-head">
+          <span className="section-label">Players</span>
+          <span className="count-pill">{state.players.length}</span>
+        </div>
+        <ul className="party-players">
           {state.players.map((p) => (
-            <li key={p.id} className="party-player-row">
+            <li key={p.id} className={`party-player-row ${p.id === me ? 'me' : ''}`}>
               <span className="avatar" style={avatarStyle(p.id)}>
                 {p.name.slice(0, 1).toUpperCase()}
               </span>
-              <span className="party-player-name">{p.name}</span>
-              {p.id === 'host' && <span className="tag">host</span>}
-              {p.id === me && <span className="tag you">you</span>}
+              <span className="party-player-name">
+                {p.name}
+                {p.id === me && <span className="tag you">you</span>}
+              </span>
+              {p.id === HOST_ID && (
+                <span className="tag host" title="Host">
+                  <span aria-hidden="true">👑</span> host
+                </span>
+              )}
+              <span className="row-lives" aria-label={`${state.settings.lives} lives`}>
+                {seats.map((_, k) => (
+                  <img key={k} src={HEALTH_ICON} alt="" draggable={false} />
+                ))}
+              </span>
             </li>
           ))}
+          <li className="party-player-row open-seat" aria-hidden="true">
+            <span className="avatar">+</span>
+            <span className="party-player-name">{isHost ? 'Share the code to fill this seat' : 'Room for more'}</span>
+          </li>
         </ul>
-      </div>
+      </section>
 
-      <div className="party-settings">
+      <section className="lobby-panel party-settings">
+        <div className="lobby-head">
+          <span className="section-label">Rules</span>
+          {!isHost && <span className="muted small">set by the host</span>}
+        </div>
         <Setting
+          icon={<img className="setting-icon" src={HEALTH_ICON} alt="" />}
           label="Lives"
           options={LIVES_OPTIONS}
           value={state.settings.lives}
@@ -337,36 +367,54 @@ function Lobby({
           onPick={(v) => onSettings({ lives: v })}
         />
         <Setting
+          icon={<RopeIcon />}
           label="Seconds per turn"
           options={FUSE_OPTIONS}
           value={state.settings.fuse}
           disabled={!isHost}
           onPick={(v) => onSettings({ fuse: v })}
         />
-        <div className="muted small">Every collectible card counts ({state.poolSize.toLocaleString()} cards).</div>
-      </div>
+        <div className="pool-note">
+          <img className="setting-icon" src={MANA_ICON} alt="" />
+          Every collectible card counts: {state.poolSize.toLocaleString()} cards.
+        </div>
+      </section>
 
       {isHost ? (
         <button className="btn primary" onClick={onStart}>
           {state.players.length > 1 ? 'Start game' : 'Start (just you)'}
         </button>
       ) : (
-        <div className="muted center waiting">
+        <div className="waiting-pill" role="status">
+          <span className="pulse-dot" aria-hidden="true" />
           Waiting for the host to start
-          <span className="dots" />
         </div>
       )}
     </>
   );
 }
 
+/** The rope as a little icon: a ring of cord with a flame at its end. */
+function RopeIcon() {
+  return (
+    <svg className="setting-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="13" r="8" fill="none" stroke="#c9a064" strokeWidth="3.2" />
+      <circle cx="12" cy="13" r="8" fill="none" stroke="#7a5730" strokeWidth="3.2" strokeDasharray="1 1.6" />
+      <circle cx="6.4" cy="7.4" r="3" fill="#ffb347" />
+      <circle cx="6.4" cy="7.4" r="1.4" fill="#fff3c4" />
+    </svg>
+  );
+}
+
 function Setting({
+  icon,
   label,
   options,
   value,
   disabled,
   onPick,
 }: {
+  icon?: React.ReactNode;
   label: string;
   options: number[];
   value: number;
@@ -375,7 +423,10 @@ function Setting({
 }) {
   return (
     <div className="setting">
-      <span>{label}</span>
+      <span className="setting-label">
+        {icon}
+        {label}
+      </span>
       <div className="seg" role="radiogroup" aria-label={label}>
         {options.map((o) => (
           <button
@@ -669,7 +720,11 @@ function EventLine({
 
 /* ---------------- Results ---------------- */
 
-function Over({ state, me, isHost, onAgain }: { state: PublicState; me: string; isHost: boolean; onAgain(): void }) {
+const PLACE_GEM = ['LEGENDARY', 'EPIC', 'RARE'];
+const ordinal = (n: number) => `${n}${n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'}`;
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+function Over({ state, me, isHost, all, onAgain }: { state: PublicState; me: string; isHost: boolean; all: Card[]; onAgain(): void }) {
   const winner = state.players.find((p) => p.id === state.winner);
   const ranked = [...state.players].sort(
     (a, b) => Number(b.id === state.winner) - Number(a.id === state.winner) || b.lives - a.lives || b.outAt - a.outAt || b.hits - a.hits,
@@ -680,54 +735,110 @@ function Over({ state, me, isHost, onAgain }: { state: PublicState; me: string; 
   const place = (id: string) => ranked.findIndex((p) => p.id === id) + 1;
   return (
     <div className="panel party-over">
-      <h2>{winner ? (winner.id === me ? 'You win!' : `${winner.name} wins!`) : 'Game over'}</h2>
+      <div className="over-head">
+        <span className="over-kicker">Game over</span>
+        <h2>{winner ? (winner.id === me ? 'You win!' : `${winner.name} wins!`) : 'No winner'}</h2>
+      </div>
       <div className="podium">
-        {podium.map((p) => (
-          <div key={p.id} className={`podium-spot place-${place(p.id)}`}>
-            {place(p.id) === 1 && (
-              <span className="crown" aria-hidden="true">
-                👑
+        {podium.map((p) => {
+          const n = place(p.id);
+          return (
+            <div key={p.id} className={`podium-spot place-${n} ${p.id === me ? 'me' : ''}`}>
+              {n === 1 && (
+                <span className="crown" aria-hidden="true">
+                  👑
+                </span>
+              )}
+              <span className="avatar" style={avatarStyle(p.id)}>
+                {p.name.slice(0, 1).toUpperCase()}
               </span>
-            )}
-            <span className="avatar" style={avatarStyle(p.id)}>
-              {p.name.slice(0, 1).toUpperCase()}
-            </span>
-            <span className="podium-name">{p.id === me ? 'You' : p.name}</span>
-            <span className="podium-block">
-              <b>{place(p.id)}</b>
-              <small>
-                {p.hits} card{p.hits === 1 ? '' : 's'}
-              </small>
-            </span>
-          </div>
-        ))}
+              <span className="podium-name">{p.id === me ? 'You' : p.name}</span>
+              <span className="podium-block">
+                <img className="podium-gem" src={rarityIcon(PLACE_GEM[n - 1])} alt="" draggable={false} />
+                <b>{ordinal(n)}</b>
+                <small>{plural(p.hits, 'card')}</small>
+                {p.bestStreak >= HOT && <small className="podium-streak">🔥 {p.bestStreak} in a row</small>}
+              </span>
+            </div>
+          );
+        })}
       </div>
       {rest.length > 0 && (
-        <ol className="party-ranking" start={4}>
+        <ol className="party-ranking">
           {rest.map((p) => (
-            <li key={p.id}>
+            <li key={p.id} className={p.id === me ? 'me' : ''}>
+              <span className="rank">{ordinal(place(p.id))}</span>
               <span className="avatar" style={avatarStyle(p.id)}>
                 {p.name.slice(0, 1).toUpperCase()}
               </span>
               <span className="party-player-name">{p.id === me ? `${p.name} (you)` : p.name}</span>
-              <span className="muted small">
-                {p.hits} card{p.hits === 1 ? '' : 's'}
-              </span>
+              <span className="muted small">{plural(p.hits, 'card')}</span>
             </li>
           ))}
         </ol>
       )}
+      <NamedCards state={state} me={me} all={all} />
       {isHost ? (
         <button className="btn primary" onClick={onAgain}>
           Back to lobby
         </button>
       ) : (
-        <div className="muted center waiting">
+        <div className="waiting-pill" role="status">
+          <span className="pulse-dot" aria-hidden="true" />
           Waiting for the host
-          <span className="dots" />
         </div>
       )}
     </div>
+  );
+}
+
+/** Every card named this game, as a strip of art; tap one for its name. */
+function NamedCards({ state, me, all }: { state: PublicState; me: string; all: Card[] }) {
+  const crop = useArtCrop();
+  const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
+  const [open, setOpen] = useState<number | null>(null);
+  const list = state.named.map((x) => ({ ...x, card: byId.get(x.cardId) })).filter((x) => x.card);
+  if (!list.length) return null;
+  const solo = state.players.length === 1;
+  const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? '?';
+  const who = (id: string) => (id === me ? 'you' : nameOf(id));
+  const sel = open !== null ? list[open] : null;
+  return (
+    <section className="named">
+      <div className="lobby-head">
+        <span className="section-label">Cards named</span>
+        <span className="count-pill">{list.length}</span>
+      </div>
+      <div className="named-strip">
+        {list.map((x, i) => (
+          <button
+            key={x.cardId}
+            type="button"
+            className={`named-card ${open === i ? 'on' : ''}`}
+            style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
+            title={x.card!.name}
+            onClick={() => setOpen(open === i ? null : i)}
+          >
+            <Art card={x.card!} crop={crop} className="named-art" />
+            {!solo && (
+              <span className="avatar mini" style={avatarStyle(x.player)}>
+                {nameOf(x.player).slice(0, 1).toUpperCase()}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+      <div className="named-caption muted small">
+        {sel ? (
+          <>
+            <b>{sel.card!.name}</b>
+            {!solo && <> · named by {who(sel.player)}</>}
+          </>
+        ) : (
+          'Tap a card to see its name.'
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -853,8 +964,12 @@ function SoloSetup({
           Same game, just you: name a card for each prompt before the rope burns down. Run out of time and you lose a life.
         </p>
       </div>
-      <div className="party-settings">
+      <section className="lobby-panel party-settings">
+        <div className="lobby-head">
+          <span className="section-label">Rules</span>
+        </div>
         <Setting
+          icon={<img className="setting-icon" src={HEALTH_ICON} alt="" />}
           label="Lives"
           options={LIVES_OPTIONS}
           value={state.settings.lives}
@@ -862,16 +977,20 @@ function SoloSetup({
           onPick={(v) => onSettings({ lives: v })}
         />
         <Setting
+          icon={<RopeIcon />}
           label="Seconds per turn"
           options={FUSE_OPTIONS}
           value={state.settings.fuse}
           disabled={false}
           onPick={(v) => onSettings({ fuse: v })}
         />
-        <div className="muted small">
-          Best with these settings: <b>{best}</b> card{best === 1 ? '' : 's'}
+        <div className="pool-note">
+          <img className="setting-icon" src={rarityIcon('LEGENDARY')} alt="" />
+          <span>
+            Best with these rules: <b>{best}</b> card{best === 1 ? '' : 's'}
+          </span>
         </div>
-      </div>
+      </section>
       <button className="btn primary" onClick={onStart}>
         Start
       </button>
@@ -883,24 +1002,47 @@ function SoloOver({
   state,
   best,
   isNew,
+  all,
   onAgain,
   onSettings,
 }: {
   state: PublicState;
   best: number;
   isNew: boolean;
+  all: Card[];
   onAgain(): void;
   onSettings(): void;
 }) {
-  const hits = state.players[0]?.hits ?? 0;
+  const p = state.players[0];
+  const hits = p?.hits ?? 0;
   return (
     <div className="panel party-over solo-over">
-      <h2>Game over</h2>
-      <div className="qf-final">
-        <b className="qf-count done">{hits}</b>
-        <span className="muted small">card{hits === 1 ? '' : 's'} named</span>
+      <div className="over-head">
+        <span className="over-kicker">Game over</span>
+        <h2>{isNew ? 'New best!' : hits ? 'Nice run' : 'Out of rope'}</h2>
       </div>
-      {isNew ? <div className="qf-newbest">New best!</div> : <p className="muted small">Best: {best}</p>}
+      <div className={`solo-final ${isNew ? 'record' : ''}`}>
+        <b className="qf-count done">{hits}</b>
+        <span>{hits === 1 ? 'card' : 'cards'}</span>
+      </div>
+      <div className="solo-stats">
+        <span>
+          <small>Best</small>
+          <b>{best}</b>
+        </span>
+        <span>
+          <small>Longest streak</small>
+          <b>{p?.bestStreak ?? 0}</b>
+        </span>
+        <span>
+          <small>Rules</small>
+          <b>
+            {state.settings.lives}
+            <img className="stat-icon" src={HEALTH_ICON} alt=" lives" /> · {state.settings.fuse}s
+          </b>
+        </span>
+      </div>
+      <NamedCards state={state} me={p?.id ?? ''} all={all} />
       <button className="btn primary" onClick={onAgain}>
         Play again
       </button>
