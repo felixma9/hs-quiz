@@ -9,6 +9,10 @@ were made with:
   done
   python3 -I scripts/make-dh-frames.py public/sunwell/frame-hero-warlock.webp public/sunwell/frame-hero-demonhunter.webp -110 1.1 0.55
 
+Sunwell has no Death Knight hero frame either; that one was made the same way:
+
+  python3 -I scripts/make-dh-frames.py public/sunwell/frame-hero-warlock.webp public/sunwell/frame-hero-deathknight.webp -70 0.5 0.75
+
 Args: source, output, hue shift (0-255 scale), saturation gain, brightness factor.
 """
 import sys

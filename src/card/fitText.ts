@@ -10,7 +10,7 @@
 const BODY: Record<string, [number, number]> = {
   MINION: [408, 176],
   SPELL: [378, 168],
-  WEAPON: [388, 168],
+  WEAPON: [344, 168], // narrowed in sunwell.ts (WEAPON_BODY)
   HERO: [376, 168],
 };
 

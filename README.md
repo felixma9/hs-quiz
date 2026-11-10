@@ -68,7 +68,7 @@ Cards are drawn on a canvas by HearthSim's [Sunwell](https://github.com/HearthSi
 
 Sunwell is older than some of the game, so:
 - **Locations** can't be drawn and are left out of the game.
-- **Demon Hunter** has no Sunwell frame, so we made fel-green ones by recoloring the Death Knight frames (and the Warlock hero frame) with `scripts/make-dh-frames.py`.
+- **Demon Hunter** has no Sunwell frame, so we made fel-green ones by recoloring the Death Knight frames (and the Warlock hero frame) with `scripts/make-dh-frames.py`. The Death Knight hero frame (also missing) is a recolored Warlock one.
 - **Multiclass cards** use the neutral frame. The class is shown in a chip under the card.
 - **Newer tribes** such as Undead and Naga: we set the tribe banner text ourselves.
 - **Spell schools** are shown in a chip under the card.

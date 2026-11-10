@@ -117,6 +117,21 @@ function sunwellProps(card: Card, v: Shown, texture: HTMLImageElement | null) {
   return { props: p, raceText };
 }
 
+/**
+ * Sunwell's name and text boxes are a little wider than what our fonts can use
+ * on some frames: long weapon and hero names ran off the banner (and got cut),
+ * and weapon text ran past the sides of the dark plate. Narrow them.
+ */
+export const NAME_MAX: Record<string, number> = { WEAPON: 350, HERO: 350 };
+export const WEAPON_BODY = { dx: 168, width: 344 };
+function fitBoxes(sw: SunwellCard, type: string) {
+  const max = NAME_MAX[type];
+  if (max && sw.nameTextCurve) sw.nameTextCurve.maxWidth = max;
+  if (type === 'WEAPON' && sw.bodyTextCoords) {
+    Object.assign(sw.bodyTextCoords, { dx: WEAPON_BODY.dx, dWidth: WEAPON_BODY.width, sWidth: WEAPON_BODY.width });
+  }
+}
+
 /** Widest tribe text (in card units) that stays on the banner's plaque. */
 const RACE_TEXT_MAX = 230;
 const RACE_TEXT_SIZE = 40;
@@ -186,6 +201,7 @@ export async function drawCard(canvas: HTMLCanvasElement, card: Card, shown: Sho
       sw.raceTextCoords = { dx: 335, dy: 843 };
     }
     fitRaceText(sw);
+    fitBoxes(sw, card.type);
     for (const g of [sw.costGem, sw.attackGem, sw.healthGem]) if (g) g.textSize = GEM_TEXT_SIZE;
     // We draw straight onto our canvas. Without this Sunwell also copies it into an image,
     // which fails because the art is cross-origin.

@@ -13,6 +13,8 @@ declare module 'sunwell/dist/sunwell.web.js' {
     raceTextCoords: Record<string, number>;
     target: unknown;
     raceBanner?: RaceBanner;
+    nameTextCurve?: { maxWidth: number; pathMiddle: number };
+    bodyTextCoords?: Record<string, number>;
     baseCardFrameAsset: string;
     getCardFrameAsset(): string;
     costGem?: Gem;
