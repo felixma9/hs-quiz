@@ -183,17 +183,13 @@ describe('gauntlet vs', () => {
   });
 
   it('passes the turn on a right answer, and costs a life on a wrong one', () => {
-    const { g, state, advance } = vsSetup();
+    const { g, state } = vsSetup();
     g.start();
     expect(state().turn).toBe('A');
     const first = state().card!;
     expect(g.answer('A', truth(g, state()))).toBe(true);
-    // Everyone sees the finished card, then the next one comes up.
-    expect(state().reveal).toMatchObject({ id: first.id, hidden: first.hidden, player: 'A' });
-    expect(state().card).toBeNull();
-    expect(g.answer('B', 'anything')).toBe(false);
-    advance(state().reveal!.ms);
-    expect(state().reveal).toBeNull();
+    // No pause: the next card comes straight up.
+    expect(state().card!.id).not.toBe(first.id);
     expect(state().last).toMatchObject({ kind: 'hit', player: 'A' });
     expect(state().turn).toBe('B');
     expect(g.answer('B', 'zzzz wrong')).toBe(false);
@@ -207,7 +203,6 @@ describe('gauntlet vs', () => {
     g.setSettings({ lives: 1 });
     g.start();
     g.answer('A', truth(g, state()));
-    advance(state().reveal!.ms);
     advance(state().turnSeconds * 1000 + 1);
     expect(state().phase).toBe('over');
     expect(state().winner).toBe('A');
@@ -245,7 +240,7 @@ describe('gauntlet vs steals', () => {
   };
 
   it('passes a missed card to the other player, then shows the answer if they miss too', () => {
-    const { g, state, advance } = vs();
+    const { g, state } = vs();
     const card = state().card!.id;
     g.answer('A', 'zzzz wrong');
     expect(state().last).toMatchObject({ kind: 'boom', player: 'A', passed: true, example: undefined });
@@ -253,8 +248,6 @@ describe('gauntlet vs steals', () => {
     expect(state().card).toMatchObject({ id: card, steal: true });
     g.answer('B', 'zzzz wrong');
     expect(state().last).toMatchObject({ kind: 'boom', player: 'B', passed: false, nobody: true });
-    expect(state().reveal).toMatchObject({ id: card, player: null });
-    advance(state().reveal!.ms);
     expect(state().card!.id).not.toBe(card);
     expect(state().card!.steal).toBe(false);
   });
@@ -267,7 +260,6 @@ describe('gauntlet vs steals', () => {
     const truth = String(ATTR[s.card!.hidden].value(all.find((x) => x.id === s.card!.id)!) ?? '');
     expect(g.answer('B', truth)).toBe(true);
     expect(state().players[1].hits).toBe(1);
-    advance(state().reveal!.ms);
     expect(state().card!.steal).toBe(false);
   });
 });

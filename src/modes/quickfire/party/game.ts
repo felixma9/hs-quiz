@@ -38,9 +38,6 @@ export const FUSE_OPTIONS = FUSE_FOR.quickfire.options;
 export const VS_PLAYERS = 2;
 /** Gauntlet VS: card text takes a while to type, so those turns get this many times the seconds. */
 export const TEXT_TIME = 2;
-/** Gauntlet VS: how long everyone sees the finished card before the next one (card text gets longer to read). */
-export const REVEAL_MS = 3500;
-export const REVEAL_TEXT_MS = 7000;
 
 /** Gauntlet VS cards: the host's card pool and which fields can be blank. */
 export interface VsOptions {
@@ -98,8 +95,6 @@ export interface PublicState {
   prompt: { text: string; hint?: string } | null;
   /** Gauntlet VS: this turn's card and its blank field. */
   card: { id: string; hidden: AttrKey; steal: boolean } | null;
-  /** Gauntlet VS: the card just settled, shown whole for a moment before the next turn. `player` got it (null: nobody did). */
-  reveal: { id: string; hidden: AttrKey; player: string | null; msLeft: number; ms: number } | null;
   /** Milliseconds left on the fuse when this snapshot was sent. */
   fuseLeft: number;
   /** Increases every turn, so clients can restart animations. */
@@ -146,7 +141,6 @@ export class PartyGame {
   private last: PartyEvent | null = null;
   private winner: string | null = null;
   private n = 0;
-  private reveal: { card: Card; hidden: AttrKey; player: string | null; until: number; ms: number } | null = null;
 
   constructor(
     private pool: Card[],
@@ -168,11 +162,8 @@ export class PartyGame {
       settings: { ...this.settings },
       turn: this.turn,
       prompt: this.prompt ? { text: this.prompt.text, hint: this.prompt.hint } : null,
-      card: this.card && !this.reveal ? { id: this.card.card.id, hidden: this.card.hidden, steal: this.card.steal } : null,
-      reveal: this.reveal
-        ? { id: this.reveal.card.id, hidden: this.reveal.hidden, player: this.reveal.player, msLeft: Math.max(0, this.reveal.until - this.now()), ms: this.reveal.ms }
-        : null,
-      fuseLeft: this.phase === 'playing' && !this.reveal ? Math.max(0, this.fuseEndsAt - this.now()) : 0,
+      card: this.card ? { id: this.card.card.id, hidden: this.card.hidden, steal: this.card.steal } : null,
+      fuseLeft: this.phase === 'playing' ? Math.max(0, this.fuseEndsAt - this.now()) : 0,
       round: this.round,
       turnSeconds: this.turnSeconds,
       streak: this.streak,
@@ -217,7 +208,7 @@ export class PartyGame {
     }
     this.event({ kind: 'info', text: `${p.name} left` });
     if (this.phase === 'playing') {
-      if (!this.checkOver() && this.turn === id && !this.reveal) this.nextTurn();
+      if (!this.checkOver() && this.turn === id) this.nextTurn();
     }
     this.emit();
   }
@@ -250,7 +241,6 @@ export class PartyGame {
     this.winner = null;
     this.last = null;
     this.turn = null;
-    this.reveal = null;
     this.nextTurn();
     this.emit();
   }
@@ -263,7 +253,6 @@ export class PartyGame {
     this.turn = null;
     this.prompt = null;
     this.card = null;
-    this.reveal = null;
     this.emit();
   }
 
@@ -318,7 +307,7 @@ export class PartyGame {
 
   /** A player's typed answer. Returns whether it was accepted. */
   answer(id: string, text: string): boolean {
-    if (this.phase !== 'playing' || this.turn !== id || this.reveal) return false;
+    if (this.phase !== 'playing' || this.turn !== id) return false;
     if (this.card) return this.answerCard(id, text);
     if (!this.prompt) return false;
     const prompt = this.prompt;
@@ -362,7 +351,7 @@ export class PartyGame {
       p.streak++;
       p.bestStreak = Math.max(p.bestStreak, p.streak);
       this.event({ kind: 'hit', player: id, cardId: card.id, streak: p.streak, attr: hidden });
-      if (!this.checkOver()) this.showCard(id);
+      if (!this.checkOver()) this.nextTurn();
     } else {
       const kind = ATTR[hidden].kind;
       const guess =
@@ -406,7 +395,7 @@ export class PartyGame {
       this.card = { ...c, steal: true };
       this.fuseEndsAt = this.now() + this.turnSeconds * 1000;
       this.round++;
-    } else this.showCard(null);
+    } else this.nextTurn();
   }
 
   /** The right answer to this turn's card, for the event line (not the whole text). */
@@ -423,23 +412,8 @@ export class PartyGame {
     this.streak = 0;
   }
 
-  /** Gauntlet VS: show the settled card whole for a moment; tick() deals the next one. */
-  private showCard(player: string | null) {
-    const c = this.card!;
-    const ms = c.hidden === 'text' ? REVEAL_TEXT_MS : REVEAL_MS;
-    this.reveal = { card: c.card, hidden: c.hidden, player, until: this.now() + ms, ms };
-    this.fuseEndsAt = Infinity;
-  }
-
   /** Call often (the host ticks it); burns the fuse. */
   tick() {
-    if (this.phase === 'playing' && this.reveal) {
-      if (this.now() < this.reveal.until) return;
-      this.reveal = null;
-      this.nextTurn();
-      this.emit();
-      return;
-    }
     if (this.phase !== 'playing' || this.now() < this.fuseEndsAt) return;
     const p = this.players.find((x) => x.id === this.turn);
     const example = this.prompt?.answers.find((c) => !this.used.has(c.id))?.name;

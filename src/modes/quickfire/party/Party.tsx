@@ -536,10 +536,8 @@ function Play({
   const [myWrong, setMyWrong] = useState(false);
   const [now, setNow] = useState(() => performance.now());
   const field = useRef<HTMLInputElement>(null);
-  // Gauntlet VS shows the finished card between turns: nobody's turn then.
-  const revealing = !!state.reveal;
-  const vs = !!state.card || revealing;
-  const myTurn = state.turn === me && !revealing;
+  const vs = !!state.card;
+  const myTurn = state.turn === me;
   const current = state.players.find((p) => p.id === state.turn);
   const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
 
@@ -581,7 +579,7 @@ function Play({
 
   const left = Math.max(0, deadline - now) / 1000;
   const frac = Math.min(1, left / (state.turnSeconds || state.settings.fuse));
-  const urgent = left <= 3 && !revealing;
+  const urgent = left <= 3;
   // Tick each of the last few seconds.
   const secs = Math.ceil(left);
   useEffect(() => {
@@ -612,13 +610,13 @@ function Play({
             </span>
           )}
           <span className="turn-banner-text">
-            {revealing ? 'Next card…' : myTurn ? 'Your turn!' : `${current?.name ?? '…'}'s turn`}
+            {myTurn ? 'Your turn!' : `${current?.name ?? '…'}'s turn`}
           </span>
         </div>
       )}
       {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
       {vs ? (
-        <VsBar state={state} me={me} frac={revealing ? 0 : frac} left={left} urgent={urgent} />
+        <VsBar state={state} me={me} frac={frac} left={left} urgent={urgent} />
       ) : (
       <div className={`table ${myTurn ? 'compact' : ''} ${solo ? 'solo' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
@@ -690,15 +688,7 @@ function Play({
       </div>
       )}
 
-      {state.reveal ? (
-        <>
-          {/* The card below shows the text, so the event line skips its copy for now. */}
-          <div className="during-reveal">
-            <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
-          </div>
-          <VsReveal key={`reveal-${state.round}`} state={state} byId={byId} drawable={drawable} />
-        </>
-      ) : state.card ? (
+      {state.card ? (
         <>
         <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
         <VsCard
@@ -799,45 +789,11 @@ function VsBar({ state, me, frac, left, urgent }: { state: PublicState; me: stri
       {a && side(a)}
       <div className={`vs-clock ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'clock'}>
         <RopeRing frac={frac} key={`rope-${state.round}`} />
-        {state.reveal ? (
-          <span className={`vs-result ${state.reveal.player ? 'ok' : 'bad'}`} aria-label={state.reveal.player ? 'Right' : 'Nobody got it'}>
-            {state.reveal.player ? '✓' : '✗'}
-          </span>
-        ) : (
-          <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
-            {Math.ceil(left)}
-          </span>
-        )}
+        <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
+          {Math.ceil(left)}
+        </span>
       </div>
       {b && side(b)}
-    </div>
-  );
-}
-
-/** Gauntlet VS: the card that was just settled, shown whole with its answer filled in, until the next one comes up. */
-function VsReveal({
-  state,
-  byId,
-  drawable,
-}: {
-  state: PublicState;
-  byId: Map<string, Card>;
-  drawable: Card[];
-}) {
-  const r = state.reveal!;
-  const card = byId.get(r.id);
-  const none = useMemo(() => new Set<AttrKey>(), []);
-  if (!card) return null;
-  // The event line above says who got it and what the answer was.
-  return (
-    <div className={`vs-turn vs-reveal-card ${r.player ? 'ok' : 'bad'}`}>
-      <div className="vs-card">
-        <GameCard card={card} hidden={none} verdicts={{ [r.hidden]: r.player ? 'correct' : 'wrong' }} pool={drawable} />
-      </div>
-      {/* Drains while the card is shown; the next card comes up when it's empty. */}
-      <div className="vs-next" aria-hidden="true">
-        <span style={{ animationDuration: `${r.msLeft}ms` }} />
-      </div>
     </div>
   );
 }
