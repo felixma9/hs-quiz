@@ -8,7 +8,7 @@ import { ICON, rarityIcon } from '../../../app/icons';
 import { load, save } from '../../../lib/storage';
 import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
 import { FUSE_FOR, FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, STEALS_FOR_LIFE, VS_PLAYERS, type PartySettings, type PublicState, type RoomGame } from './game';
-import { ATTR, labelFor, pretty, type AttrKey } from '../../../lib/attributes';
+import { ATTR, labelFor, plainText, pretty, type AttrKey } from '../../../lib/attributes';
 import { GameCard } from '../../../card/GameCard';
 import { preloadArt } from '../../../card/sunwell';
 import { howTo } from '../../gauntlet/round';
@@ -546,17 +546,22 @@ function Play({
   const [input, setInput] = useState('');
   /** My last guess was rejected and I haven't changed it yet: show it in red. */
   const [myWrong, setMyWrong] = useState(false);
-  const [now, setNow] = useState(() => performance.now());
   const field = useRef<HTMLInputElement>(null);
   const vs = !!state.card;
   const myTurn = state.turn === me;
   const current = state.players.find((p) => p.id === state.turn);
   const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
 
+  // Whole seconds left. Only this (not the rope's smooth burn) re-renders the screen, once a second:
+  // re-rendering everything 10x a second made phones re-scroll to the focused field while you held the page.
+  const [left, setLeft] = useState(() => Math.ceil(Math.max(0, deadline - performance.now()) / 1000));
   useEffect(() => {
-    const t = setInterval(() => setNow(performance.now()), 100);
+    const t = setInterval(() => {
+      const v = Math.ceil(Math.max(0, deadline - performance.now()) / 1000);
+      setLeft((was) => (was === v ? was : v));
+    }, 100);
     return () => clearInterval(t);
-  }, []);
+  }, [deadline]);
 
   // New turn: clear the box, and focus it if it's mine.
   useEffect(() => {
@@ -589,11 +594,10 @@ function Play({
   const delta = ((((target - angle.current) % 360) + 540) % 360) - 180;
   angle.current += delta;
 
-  const left = Math.max(0, deadline - now) / 1000;
-  const frac = Math.min(1, left / (state.turnSeconds || state.settings.fuse));
+  const total = state.turnSeconds || state.settings.fuse;
   const urgent = left <= 3;
   // Tick each of the last few seconds.
-  const secs = Math.ceil(left);
+  const secs = left;
   useEffect(() => {
     if (secs > 0 && secs <= 3) sfx.tick(true);
     else if (secs > 3 && secs <= 5) sfx.tick(false);
@@ -628,12 +632,12 @@ function Play({
       )}
       {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
       {vs ? (
-        <VsBar state={state} me={me} frac={frac} left={left} urgent={urgent} />
+        <VsBar state={state} me={me} deadline={deadline} total={total} left={left} urgent={urgent} />
       ) : (
       <div className={`table ${myTurn ? 'compact' : ''} ${solo ? 'solo' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
         <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
-          <RopeRing frac={frac} key={`rope-${state.round}`} />
+          <RopeRing deadline={deadline} total={total} key={`rope-${state.round}`} />
           {state.streak >= 2 && (
             <span className="speed-badge" key={`speed-${state.streak}`} title={`${state.streak} right in a row`}>
               ⚡ {state.turnSeconds}s
@@ -765,7 +769,21 @@ function Play({
 }
 
 /** Gauntlet VS scoreboard: you on the left, the rope in the middle, your opponent on the right. */
-function VsBar({ state, me, frac, left, urgent }: { state: PublicState; me: string; frac: number; left: number; urgent: boolean }) {
+function VsBar({
+  state,
+  me,
+  deadline,
+  total,
+  left,
+  urgent,
+}: {
+  state: PublicState;
+  me: string;
+  deadline: number;
+  total: number;
+  left: number;
+  urgent: boolean;
+}) {
   const last = state.last;
   const seated = state.players.filter((p) => p.lives > 0 || p.outAt > 0 || state.players.length <= VS_PLAYERS).slice(0, VS_PLAYERS);
   const [a, b] = [...seated].sort((x, y) => Number(y.id === me) - Number(x.id === me));
@@ -806,7 +824,7 @@ function VsBar({ state, me, frac, left, urgent }: { state: PublicState; me: stri
     <div className={`vs-bar ${urgent ? 'urgent' : ''}`}>
       {a && side(a)}
       <div className={`vs-clock ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'clock'}>
-        <RopeRing frac={frac} key={`rope-${state.round}`} />
+        <RopeRing deadline={deadline} total={total} key={`rope-${state.round}`} />
         <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
           {Math.ceil(left)}
         </span>
@@ -933,6 +951,11 @@ function EventLine({
                 : <b>{pretty(last.attr, ATTR[last.attr].value(c))}</b>
               </>
             )}
+            {last.attr === 'text' && c?.text && (
+              <span className="vs-reveal hit-text">
+                <span className="vs-reveal-text">{plainText(c.text)}</span>
+              </span>
+            )}
             {last.bonusLife && (
               <b className="bonus-life">
                 {' '}
@@ -989,7 +1012,8 @@ function EventLine({
               {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" zoom />}
               <span>
                 <b>{c?.name}</b>
-                <span className="vs-reveal-text">{last.reveal || '(no text)'}</span>
+                {/* The host sends the text; this browser's copy of the card is the fallback. */}
+                <span className="vs-reveal-text">{last.reveal || plainText(c?.text) || '(no text)'}</span>
               </span>
             </span>
           </>
@@ -1195,16 +1219,29 @@ function SoundToggle() {
  * The turn timer: a rope laid round the middle of the table that burns down
  * (from the top, clockwise) with a flickering flame at the burning end.
  */
-function RopeRing({ frac }: { frac: number }) {
+/** The burning rope. It ticks on its own so only the ring redraws, not the whole screen. */
+function RopeRing({ deadline, total }: { deadline: number; total: number }) {
   const id = useId();
+  const [now, setNow] = useState(() => performance.now());
+  useEffect(() => {
+    let raf = 0;
+    let lastAt = 0;
+    const loop = (t: number) => {
+      // About 10 updates a second is plenty for a rope.
+      if (t - lastAt > 90) {
+        lastAt = t;
+        setNow(performance.now());
+      }
+      if (performance.now() < deadline) raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [deadline]);
+  const frac = Math.min(1, Math.max(0, deadline - now) / 1000 / total);
   const R = 44;
   const C = 2 * Math.PI * R;
-  // Where the flame sits, in the SVG's 0-100 box.
-  const t = frac * 2 * Math.PI;
-  const fx = 50 + R * Math.sin(t);
-  const fy = 50 - R * Math.cos(t);
-  // The SVG overhangs the centre disc by 7% each side (114% wide).
-  const at = (v: number) => `${(-7 + v * 1.14).toFixed(2)}%`;
+  // The flame rides a ring the size of the SVG, turned (not moved) so the browser never re-lays out the page.
+  const deg = frac * 360;
   return (
     <>
       <svg className="rope-ring" viewBox="0 0 100 100" aria-hidden="true">
@@ -1223,9 +1260,11 @@ function RopeRing({ frac }: { frac: number }) {
         </g>
       </svg>
       {frac > 0 && (
-        <span className="rope-flame" style={{ left: at(fx), top: at(fy) }}>
-          <span className="flame-glow" />
-          <span className="flame-core" />
+        <span className="rope-orbit" style={{ transform: `rotate(${deg.toFixed(1)}deg)` }}>
+          <span className="rope-flame" style={{ top: `${50 - R}%`, transform: `rotate(${(-deg).toFixed(1)}deg)` }}>
+            <span className="flame-glow" />
+            <span className="flame-core" />
+          </span>
         </span>
       )}
     </>

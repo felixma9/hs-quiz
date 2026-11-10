@@ -393,3 +393,7 @@
 .party.kb .vs-hits { display: none; }
 .party.kb .vs-clock { width: 56px; height: 56px; margin: 4px; }
 .party.kb .vs-clock .fuse-count { font-size: 1.25rem; }
+/* The flame's carrier: same box as the rope SVG, rotated as the rope burns. */
+.rope-orbit { position: absolute; inset: -7%; pointer-events: none; z-index: 2; will-change: transform; }
+.rope-orbit .rope-flame { left: 50%; }
+.vs-reveal.hit-text { display: block; margin-top: 6px; }
