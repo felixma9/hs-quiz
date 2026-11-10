@@ -275,7 +275,7 @@ function Feedback({
       <div className="feedback-head">{ok ? '✓ Correct!' : revealed ? 'Revealed (−1 life)' : '✗ Not quite'}</div>
       {attrKey === 'text' ? (
         <>
-          {!revealed && <div className="small">You got {Math.round((result.score ?? 0) * 100)}% of the key words (about 40% passes)</div>}
+          {!revealed && <div className="small">You got {Math.round((result.score ?? 0) * 100)}% of the key words (about 50% passes)</div>}
           <div className="truth">
             <TextDiff truth={plainText(card.text)} matched={result.truthMatched} />
           </div>

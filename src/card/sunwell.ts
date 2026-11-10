@@ -1,4 +1,4 @@
-import Sunwell from 'sunwell/dist/sunwell.web.js';
+import Sunwell, { type SunwellCard } from 'sunwell/dist/sunwell.web.js';
 import type { Card } from '../lib/types';
 import { ATTR, pretty, type AttrKey } from '../lib/attributes';
 import { artUrl } from '../lib/cards';
@@ -117,6 +117,43 @@ function sunwellProps(card: Card, v: Shown, texture: HTMLImageElement | null) {
   return { props: p, raceText };
 }
 
+/** Widest tribe text (in card units) that stays on the banner's plaque. */
+const RACE_TEXT_MAX = 230;
+const RACE_TEXT_SIZE = 40;
+
+/**
+ * Sunwell draws the tribe at a fixed 40px into a 300px buffer, so two tribes
+ * ("Elemental Mech") run off the plaque or get cut. Draw it ourselves, shrunk to fit.
+ */
+function fitRaceText(sw: SunwellCard) {
+  const banner = sw.raceBanner;
+  if (!banner) return;
+  banner.render = (ctx: CanvasRenderingContext2D, ratio: number) => {
+    const text = sw.raceText;
+    if (!sw.raceBannerAsset || !text) return;
+    const coords = sw.raceBannerCoords;
+    coords.ratio = ratio;
+    banner.sunwell.drawImage(ctx, sw.raceBannerAsset, coords);
+    const font = (px: number) => `${px}px "Merriweather"`;
+    ctx.save();
+    ctx.font = font(RACE_TEXT_SIZE);
+    const w = ctx.measureText(text).width;
+    const size = w > RACE_TEXT_MAX ? Math.max(20, (RACE_TEXT_SIZE * RACE_TEXT_MAX) / w) : RACE_TEXT_SIZE;
+    ctx.font = font(size * ratio);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    const x = sw.raceTextCoords.dx * ratio;
+    const y = sw.raceTextCoords.dy * ratio;
+    ctx.lineWidth = 7 * (size / RACE_TEXT_SIZE) * ratio;
+    ctx.strokeStyle = 'black';
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = 'white';
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  };
+}
+
 /** The real value of an attribute, as the string we draw (text keeps its <b> tags). */
 export function truth(card: Card, k: AttrKey): string {
   if (k === 'text') return card.text ?? '';
@@ -148,6 +185,7 @@ export async function drawCard(canvas: HTMLCanvasElement, card: Card, shown: Sho
       sw.raceBannerCoords = { dx: 131, dy: 806, dWidth: 408, dHeight: 69, sWidth: 408, sHeight: 69 };
       sw.raceTextCoords = { dx: 335, dy: 843 };
     }
+    fitRaceText(sw);
     for (const g of [sw.costGem, sw.attackGem, sw.healthGem]) if (g) g.textSize = GEM_TEXT_SIZE;
     // We draw straight onto our canvas. Without this Sunwell also copies it into an image,
     // which fails because the art is cross-origin.

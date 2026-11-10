@@ -15,7 +15,7 @@ export interface Grade {
 export const TEXT_PASS = 0.7;
 export const TEXT_CLOSE = 0.4;
 /** Gauntlet VS (against the rope): share of the card's key words you need. */
-export const TEXT_PASS_LENIENT = 0.4;
+export const TEXT_PASS_LENIENT = 0.5;
 
 export function gradeNumber(guess: number | null, truth: number | null): Grade {
   if (guess === truth) return { verdict: 'correct' };
