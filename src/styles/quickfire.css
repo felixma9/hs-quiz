@@ -386,3 +386,10 @@
 .bonus-life { color: #ff8a8d; white-space: nowrap; }
 .bonus-life .stat-icon { vertical-align: -2px; }
 .vs-side .seat-lives { flex-wrap: wrap; justify-content: center; max-width: 100px; }
+/* Keyboard open: no full-screen pulsing glow (it repaints the whole screen while you scroll), and a tighter VS scoreboard. */
+.party.kb .my-turn-glow { display: none; }
+.party.kb .vs-bar { padding: 4px; }
+.party.kb .vs-side .avatar { width: 30px; height: 30px; font-size: 0.85rem; }
+.party.kb .vs-hits { display: none; }
+.party.kb .vs-clock { width: 56px; height: 56px; margin: 4px; }
+.party.kb .vs-clock .fuse-count { font-size: 1.25rem; }

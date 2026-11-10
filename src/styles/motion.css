@@ -242,3 +242,5 @@ html { scroll-behavior: smooth; }
 .vs-side.boom .avatar { animation: boom 0.5s ease 1; }
 .vs-bar.urgent .fuse-count { animation: tick 0.35s var(--ease) 1; }
 .steal-tag { animation: qf-pop 0.3s var(--ease) backwards; }
+/* Phones: the browser's own scroll to a focused field (keyboard opening) shouldn't be animated against your finger. */
+@media (pointer: coarse) { html { scroll-behavior: auto; } }

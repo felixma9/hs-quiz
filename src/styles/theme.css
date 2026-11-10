@@ -201,3 +201,16 @@ footer { opacity: 0.8; }
 .cost-drop { width: 11px; height: 14px; object-fit: contain; vertical-align: -2px; }
 .class-tile-icon { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4); }
 @media (max-width: 600px) { .class-tile-icon { width: 14px; height: 14px; } }
+
+/*
+ * Phones: anything pinned to the screen or blurred behind has to be repainted
+ * on every scroll frame, and jitters while the keyboard resizes the visible
+ * area. Let the background scroll with the page, drop the grain and the blur.
+ */
+@media (pointer: coarse) {
+  body { background-attachment: scroll; }
+  body::before { display: none; }
+  .top { background: rgba(11, 12, 18, 0.97); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+/* Typing in a room: the title bar scrolls away instead of sticking. */
+body:has(.party.kb) .top { position: relative; }

@@ -1379,9 +1379,11 @@ function useKeyboardOpen(): boolean {
     const vv = window.visualViewport;
     if (!vv || !matchMedia('(pointer: coarse)').matches) return;
     let tallest = Math.max(window.innerHeight, vv.height);
+    // Two thresholds, so the toolbar sliding in and out while scrolling doesn't flip the layout back and forth.
     const on = () => {
       tallest = Math.max(tallest, window.innerHeight, vv.height);
-      setOpen(vv.height < tallest * 0.75);
+      const r = vv.height / tallest;
+      setOpen((was) => (was ? r < 0.85 : r < 0.72));
     };
     on();
     vv.addEventListener('resize', on);
