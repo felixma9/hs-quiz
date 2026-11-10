@@ -19,3 +19,10 @@ describe('fuzzy', () => {
     expect(r.inTruth).toEqual([true, false, true]);
   });
 });
+
+describe('abbreviations', () => {
+  it('expands common card-text shorthand', () => {
+    expect(words('Deal 3 dmg to ur opp, w/ bc')).toEqual(['deal', '3', 'damage', 'to', 'your', 'opponent', 'with', 'battlecry']);
+    expect(words('at eot gain 2 atk')).toEqual(['at', 'end', 'of', 'turn', 'gain', '2', 'attack']);
+  });
+});

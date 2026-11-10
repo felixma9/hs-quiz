@@ -15,9 +15,22 @@ const NUMBER_WORDS: Record<string, string> = {
   '1st': '1', '2nd': '2', '3rd': '3', '4th': '4', '5th': '5',
 };
 
+/** Shorthand people type for card text ("ur" = "your", "dmg" = "damage", "eot" = "end of turn"). */
+const ABBREVIATIONS: Record<string, string> = {
+  u: 'you', ur: 'your', urs: 'yours', yr: 'your', w: 'with', wo: 'without', b4: 'before', thru: 'through', til: 'until',
+  dmg: 'damage', dmgs: 'damage', atk: 'attack', att: 'attack', hp: 'health', def: 'health', hlth: 'health',
+  opp: 'opponent', opps: 'opponents', oppo: 'opponent', enemys: 'enemy', frnd: 'friendly', fr: 'friendly',
+  min: 'minion', mins: 'minions', minn: 'minion', char: 'character', chars: 'characters', crd: 'card', crds: 'cards',
+  rnd: 'random', rand: 'random', rdm: 'random', ea: 'each', ech: 'each', xtra: 'extra', pwr: 'power', pw: 'power',
+  bc: 'battlecry', dr: 'deathrattle', ds: 'divine shield', eot: 'end of turn', sot: 'start of turn',
+  spd: 'spell damage', sd: 'spell damage', lst: 'lifesteal', disc: 'discover', disco: 'discover',
+  gen: 'generate', dup: 'copy', cpy: 'copy', n: 'and',
+};
+
 /**
  * Split text into lowercase words and numbers, ignoring punctuation.
- * Number words become digits, so "two" and "2" are the same word.
+ * Number words become digits, so "two" and "2" are the same word, and
+ * shorthand like "ur" or "dmg" becomes the full word.
  */
 export function words(s: string): string[] {
   return s
@@ -28,6 +41,7 @@ export function words(s: string): string[] {
     .trim()
     .split(' ')
     .filter(Boolean)
+    .flatMap((w) => (ABBREVIATIONS[w] ?? w).split(' '))
     .map((w) => NUMBER_WORDS[w] ?? w);
 }
 

@@ -10,7 +10,9 @@ import { newRound } from '../../gauntlet/round';
  * wins. Each card can be used once per game.
  *
  * Gauntlet VS is the same room with Gauntlet's cards: two players take turns
- * filling in a card's blank field. A wrong answer or a burnt fuse costs a life.
+ * filling in a card's blank field. A wrong answer or a burnt fuse costs a life
+ * and passes the same card to the other player to steal; if they miss too,
+ * everyone sees the answer and a new card comes up.
  *
  * Only the host runs this. Everyone else gets PublicState snapshots.
  */
@@ -66,7 +68,22 @@ export type PartyEvent =
    * A life lost: the fuse burnt out, or (Gauntlet VS) a wrong answer, when
    * `guess` holds what they said. `example` is a right answer.
    */
-  | { kind: 'boom'; player: string; out: boolean; example?: string; cardId?: string; attr?: AttrKey; guess?: string; n: number }
+  | {
+      kind: 'boom';
+      player: string;
+      out: boolean;
+      example?: string;
+      cardId?: string;
+      attr?: AttrKey;
+      guess?: string;
+      /** Gauntlet VS: the card goes to the other player to steal (the answer isn't shown yet). */
+      passed?: boolean;
+      /** Gauntlet VS: both players missed this card. */
+      nobody?: boolean;
+      /** Gauntlet VS: nobody got a card's text; this is the real text. */
+      reveal?: string;
+      n: number;
+    }
   | { kind: 'info'; text: string; n: number };
 
 export interface PublicState {
@@ -77,7 +94,7 @@ export interface PublicState {
   turn: string | null;
   prompt: { text: string; hint?: string } | null;
   /** Gauntlet VS: this turn's card and its blank field. */
-  card: { id: string; hidden: AttrKey } | null;
+  card: { id: string; hidden: AttrKey; steal: boolean } | null;
   /** Milliseconds left on the fuse when this snapshot was sent. */
   fuseLeft: number;
   /** Increases every turn, so clients can restart animations. */
@@ -112,7 +129,7 @@ export class PartyGame {
   private phase: PublicState['phase'] = 'lobby';
   private turn: string | null = null;
   private prompt: Prompt | null = null;
-  private card: { card: Card; hidden: AttrKey } | null = null;
+  private card: { card: Card; hidden: AttrKey; steal: boolean } | null = null;
   /** Gauntlet VS: fields with only one possible answer in the pool. */
   private free: Set<string> | null = null;
   private fuseEndsAt = 0;
@@ -145,7 +162,7 @@ export class PartyGame {
       settings: { ...this.settings },
       turn: this.turn,
       prompt: this.prompt ? { text: this.prompt.text, hint: this.prompt.hint } : null,
-      card: this.card ? { id: this.card.card.id, hidden: this.card.hidden } : null,
+      card: this.card ? { id: this.card.card.id, hidden: this.card.hidden, steal: this.card.steal } : null,
       fuseLeft: this.phase === 'playing' ? Math.max(0, this.fuseEndsAt - this.now()) : 0,
       round: this.round,
       turnSeconds: this.turnSeconds,
@@ -261,7 +278,7 @@ export class PartyGame {
     if (this.isVs) {
       this.free ??= giveaways(this.vs.pool);
       const r = newRound(this.vs.pool, this.vs.allowed, this.rng, this.used, this.free);
-      this.card = { card: r.card, hidden: r.hidden };
+      this.card = { card: r.card, hidden: r.hidden, steal: false };
       this.prompt = null;
       // No speed-up: filling in a card takes as long as it takes. Card text gets extra time.
       this.turnSeconds = this.settings.fuse * (r.hidden === 'text' ? TEXT_TIME : 1);
@@ -317,19 +334,24 @@ export class PartyGame {
     return true;
   }
 
-  /** Gauntlet VS: one try. Right passes the turn; wrong costs a life too. */
+  /**
+   * Gauntlet VS: one try. Right passes the turn with a new card. Wrong costs a
+   * life and passes the same card to the other player to steal; a missed steal
+   * shows the answer and a new card comes up.
+   */
   private answerCard(id: string, text: string): boolean {
     const { card, hidden } = this.card!;
     const g = gradeAttr(hidden, text, card, true);
     const p = this.players.find((x) => x.id === id)!;
     const ok = g.verdict === 'correct';
-    this.used.add(card.id);
-    this.named.push({ player: id, cardId: card.id, ok });
     if (ok) {
+      this.used.add(card.id);
+      this.named.push({ player: id, cardId: card.id, ok });
       p.hits++;
       p.streak++;
       p.bestStreak = Math.max(p.bestStreak, p.streak);
       this.event({ kind: 'hit', player: id, cardId: card.id, streak: p.streak, attr: hidden });
+      if (!this.checkOver()) this.nextTurn();
     } else {
       const kind = ATTR[hidden].kind;
       const guess =
@@ -340,11 +362,40 @@ export class PartyGame {
             : kind === 'enum'
               ? pretty(hidden, text)
               : text.trim().slice(0, 60) || 'nothing';
-      this.loseLife(p, { cardId: card.id, attr: hidden, guess });
+      this.missCard(p, guess);
     }
-    if (!this.checkOver()) this.nextTurn();
     this.emit();
     return ok;
+  }
+
+  /** Gauntlet VS: a wrong answer (`guess`) or a burnt fuse. Steal, or show the answer and move on. */
+  private missCard(p: PartyPlayer, guess?: string) {
+    const c = this.card!;
+    const other = this.alive().find((x) => x.id !== p.id);
+    // The other player gets a go at this card, unless they already had one (or this miss ends the game).
+    const pass = !c.steal && !!other && p.lives > 1;
+    const final = !pass;
+    if (final) {
+      this.used.add(c.card.id);
+      this.named.push({ player: p.id, cardId: c.card.id, ok: false });
+    }
+    this.loseLife(p, {
+      cardId: c.card.id,
+      attr: c.hidden,
+      guess,
+      passed: pass,
+      nobody: final && c.steal,
+      example: final ? this.cardTruth() : undefined,
+      reveal: final && c.hidden === 'text' ? String(ATTR.text.value(c.card) ?? '') : undefined,
+    });
+    if (this.checkOver()) return;
+    if (pass && other) {
+      // Same card, new fuse, other player.
+      this.turn = other.id;
+      this.card = { ...c, steal: true };
+      this.fuseEndsAt = this.now() + this.turnSeconds * 1000;
+      this.round++;
+    } else this.nextTurn();
   }
 
   /** The right answer to this turn's card, for the event line (not the whole text). */
@@ -353,11 +404,11 @@ export class PartyGame {
     return pretty(this.card.hidden, ATTR[this.card.hidden].value(this.card.card));
   }
 
-  private loseLife(p: PartyPlayer, extra: { cardId?: string; attr?: AttrKey; guess?: string; example?: string }) {
+  private loseLife(p: PartyPlayer, extra: { cardId?: string; attr?: AttrKey; guess?: string; example?: string; passed?: boolean; nobody?: boolean; reveal?: string }) {
     p.lives = Math.max(0, p.lives - 1);
     if (p.lives === 0) p.outAt = this.round;
     p.streak = 0;
-    this.event({ kind: 'boom', player: p.id, out: p.lives === 0, example: extra.example ?? this.cardTruth(), cardId: extra.cardId, attr: extra.attr, guess: extra.guess });
+    this.event({ kind: 'boom', player: p.id, out: p.lives === 0, ...extra });
     this.streak = 0;
   }
 
@@ -367,10 +418,11 @@ export class PartyGame {
     const p = this.players.find((x) => x.id === this.turn);
     const example = this.prompt?.answers.find((c) => !this.used.has(c.id))?.name;
     if (p && this.card) {
-      this.used.add(this.card.card.id);
-      this.named.push({ player: p.id, cardId: this.card.card.id, ok: false });
-      this.loseLife(p, { cardId: this.card.card.id, attr: this.card.hidden });
-    } else if (p) this.loseLife(p, { example });
+      this.missCard(p);
+      this.emit();
+      return;
+    }
+    if (p) this.loseLife(p, { example });
     if (!this.checkOver()) this.nextTurn();
     this.emit();
   }

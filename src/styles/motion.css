@@ -238,3 +238,7 @@ html { scroll-behavior: smooth; }
 .named-card { animation: qf-pop 0.3s var(--ease) backwards; }
 .podium-gem { animation: qf-pop 0.35s var(--ease) 0.55s backwards; }
 .solo-final { animation: qf-pop 0.4s var(--ease) backwards; }
+
+.vs-side.boom .avatar { animation: boom 0.5s ease 1; }
+.vs-bar.urgent .fuse-count { animation: tick 0.35s var(--ease) 1; }
+.steal-tag { animation: qf-pop 0.3s var(--ease) backwards; }

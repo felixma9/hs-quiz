@@ -223,3 +223,40 @@ describe('gauntlet vs text turns', () => {
     expect(last.turnSeconds).toBe(40);
   });
 });
+
+describe('gauntlet vs steals', () => {
+  const vs = () => {
+    let t = 0;
+    let last!: PublicState;
+    const g = new PartyGame(all, all, (s) => (last = s), () => t);
+    g.addPlayer('A', 'A');
+    g.addPlayer('B', 'B');
+    g.setSettings({ game: 'gauntlet', lives: 3 });
+    g.start();
+    return { g, state: () => last, advance: (ms: number) => ((t += ms), g.tick()) };
+  };
+
+  it('passes a missed card to the other player, then shows the answer if they miss too', () => {
+    const { g, state } = vs();
+    const card = state().card!.id;
+    g.answer('A', 'zzzz wrong');
+    expect(state().last).toMatchObject({ kind: 'boom', player: 'A', passed: true, example: undefined });
+    expect(state().turn).toBe('B');
+    expect(state().card).toMatchObject({ id: card, steal: true });
+    g.answer('B', 'zzzz wrong');
+    expect(state().last).toMatchObject({ kind: 'boom', player: 'B', passed: false, nobody: true });
+    expect(state().card!.id).not.toBe(card);
+    expect(state().card!.steal).toBe(false);
+  });
+
+  it('passes on a burnt rope too, and a steal can win the card', () => {
+    const { g, state, advance } = vs();
+    advance(state().turnSeconds * 1000 + 1);
+    expect(state().last).toMatchObject({ player: 'A', passed: true });
+    const s = state();
+    const truth = String(ATTR[s.card!.hidden].value(all.find((x) => x.id === s.card!.id)!) ?? '');
+    expect(g.answer('B', truth)).toBe(true);
+    expect(state().players[1].hits).toBe(1);
+    expect(state().card!.steal).toBe(false);
+  });
+});

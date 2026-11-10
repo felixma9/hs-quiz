@@ -426,7 +426,7 @@ function Lobby({
         <div className="pool-note">
           <img className="setting-icon" src={MANA_ICON} alt="" />
           {vs
-            ? `1v1: take turns filling in a card's blank. A wrong answer or a burnt rope costs a life. Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
+            ? `1v1: take turns filling in a card's blank. Miss and you lose a life, and your opponent gets a chance to steal the same card. Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
             : `Every collectible card counts: ${state.poolSize.toLocaleString()} cards.`}
         </div>
       </section>
@@ -611,7 +611,10 @@ function Play({
         </div>
       )}
       {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
-      <div className={`table ${myTurn ? 'compact' : ''} ${solo ? 'solo' : ''} ${state.card ? 'vs' : ''} ${urgent ? 'urgent' : ''}`}>
+      {state.card ? (
+        <VsBar state={state} me={me} frac={frac} left={left} urgent={urgent} />
+      ) : (
+      <div className={`table ${myTurn ? 'compact' : ''} ${solo ? 'solo' : ''} ${urgent ? 'urgent' : ''}`}>
         <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
         <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
           <RopeRing frac={frac} key={`rope-${state.round}`} />
@@ -679,9 +682,11 @@ function Play({
           );
         })}
       </div>
-
+      )}
 
       {state.card ? (
+        <>
+        <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
         <VsCard
           key={state.round}
           state={state}
@@ -693,6 +698,7 @@ function Play({
           onTyping={onTyping}
           onAnswer={onAnswer}
         />
+        </>
       ) : (
       <>
       <div className={`qf-prompt party-prompt ${myTurn ? 'mine' : ''}`} key={state.round}>
@@ -737,8 +743,54 @@ function Play({
       </>
       )}
 
-      <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
+      {!state.card && <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />}
     </>
+  );
+}
+
+/** Gauntlet VS scoreboard: you on the left, the rope in the middle, your opponent on the right. */
+function VsBar({ state, me, frac, left, urgent }: { state: PublicState; me: string; frac: number; left: number; urgent: boolean }) {
+  const last = state.last;
+  const seated = state.players.filter((p) => p.lives > 0 || p.outAt > 0 || state.players.length <= VS_PLAYERS).slice(0, VS_PLAYERS);
+  const [a, b] = [...seated].sort((x, y) => Number(y.id === me) - Number(x.id === me));
+  const side = (p: PublicState['players'][number]) => {
+    const boom = last?.kind === 'boom' && last.player === p.id;
+    return (
+      <div
+        key={p.id + (boom ? `-boom-${last!.n}` : '')}
+        className={`vs-side ${p.id === state.turn ? 'active' : ''} ${boom ? 'boom' : ''} ${p.id === me ? 'me' : ''} ${p.lives === 0 ? 'out' : ''}`}
+      >
+        <span className="avatar-wrap">
+          <span className="avatar" style={avatarStyle(p.id)}>
+            {p.name.slice(0, 1).toUpperCase()}
+          </span>
+          {p.streak >= HOT && (
+            <span className="vs-hot" key={`hot-${p.streak}`} aria-label={`${p.streak} in a row`}>
+              🔥{p.streak}
+            </span>
+          )}
+        </span>
+        <span className="vs-name">{p.id === me ? 'You' : p.name}</span>
+        <span className="seat-lives" aria-label={`${p.lives} lives`}>
+          {Array.from({ length: state.settings.lives }, (_, k) => (
+            <img key={k} className={`life ${k < p.lives ? 'on' : ''}`} src={HEALTH_ICON} alt="" draggable={false} />
+          ))}
+        </span>
+        <span className="vs-hits">{plural(p.hits, 'card')}</span>
+      </div>
+    );
+  };
+  return (
+    <div className={`vs-bar ${urgent ? 'urgent' : ''}`}>
+      {a && side(a)}
+      <div className={`vs-clock ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'clock'}>
+        <RopeRing frac={frac} key={`rope-${state.round}`} />
+        <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
+          {Math.ceil(left)}
+        </span>
+      </div>
+      {b && side(b)}
+    </div>
   );
 }
 
@@ -780,13 +832,15 @@ function VsCard({
   return (
     <div className={`vs-turn ${myTurn ? 'mine' : ''}`}>
       <div className="vs-ask">
+        {state.card!.steal && <span className="steal-tag">{myTurn ? 'Steal!' : 'Steal'}</span>}
         {myTurn ? (
           <>
-            Fill in the <b>{label}</b>: {key === 'text' ? 'tap the text box and type what you remember. The gist is enough: about 40% of the key words, any order (blank if the card has none). Double time.' : howTo(key)}
+            Fill in the <b>{label}</b>:{' '}
+            {key === 'text' ? 'tap the text box and type the gist (shorthand like "dmg" is fine). Double time.' : howTo(key)}
           </>
         ) : (
           <>
-            {who} is filling in the <b>{label}</b>
+            {who} is {state.card!.steal ? 'trying to steal' : 'filling in'} the <b>{label}</b>
             {key === 'text' && ' (double time)'}
           </>
         )}
@@ -874,33 +928,61 @@ function EventLine({
     cls = 'bad';
     body = <span>✗ {last.text}</span>;
   } else if (last.kind === 'boom' && last.cardId) {
-    // Gauntlet VS: a wrong answer or a burnt rope, with the right answer.
+    // Gauntlet VS: a wrong answer or a burnt rope. Passed on for a steal, or the answer.
     const c = byId.get(last.cardId);
     const field = c && last.attr ? labelFor(ATTR[last.attr], c).toLowerCase() : 'answer';
-    const out = last.out ? (last.player === me ? ' You are out!' : ` ${nameOf(last.player)} is out!`) : '';
+    const what =
+      last.guess !== undefined ? (
+        <>
+          ✗ {who(last.player)} said <b>{last.guess}</b>.
+        </>
+      ) : (
+        <>💥 {who(last.player)} ran out of time.</>
+      );
     cls = 'boom';
-    body = (
-      <>
-        {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" />}
+    if (last.passed) {
+      body = (
         <span>
-          {last.guess !== undefined ? (
-            <>
-              ✗ {who(last.player)} said <b>{last.guess}</b>.{' '}
-            </>
-          ) : (
-            <>💥 {who(last.player)} ran out of time. </>
-          )}
-          {last.example ? (
-            <>
-              {c?.name}'s {field} is <b>{last.example}</b>.
-            </>
-          ) : (
-            <>That was {c?.name}.</>
-          )}
-          {out}
+          {what} {last.player === me ? 'Over to your opponent.' : <b className="steal-call">Your chance to steal!</b>}
         </span>
-      </>
-    );
+      );
+    } else {
+      const out = last.out ? (last.player === me ? ' You are out!' : ` ${nameOf(last.player)} is out!`) : '';
+      const nobody = last.nobody ? 'Nobody got it. ' : '';
+      if (last.reveal !== undefined) {
+        cls = 'boom reveal';
+        body = (
+          <>
+            <span>
+              {what} {nobody}
+              {out}
+            </span>
+            <span className="vs-reveal">
+              {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" />}
+              <span>
+                <b>{c?.name}</b>
+                <span className="vs-reveal-text">{last.reveal || '(no text)'}</span>
+              </span>
+            </span>
+          </>
+        );
+      } else {
+        body = (
+          <>
+            {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" />}
+            <span>
+              {what} {nobody}
+              {last.example && (
+                <>
+                  {c?.name}'s {field} is <b>{last.example}</b>.
+                </>
+              )}
+              {out}
+            </span>
+          </>
+        );
+      }
+    }
   } else if (last.kind === 'boom') {
     cls = 'boom';
     body = (
