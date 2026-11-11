@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import type { Card } from '../lib/types';
-import { normalizeName } from '../lib/fuzzy';
+import { normalizeCardName, normalizeName } from '../lib/fuzzy';
 import { boxStyle, type Box } from './layout';
 import { useTapPick } from './tap';
+import { rank } from '../lib/search';
 
 /** Touch screens: the keyboard covers whatever is below the field, so suggestions open above it. */
 const touch = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
@@ -25,9 +26,7 @@ export function NameEditor({
   const matches = useMemo(() => {
     const n = normalizeName(value);
     if (n.length < 2) return [];
-    const starts = names.filter((x) => normalizeName(x).startsWith(n));
-    const inside = names.filter((x) => !normalizeName(x).startsWith(n) && normalizeName(x).includes(n));
-    return [...starts, ...inside].slice(0, 6);
+    return rank(names, n, normalizeCardName, 6);
   }, [value, names]);
   const exact = matches.length === 1 && normalizeName(matches[0]) === normalizeName(value);
   const tap = useTapPick();

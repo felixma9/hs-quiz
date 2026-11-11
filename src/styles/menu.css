@@ -1,51 +1,71 @@
-/* Main menu: intro, mode links, card pool (rarities + sets). */
-.menu { display: grid; gap: 16px; padding-top: 12px; }
-.menu-intro { text-align: center; margin: 8px 0 4px; }
-.menu-intro p { margin: 0; color: var(--muted); }
+/* Main menu: intro, mode links, card pool (rarities + sets), share settings. */
+.menu { display: grid; gap: 20px; }
+.menu-intro { text-align: center; }
+.menu-intro h1 { margin: 8px 0 0; font-size: clamp(1.3rem, 5vw, 1.7rem); line-height: 1.25; text-wrap: balance; }
+
+/* Modes: a row each, with a slice of card art fading in on the right. */
+.mode-list { display: grid; gap: 10px; }
 .mode-card {
-  display: block; padding: 16px 18px; border-radius: 4px; background: transparent;
-  border: 1px solid var(--border); color: var(--text); text-decoration: none; transition: border-color 0.15s;
+  position: relative; overflow: hidden; isolation: isolate; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
+  min-height: 88px; padding: 14px 16px; border-radius: var(--radius); background: var(--surface);
+  color: var(--text); text-decoration: none;
 }
-.mode-card:hover, .mode-card:active { border-color: var(--gold-dim); }
-.mode-card h2 { color: var(--gold); }
-.mode-card p { margin: 0.25em 0 0; color: var(--muted); font-size: 0.92rem; }
+.mode-art {
+  position: absolute; inset: 0 0 0 45%; z-index: -1; opacity: 0.35;
+  background: var(--art) center 30% / 140% auto no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%); mask-image: linear-gradient(90deg, transparent, #000 70%);
+}
+.mode-body { display: grid; gap: 2px; max-width: 78%; }
+.mode-card h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.1rem; }
+.mode-icon { width: 20px; height: 20px; object-fit: contain; flex: none; }
+.mode-card p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.35; }
+.mode-go { color: var(--faint); font-size: 1.1rem; }
+@media (hover: hover) {
+  .mode-card:hover { background: var(--surface-2); }
+  .mode-card:hover .mode-go { color: var(--gold); }
+}
+
+/* Card pool */
+.pool-section { display: grid; gap: 16px; padding: 16px; border-radius: var(--radius); background: var(--surface); }
+.pool-section > .section-label { color: var(--text); font-size: 0.9rem; }
 
 .rarity-picker { display: grid; gap: 8px; }
-.rarity-picker .label { font-weight: 700; }
 .rarity-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .rarity-chip {
-  display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 0.85rem; padding: 7px 12px; min-height: 38px;
-  border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; font: inherit; font-size: 0.88rem;
+  border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--faint); cursor: pointer;
 }
-.rarity-chip.on { color: var(--text); border-color: var(--gold-dim); background: var(--surface-2); }
-.rarity-chip .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; opacity: 0.35; }
-.rarity-chip.on .dot { opacity: 1; }
-.rarity-chip .count { color: var(--muted); font-size: 0.75rem; }
+.rarity-chip.on { color: var(--text); border-color: var(--gold-dim); background: var(--gold-bg); }
+.rarity-chip .count { color: var(--muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.rarity-chip-gem { width: 13px; height: 17px; object-fit: contain; opacity: 0.4; }
+.rarity-chip.on .rarity-chip-gem { opacity: 1; }
+.rarity-chip-gem.free { filter: grayscale(1) brightness(0.75); }
 
-.set-picker { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 12px 0; }
+.set-picker { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
 .set-summary {
-  display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; background: none; border: 0;
-  color: var(--text); font: inherit; text-align: left; padding: 0; cursor: pointer; min-height: 32px;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 0;
+  background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer;
 }
-.chev { color: var(--muted); }
-.set-year { border: 1px solid var(--border); border-radius: 4px; padding: 4px 12px 8px; margin: 0; display: grid; gap: 2px; }
+.set-summary b { font-weight: 600; }
+.chev { color: var(--muted); display: inline-block; transition: transform var(--med) var(--ease); }
+.chev.open { transform: rotate(180deg); }
+.set-year { border: 1px solid var(--line); border-radius: 8px; padding: 4px 12px 8px; margin: 0; display: grid; gap: 0; }
 .set-year legend { padding: 0 6px; }
-.set-row { display: grid; grid-template-columns: auto 1fr auto; min-height: 36px; }
+.set-row { display: grid; grid-template-columns: auto 1fr auto; min-height: 40px; }
 
 /* Share settings: your code + copy/link, and a box for a friend's code. */
-.share-panel { display: grid; gap: 8px; }
-.share-panel .label { font-weight: 700; }
+.share-panel { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 14px; }
 .share-row { display: flex; gap: 6px; align-items: stretch; }
-.share-row .in { flex: 1; min-width: 0; }
+.share-row .in { flex: 1; min-width: 0; min-height: 40px; }
 .share-code {
-  flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 12px; border: 1px solid var(--border); border-radius: 4px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1rem; letter-spacing: 0.06em; color: var(--gold);
+  flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem; letter-spacing: 0.04em; color: var(--gold);
   overflow-x: auto; white-space: nowrap; user-select: all; -webkit-user-select: all;
 }
 .share-note { color: var(--muted); min-height: 1.2em; }
-.share-note.ok { color: #6aaa64; }
-.share-note.bad { color: #e5484d; }
+.share-note.ok { color: var(--ok-text); }
+.share-note.bad { color: var(--bad-text); }
 .shared-banner {
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
-  padding: 12px 14px; border: 1px solid var(--gold-dim); border-radius: 4px; background: var(--surface-2);
+  padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--gold-dim); background: var(--gold-bg);
 }

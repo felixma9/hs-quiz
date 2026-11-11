@@ -1,5 +1,23 @@
 /** Lowercase, drop accents, keep only letters and digits. "Al'Akir the Windlord" -> "alakirthewindlord". */
 export function normalizeName(s: string): string {
+  return cachedNorm.get(s) ?? normalize(s);
+}
+
+/**
+ * Card names get normalized on every keystroke of a search, over thousands of
+ * cards, so names are remembered once normalized (typed input isn't, so the cache stays the size of the card list).
+ */
+const cachedNorm = new Map<string, string>();
+export function normalizeCardName(name: string): string {
+  let n = cachedNorm.get(name);
+  if (n === undefined) {
+    n = normalize(name);
+    cachedNorm.set(name, n);
+  }
+  return n;
+}
+
+function normalize(s: string): string {
   return s
     .toLowerCase()
     .normalize('NFD')

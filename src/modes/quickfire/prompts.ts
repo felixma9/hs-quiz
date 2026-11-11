@@ -1,6 +1,6 @@
 import type { Card } from '../../lib/types';
 import { pretty } from '../../lib/attributes';
-import { levenshtein, normalizeName } from '../../lib/fuzzy';
+import { levenshtein, normalizeCardName, normalizeName } from '../../lib/fuzzy';
 import { nameTolerance } from '../../lib/grade';
 
 /**
@@ -194,7 +194,7 @@ const TEMPLATES: Template[] = [
         text: `Finish the Legendary ${TYPE_WORD[s.type]}: **${p}…**`,
         hint: s.cardClass === 'NEUTRAL' ? 'Neutral' : cls(s),
         // Any card that starts this way counts.
-        test: (c) => normalizeName(c.name).startsWith(n),
+        test: (c) => normalizeCardName(c.name).startsWith(n),
         why: () => `doesn't start with "${p}"`,
       };
     },
@@ -236,14 +236,14 @@ export function makePrompt(pool: Card[], used: Set<string> = new Set(), rng: Rng
   const n = normalizeName(p);
   return {
     text: `Finish the ${seed.rarity === 'LEGENDARY' ? 'Legendary ' : ''}${TYPE_WORD[seed.type]}: **${p}…**`,
-    test: (c) => normalizeName(c.name).startsWith(n),
+    test: (c) => normalizeCardName(c.name).startsWith(n),
     why: () => `doesn't start with "${p}"`,
-    answers: pool.filter((c) => normalizeName(c.name).startsWith(n)),
+    answers: pool.filter((c) => normalizeCardName(c.name).startsWith(n)),
   };
 }
 
 /** Lowercase words of a name, accents and punctuation dropped ("Al'Akir" -> "alakir"). */
-const nameWords = (s: string) =>
+const toWords = (s: string) =>
   s
     .toLowerCase()
     .normalize('NFD')
@@ -251,6 +251,13 @@ const nameWords = (s: string) =>
     .replace(/['’]/g, '')
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
+/** Card names' words, worked out once per name (findCard checks every card on each answer). */
+const wordCache = new Map<string, string[]>();
+function nameWords(name: string): string[] {
+  let w = wordCache.get(name);
+  if (!w) wordCache.set(name, (w = toWords(name)));
+  return w;
+}
 
 /**
  * How well a typed word stands for a word of a card name: 2 = it's the word
@@ -277,7 +284,7 @@ export function findCard(input: string, cards: Card[], prefer?: (c: Card) => boo
   let best: Card | null = null;
   let bestD = Infinity;
   for (const c of cards) {
-    const n = normalizeName(c.name);
+    const n = normalizeCardName(c.name);
     if (n === g) return c;
     if (Math.abs(n.length - g.length) > 2) continue;
     const d = levenshtein(g, n);
@@ -288,7 +295,7 @@ export function findCard(input: string, cards: Card[], prefer?: (c: Card) => boo
   }
   if (best) return best;
   // 2. Part of the name: every typed word matches a word of the name, in order.
-  const typed = nameWords(input);
+  const typed = toWords(input);
   if (g.length < 4 || !typed.length) return null;
   const partial: { c: Card; fit: number }[] = [];
   for (const c of cards) {
@@ -309,7 +316,7 @@ export function findCard(input: string, cards: Card[], prefer?: (c: Card) => boo
     }
     // Needs a complete word of the name, or most of it: just the first few
     // letters (e.g. the hint in "Finish the name: Ragn…") isn't an answer.
-    const enough = whole || g.length >= normalizeName(c.name).length * 0.6;
+    const enough = whole || g.length >= normalizeCardName(c.name).length * 0.6;
     if (fit && enough) partial.push({ c, fit });
   }
   if (!partial.length) return null;

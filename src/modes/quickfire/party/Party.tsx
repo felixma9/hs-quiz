@@ -1200,7 +1200,8 @@ function NamedCards({ state, me, all }: { state: PublicState; me: string; all: C
       <div className="named-strip">
         {list.map((x, i) => (
           <button
-            key={x.cardId}
+            // A card can come up twice in a long game, so the position is the key.
+            key={i}
             type="button"
             className={`named-card ${x.ok === undefined ? '' : x.ok ? 'run-card ok' : 'run-card bad'} ${open === i ? 'on' : ''}`}
             style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}

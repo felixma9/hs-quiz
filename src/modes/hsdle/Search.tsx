@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../lib/types';
-import { normalizeName } from '../../lib/fuzzy';
+import { normalizeCardName, normalizeName } from '../../lib/fuzzy';
+import { rank } from '../../lib/search';
 import { Art, useArtCrop } from './Art';
 import { useTapPick } from '../../card/tap';
 
@@ -17,9 +18,7 @@ export function Search({ minions, exclude, onPick }: { minions: Card[]; exclude:
     if (!n) return [];
     const ex = new Set(exclude);
     const pool = minions.filter((c) => !ex.has(c.id));
-    const starts = pool.filter((c) => normalizeName(c.name).startsWith(n));
-    const inside = pool.filter((c) => !normalizeName(c.name).startsWith(n) && normalizeName(c.name).includes(n));
-    return [...starts, ...inside].slice(0, 8);
+    return rank(pool, n, (c) => normalizeCardName(c.name), 8);
   }, [q, minions, exclude]);
   useEffect(() => setHi(0), [q]);
 

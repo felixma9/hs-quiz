@@ -22,6 +22,17 @@ type Mode = keyof typeof KEY;
 
 export function Hsdle({ cards }: { cards: Card[] }) {
   const minions = useMemo(() => cards.filter((c) => c.type === 'MINION'), [cards]);
+  if (!minions.length) {
+    return (
+      <div className="panel center">
+        HSdle needs minions, and your card pool has none. <a href="#/">Change it on the menu.</a>
+      </div>
+    );
+  }
+  return <HsdleGame cards={cards} minions={minions} />;
+}
+
+function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
   const byId = useMemo(() => new Map(minions.map((c) => [c.id, c])), [minions]);
   const date = today();
   const [mode, setMode] = useState<Mode>('daily');

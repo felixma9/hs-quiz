@@ -4,37 +4,39 @@
 .hud > :last-child { align-self: center; justify-self: end; }
 .hud b { color: var(--text); }
 .stat { display: flex; flex-direction: column; align-items: center; line-height: 1; gap: 3px; }
-.stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
-.stat-value { font-variant-numeric: tabular-nums; font-weight: 800; }
+.stat-label { font-size: 0.72rem; color: var(--muted); }
+.stat-value { font-variant-numeric: tabular-nums; font-weight: 700; }
 .score .stat-value { font-size: 2rem; color: var(--text); display: inline-block; }
-.score.record .stat-value { color: #f0b232; text-shadow: 0 0 10px rgba(240, 178, 50, 0.35); }
+.score.record .stat-value { color: var(--gold); }
 .best .stat-value { font-size: 1.2rem; color: var(--muted); }
 .lives { display: inline-flex; align-items: center; gap: 4px; }
-.heart { width: 26px; height: 34px; object-fit: contain; display: block; transition: filter 0.3s ease, opacity 0.3s ease; }
-.heart.full { filter: drop-shadow(0 0 5px rgba(229, 72, 77, 0.5)); }
+.heart { width: 22px; height: 29px; object-fit: contain; display: block; transition: filter 0.3s ease, opacity 0.3s ease; }
 .heart.lost { filter: grayscale(1) brightness(0.45); opacity: 0.45; }
-@media (max-width: 600px) { .heart { width: 24px; height: 31px; } .lives { gap: 3px; } .score .stat-value { font-size: 1.75rem; } }
+@media (max-width: 600px) { .lives { gap: 3px; } .score .stat-value { font-size: 1.75rem; } }
 .settings .chips { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 
 .truth { margin-top: 6px; }
-.text-diff .hit { background: var(--ok); color: #fff; border-radius: 2px; padding: 0 2px; }
+.text-diff .hit { background: rgba(63, 143, 74, 0.45); color: #fff; border-radius: 3px; padding: 0 2px; }
 .text-diff .miss { color: inherit; text-decoration: underline 2px var(--key); text-underline-offset: 3px; }
-.feedback.ok .text-diff .hit { background: rgba(255,255,255,0.2); }
 
 .actions { display: flex; gap: 8px; }
 .actions .btn.primary { flex: 1; }
-.btn.reveal { background: transparent; border: 1px solid var(--border, #3a3a3c); color: var(--muted); }
-.btn.reveal .cost { color: #e5484d; margin-left: 4px; white-space: nowrap; }
-.btn.reveal:hover { color: var(--text); }
+.btn.reveal { background: transparent; border: 1px solid var(--line-2); color: var(--muted); }
+.btn.reveal .cost { color: var(--bad-text); margin-left: 4px; white-space: nowrap; }
+@media (hover: hover) { .btn.reveal:hover:not(:disabled) { background: transparent; color: var(--text); } }
 
 /* Game over: reuses the Quickfire results pieces (score ring, stat tiles, art strip). */
 .gauntlet-over { margin-top: 4px; }
 .gauntlet-over .feedback { text-align: center; }
 .solo-stats .of { font-style: normal; font-size: 0.8rem; font-weight: 600; color: var(--muted); align-self: flex-end; margin-bottom: 2px; }
-.run-card.ok .named-art { border-color: rgba(83, 141, 78, 0.9); }
-.run-card.bad .named-art { border-color: rgba(229, 72, 77, 0.65); filter: saturate(0.55) brightness(0.8); }
+.run-card.ok .named-art { border-color: var(--ok); }
+.run-card.bad .named-art { border-color: var(--bad-text); filter: saturate(0.55) brightness(0.8); }
 .run-card.on .named-art { border-color: var(--gold); filter: none; }
-.run-mark { position: absolute; right: -3px; bottom: -3px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
-  font-size: 0.8rem; font-weight: 900; line-height: 1; color: #fff; box-shadow: 0 0 0 2px var(--bg); }
+.run-mark { position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center;
+  font-size: 0.72rem; font-weight: 800; line-height: 1; color: #fff; box-shadow: 0 0 0 2px var(--bg); }
 .run-card.ok .run-mark { background: var(--ok); }
-.run-card.bad .run-mark { background: #e5484d; }
+.run-card.bad .run-mark { background: #c2453f; }
+
+/* Settings panel. */
+.settings { padding: 14px; border-radius: var(--radius); background: var(--surface); }
+.hud .link { font-size: 1.25rem; min-width: 44px; }

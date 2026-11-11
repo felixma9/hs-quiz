@@ -1,60 +1,59 @@
 /* HSdle: guess the minion. */
 .hsdle .ask { margin: 0; }
 .search { position: relative; }
-.search .in { font-size: 17px; padding: 14px 16px; border-color: var(--gold-dim); background: #18181a; }
-.search .in:focus { outline: 2px solid var(--gold); }
+.search .in { font-size: 17px; padding: 13px 14px; }
 .search-list {
   list-style: none; margin: 4px 0 0; padding: 4px; position: absolute; z-index: 20; left: 0; right: 0;
-  background: #1c1c1e; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 10px 28px rgba(0,0,0,0.6);
+  background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--radius); box-shadow: 0 10px 28px rgba(0,0,0,0.5);
 }
 .search-list button {
   width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; background: none; border: 0;
-  color: var(--text); font: inherit; padding: 6px 8px; border-radius: 2px; cursor: pointer;
+  color: var(--text); font: inherit; padding: 6px 8px; min-height: 48px; border-radius: 6px; cursor: pointer;
 }
-.search-list button.hi { background: var(--surface-2); }
+.search-list button.hi { background: rgba(255, 255, 255, 0.06); }
 .search-list .thumb { width: 36px; height: 36px; }
 
 .clues { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; align-items: flex-start; }
 .clue { display: grid; justify-items: center; gap: 8px; }
 .clue-btn {
-  display: grid; gap: 2px; justify-items: center; min-width: 120px; padding: 8px 14px; border-radius: 4px; font: inherit;
-  font-weight: 700; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase;
-  background: transparent; color: var(--muted); border: 1px solid var(--border); cursor: default;
+  display: grid; gap: 2px; justify-items: center; min-width: 120px; min-height: 48px; padding: 8px 14px; border-radius: var(--radius); font: inherit;
+  font-weight: 600; font-size: 0.9rem;
+  background: transparent; color: var(--faint); border: 1px solid var(--line); cursor: default;
 }
-.clue-btn .small { text-transform: none; letter-spacing: 0; font-weight: 400; }
-.clue-btn.unlocked { color: var(--gold); border-color: var(--gold-dim); cursor: pointer; }
-.clue-btn.on { background: var(--surface-2); }
+.clue-btn .small { font-weight: 400; }
+.clue-btn.unlocked { color: var(--text); border-color: var(--gold-dim); cursor: pointer; }
+.clue-btn.on { background: var(--gold-bg); }
 .clue-body { max-width: 320px; text-align: center; }
-.clue-art { width: 220px; height: 220px; border: 2px solid var(--gold-dim); }
+.clue-art { width: 220px; height: 220px; }
 .clue-body p { margin: 0; font-style: italic; color: var(--text); }
 
 .hsdle-result { display: grid; gap: 14px; }
 .give-up {
   justify-self: center; font: inherit; font-size: 0.85rem; color: var(--muted); background: none; cursor: pointer;
-  border: 1px solid var(--border); border-radius: 4px; padding: 8px 16px; min-height: 40px;
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 16px; min-height: 44px;
 }
-.give-up.armed { color: #fff; background: #8f3434; border-color: #8f3434; }
+.give-up.armed { color: #fff; background: var(--bad); border-color: var(--bad); }
 
 .board-wrap { overflow-x: auto; margin: 0 -16px; padding: 0 16px 8px; -webkit-overflow-scrolling: touch; }
 .board { display: grid; gap: 6px; min-width: max-content; }
 .board-row { display: grid; grid-template-columns: 116px 54px 54px 54px 70px 74px 104px 74px 84px; gap: 5px; }
 .board-head .board-cell {
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
-  border-bottom: 2px solid var(--border); padding-bottom: 4px; text-align: center; align-self: end;
+  font-size: 0.7rem; font-weight: 600; color: var(--muted);
+  border-bottom: 1px solid var(--line); padding-bottom: 4px; text-align: center; align-self: end;
 }
 .board-head .name-cell { text-align: left; }
 .board-cell { position: relative; }
-.board-row .name-cell { position: sticky; left: 0; z-index: 2; background: var(--bg); box-shadow: 6px 0 6px -4px rgba(0,0,0,0.6); }
+.board-row .name-cell { position: sticky; left: 0; z-index: 2; background: var(--bg); }
 .name-cell { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; line-height: 1.15; min-width: 0; }
-.name-cell .thumb { width: 36px; height: 36px; border: 1px solid var(--gold-dim); }
+.name-cell .thumb { width: 36px; height: 36px; }
 .name-cell span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 .tile {
-  height: 64px; display: grid; place-items: center; text-align: center; padding: 3px; border-radius: 3px; overflow: hidden;
-  font-size: 0.66rem; font-weight: 700; line-height: 1.12; color: #fff; border: 1px solid rgba(0,0,0,0.35);
+  height: 64px; display: grid; place-items: center; text-align: center; padding: 3px; border-radius: 6px; overflow: hidden;
+  font-size: 0.66rem; font-weight: 600; line-height: 1.12; color: #fff;
 }
-.tile.t-correct { background: var(--ok); }
-.tile.t-close { background: var(--close); }
-.tile.t-wrong { background: #8f3434; }
+.tile.t-correct { background: #3f8a47; }
+.tile.t-close { background: #a68f34; }
+.tile.t-wrong { background: #7d3333; }
 .tile-label { position: relative; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.6); overflow-wrap: normal; hyphens: manual; }
 .tile-arrow { position: absolute; inset: 6px; opacity: 0.28; background: #000; z-index: 0;
   clip-path: polygon(50% 0, 100% 45%, 70% 45%, 70% 100%, 30% 100%, 30% 45%, 0 45%); }
@@ -94,8 +93,8 @@
 .tile.selected { outline: 2px solid #fff; outline-offset: -2px; }
 .name-cell.selected .thumb { outline: 2px solid #fff; }
 .board-detail {
-  margin-top: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem;
-  text-align: center; background: var(--surface-2);
+  margin-top: 8px; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;
+  text-align: center; background: var(--surface);
 }
 
 /* Rarity tile: gem + label */
@@ -145,5 +144,5 @@
 }
 
 /* The header's name cell matches the other column heads (the name-button rule above clears its padding and rule). */
-.board-head .board-cell.name-cell { padding-bottom: 4px; border-bottom: 2px solid var(--border); align-items: flex-end; font-size: 0.68rem; line-height: normal; }
+.board-head .board-cell.name-cell { padding-bottom: 4px; border-bottom: 1px solid var(--line); align-items: flex-end; font-size: 0.68rem; line-height: normal; }
 @media (max-width: 600px) { .board-head .board-cell.name-cell { padding-bottom: 3px; } }

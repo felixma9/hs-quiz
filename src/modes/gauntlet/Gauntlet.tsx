@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, gradeAttr, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
 import { newRound, howTo, type Round } from './round';
+import { giveaways } from '../../lib/cards';
 import type { Grade } from '../../lib/grade';
 import { load, save } from '../../lib/storage';
 import { GameCard } from '../../card/GameCard';
@@ -22,7 +23,9 @@ interface Played extends Round {
 export function Gauntlet({ cards }: { cards: Card[] }) {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const pool = useMemo(() => (settings.minionsOnly ? cards.filter((c) => c.type === 'MINION') : cards), [cards, settings.minionsOnly]);
-  const [round, setRound] = useState<Round>(() => newRound(pool, settings.allowed));
+  // Fields with only one possible answer in the pool: worked out once per pool, not every card.
+  const free = useMemo(() => giveaways(pool), [pool]);
+  const [round, setRound] = useState<Round>(() => newRound(pool, settings.allowed, Math.random, undefined, free));
   const [answer, setAnswer] = useState('');
   const [result, setResult] = useState<Grade | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -40,11 +43,11 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
   const attr = ATTR[round.hidden];
 
   const next = useCallback(() => {
-    setRound(newRound(pool, settings.allowed));
+    setRound(newRound(pool, settings.allowed, Math.random, undefined, free));
     setAnswer('');
     setResult(null);
     setRevealed(false);
-  }, [pool, settings.allowed]);
+  }, [pool, settings.allowed, free]);
 
   const submit = () => {
     if (result || over) return next();
@@ -79,14 +82,14 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
   };
 
   const restart = (s = settings) => {
-    const p = s.minionsOnly ? cards.filter((c) => c.type === 'MINION') : cards;
+    const p = s === settings ? pool : s.minionsOnly ? cards.filter((c) => c.type === 'MINION') : cards;
     setScore(0);
     setLives(LIVES);
     setHistory([]);
     setStreak(0);
     setBestStreak(0);
     setStartBest(best);
-    setRound(newRound(p, s.allowed));
+    setRound(newRound(p, s.allowed, Math.random, undefined, p === pool ? free : giveaways(p)));
     setAnswer('');
     setResult(null);
     setRevealed(false);
@@ -112,7 +115,9 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+    // Re-subscribes only when the answer is shown (each answer sets a new result), not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, over]);
 
   const hidden = useMemo(() => new Set<AttrKey>(result ? [] : [round.hidden]), [result, round.hidden]);
   const truth = attr.value(round.card);

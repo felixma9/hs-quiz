@@ -1,7 +1,7 @@
 /* The card (drawn on a canvas by Sunwell) and filling it in by tapping. */
 .game-card { position: relative; display: grid; gap: 8px; justify-items: center; align-content: start; }
 .game-card-frame { position: relative; width: min(300px, 78vw); aspect-ratio: 500 / 746; }
-.game-card canvas { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.2s; }
+.game-card canvas { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity var(--med) ease; }
 .game-card canvas.ready { opacity: 1; }
 .card-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
 .card-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; font-size: 0.85rem; }
@@ -26,8 +26,8 @@
 
 /* Inline editors over the card */
 .card-edit {
-  position: absolute; z-index: 5; font: inherit; font-size: 16px; color: #fff; background: rgba(18, 18, 19, 0.92);
-  border: 2px solid #fff; border-radius: 4px; padding: 6px 8px; text-align: center; outline: none;
+  position: absolute; z-index: 5; font: inherit; font-size: 16px; color: #fff; background: rgba(14, 15, 19, 0.94);
+  border: 2px solid var(--gold); border-radius: 8px; padding: 6px 8px; text-align: center; outline: none;
 }
 .card-edit-number { font-size: 28px; font-weight: 800; border-radius: 50%; padding: 0; }
 .card-edit-text { resize: none; text-align: center; font-size: 15px; line-height: 1.3; }
@@ -38,7 +38,7 @@
 /* Chips under the card (class, spell school) */
 .chip {
   display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 0.85rem; color: var(--text);
-  background: var(--surface-2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 999px; min-height: 32px;
+  background: var(--surface); border: 1px solid var(--line); padding: 4px 12px; border-radius: 8px; min-height: 36px;
 }
 .chip:disabled { opacity: 1; cursor: default; }
 .chip.editable { border: 1px dashed rgba(255,255,255,0.55); cursor: pointer; }
@@ -47,14 +47,14 @@
 .chip.v-wrong { border: 2px solid var(--bad); }
 
 /* Class / tribe pickers */
-.picker { width: 100%; gap: 10px; }
+.picker { width: 100%; gap: 10px; padding: 12px; border-radius: var(--radius); background: var(--surface); }
 .picker-head { display: flex; justify-content: space-between; align-items: center; }
 .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
 .class-btn {
-  display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border-radius: 4px; font: inherit; font-size: 0.78rem;
-  background: var(--surface-2); border: 2px solid transparent; color: var(--text); cursor: pointer;
+  display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border-radius: 8px; font: inherit; font-size: 0.78rem;
+  background: var(--surface-2); border: 1px solid transparent; color: var(--text); cursor: pointer;
 }
-.class-btn.on { border-color: #fff; }
+.class-btn.on { border-color: var(--gold); background: var(--gold-bg); }
 .class-icon {
   width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-size: 22px;
   border: 2px solid rgba(255,255,255,0.6); box-shadow: inset 0 -4px 8px rgba(0,0,0,0.35);
@@ -65,9 +65,9 @@
 .option-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .option-list button {
   display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 0.9rem; padding: 8px 12px; min-height: 40px;
-  border-radius: 4px; background: var(--surface-2); color: var(--text); border: 2px solid transparent; cursor: pointer;
+  border-radius: 8px; background: var(--surface-2); color: var(--text); border: 1px solid transparent; cursor: pointer;
 }
-.option-list button.on { border-color: #fff; }
+.option-list button.on { border-color: var(--gold); background: var(--gold-bg); }
 .dual summary { cursor: pointer; color: var(--muted); padding: 4px 0; }
 
 /* Wide screens: open pickers beside the card instead of under it. */
@@ -75,7 +75,7 @@
   .game-card .picker {
     position: absolute; top: 0; width: 300px; max-height: 100%; overflow-y: auto;
     left: calc(50% + 150px + 28px);
-    background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 14px;
+    border: 1px solid var(--line); padding: 14px;
   }
 }
 
@@ -85,5 +85,5 @@
 /* Quick keys for symbols phone keyboards hide (+ - / : ...), in a row just above the card text box. */
 .symbol-keys { position: absolute; left: 3%; right: 3%; z-index: 6; display: flex; justify-content: center; gap: 4px; }
 .symbol-keys button { flex: 1 1 0; max-width: 40px; min-height: 36px; padding: 0; border-radius: 8px; font: inherit; font-size: 1.1rem; font-weight: 700;
-  color: #fff; background: rgba(18, 18, 19, 0.92); border: 1px solid rgba(255, 255, 255, 0.35); cursor: pointer; touch-action: manipulation; }
+  color: #fff; background: rgba(14, 15, 19, 0.94); border: 1px solid var(--line-2); cursor: pointer; touch-action: manipulation; }
 .symbol-keys button:active { background: var(--gold); color: #1a1408; }

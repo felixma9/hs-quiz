@@ -38,7 +38,7 @@ src/
   modes/hsdle/             HSdle mode: compare.ts (column logic), Board, Search, Clues, Art
   lib/                     shared logic: card types, attributes, grading, fuzzy matching, storage
   data/                    set names/years, class badges
-  styles/                  base, menu, card, gauntlet, hsdle
+  styles/                  base (tokens, controls), menu, card, gauntlet, hsdle, quickfire, motion
   types/                   type declarations for Sunwell
 scripts/                   build-cards.ts (+ transform.ts), measure-art.py
 tests/                     vitest: grading, fuzzy matching, card data, HSdle compare
@@ -56,7 +56,7 @@ Much of the art is padded with light bars. `python3 -I scripts/measure-art.py` d
 
 ## Decor
 
-The UI is minimal: flat surfaces, gold as the one accent and a green main button (the final style layer is `src/styles/hs-ui.css`). The site uses the card-frame gems from `public/sunwell/` as icons around the site: the mana crystal in the title, health drops for lives, rarity gems on the pool chips and mode cards, and mana/attack/health gems on the numbers in Quickfire prompts. Class icons from `public/class-icons/` appear on the Gauntlet class chip, HSdle class tiles and Quickfire prompts. To use your own logo or background, put `logo.png` and/or `background.jpg` in `public/decor/`; only add images you have the right to use on a public site.
+The UI is quiet and built for phones first: flat surfaces, one typeface (Inter), gold only for what's selected or yours, and green for the main button. Colors and sizes are tokens at the top of `src/styles/base.css`; motion is kept to what tells you something (`src/styles/motion.css`). The site uses the card-frame gems from `public/sunwell/` as icons around the site: the mana crystal in the title, health drops for lives, rarity gems on the pool chips and mode cards, and mana/attack/health gems on the numbers in Quickfire prompts. Class icons from `public/class-icons/` appear on the Gauntlet class chip, HSdle class tiles and Quickfire prompts. To use your own logo or background, put `logo.png` and/or `background.jpg` in `public/decor/`; only add images you have the right to use on a public site.
 
 ## Class icons
 

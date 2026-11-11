@@ -124,7 +124,13 @@ export function joinRoom(
   return new Promise((resolve, reject) => {
     const peer = new Peer();
     let joined = false;
+    let done = false;
+    // Destroying the peer closes the connection, which would call this again
+    // (and replace "The host closed the room." with "Lost connection"), so only the first reason counts.
     const fail = (text: string) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
       peer.destroy();
       if (joined) handlers.onClosed(text);
       else reject(new Error(text));
@@ -138,7 +144,10 @@ export function joinRoom(
         conn.send({ t: 'hello', name } satisfies ToHost);
         resolve({
           send: (m) => conn.open && conn.send(m),
-          close: () => peer.destroy(),
+          close: () => {
+            done = true;
+            peer.destroy();
+          },
         });
       });
       conn.on('data', (d) => {

@@ -56,12 +56,16 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
 
   useEffect(() => setActive(null), [card.id]);
 
-  // Redraw when the card or what's shown changes; typing is debounced.
+  // Redraw when the card or what's shown changes. A new card draws straight away; typing is debounced.
+  const drawnId = useRef<string | null>(null);
   useEffect(() => {
+    const fresh = drawnId.current !== card.id;
+    drawnId.current = card.id;
+    if (fresh) setReady(false);
     let live = true;
     const t = setTimeout(
       () => canvas.current && drawCard(canvas.current, card, shown, () => setReady(true), () => live),
-      ready ? 120 : 0,
+      fresh ? 0 : 120,
     );
     return () => {
       live = false;
@@ -69,7 +73,6 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id, shownKey]);
-  useEffect(() => setReady(false), [card.id]);
 
   const layout = layoutFor(card);
   const canEdit = (k: AttrKey) => editable.has(k) && !!onChange;
