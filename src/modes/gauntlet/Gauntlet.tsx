@@ -280,17 +280,19 @@ function Feedback({
             <TextDiff truth={plainText(card.text)} matched={result.truthMatched} />
           </div>
         </>
+      ) : ok ? (
+        <div>
+          It's <b>{truthPretty}</b>.
+        </div>
       ) : (
-        !ok && (
-          <div>
-            {answer ? (
-              <>
-                You said <b>{attrKey === 'name' ? answer : pretty(attrKey, ATTR[attrKey].kind === 'number' ? (answer === '' ? null : Number(answer)) : answer)}</b>.{' '}
-              </>
-            ) : null}
-            It's <b>{truthPretty}</b>.
-          </div>
-        )
+        <div>
+          {answer ? (
+            <>
+              You said <b>{attrKey === 'name' ? answer : pretty(attrKey, ATTR[attrKey].kind === 'number' ? (answer === '' ? null : Number(answer)) : answer)}</b>.{' '}
+            </>
+          ) : null}
+          It's <b>{truthPretty}</b>.
+        </div>
       )}
     </div>
   );

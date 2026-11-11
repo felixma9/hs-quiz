@@ -1088,7 +1088,12 @@ function EventLine({
     body = (
       <span>
         💥 {who(last.player)} ran out of time{last.out ? (last.player === me ? ' and are out!' : ' and is out!') : ''}
-        {last.example && <span className="muted"> (e.g. {last.example})</span>}
+        {last.example && (
+          <>
+            {' '}
+            One answer: <b>{last.example}</b>
+          </>
+        )}
       </span>
     );
   } else {
