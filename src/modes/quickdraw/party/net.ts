@@ -17,6 +17,34 @@ export type ToGuest =
   | { t: 'closed' };
 
 const PREFIX = 'hsquiz-room-';
+
+/**
+ * Relay (TURN) servers for players who can't connect directly (mobile data,
+ * strict routers). PeerJS's own free relays are gone, so we use Metered's.
+ * The login comes from .env.local (VITE_TURN_USERNAME / VITE_TURN_CREDENTIAL);
+ * it ends up in the page anyway, but stays out of git. Without it, only direct
+ * connections work.
+ */
+const TURN_USER: string | undefined = import.meta.env.VITE_TURN_USERNAME;
+const TURN_PASS: string | undefined = import.meta.env.VITE_TURN_CREDENTIAL;
+export const ICE_SERVERS: RTCIceServer[] = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  ...(TURN_USER && TURN_PASS
+    ? [
+        {
+          urls: [
+            'turn:global.relay.metered.ca:80',
+            'turn:global.relay.metered.ca:80?transport=tcp',
+            'turn:global.relay.metered.ca:443',
+            'turns:global.relay.metered.ca:443?transport=tcp',
+          ],
+          username: TURN_USER,
+          credential: TURN_PASS,
+        },
+      ]
+    : []),
+];
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I or O
 
 export function newRoomCode(rng = Math.random): string {
@@ -80,7 +108,7 @@ export function hostRoom(handlers: {
     let tries = 0;
     const attempt = () => {
       const code = newRoomCode();
-      const peer = new Peer(PREFIX + code);
+      const peer = new Peer(PREFIX + code, { config: { iceServers: ICE_SERVERS } });
       const conns = new Map<string, DataConnection>();
       let opened = false;
       peer.on('open', () => {
@@ -137,7 +165,7 @@ export function joinRoom(
   handlers: { onMessage(msg: ToGuest): void; onClosed(text: string): void },
 ): Promise<GuestRoom> {
   return new Promise((resolve, reject) => {
-    const peer = new Peer();
+    const peer = new Peer({ config: { iceServers: ICE_SERVERS } });
     let joined = false;
     let done = false;
     // Destroying the peer closes the connection, which would call this again
@@ -150,7 +178,7 @@ export function joinRoom(
       if (joined) handlers.onClosed(text);
       else reject(new Error(text));
     };
-    const timer = setTimeout(() => !joined && fail("Couldn't connect to that room. It may have closed."), 15000);
+    const timer = setTimeout(() => !joined && fail("Found the room but couldn't connect to the host. Try again, or join the same Wi-Fi."), 15000);
     peer.on('open', () => {
       const conn = peer.connect(PREFIX + code, { reliable: true });
       conn.on('open', () => {

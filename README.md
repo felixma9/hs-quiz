@@ -25,6 +25,17 @@ npm test           # grading + data pipeline tests
 npm run build      # static site in dist/
 ```
 
+## Room relay
+
+Rooms connect browsers directly, which fails on many mobile and home networks. Those players go through a Metered TURN relay. Its login goes in `.env.local` (not in git), and `npm run deploy` builds it into the site:
+
+```
+VITE_TURN_USERNAME=...
+VITE_TURN_CREDENTIAL=...
+```
+
+Without it, rooms only work between players who can connect directly.
+
 ## Project layout
 
 ```
