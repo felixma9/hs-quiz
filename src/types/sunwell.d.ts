@@ -17,6 +17,7 @@ declare module 'sunwell/dist/sunwell.web.js' {
     bodyTextCoords?: Record<string, number>;
     baseCardFrameAsset: string;
     getCardFrameAsset(): string;
+    getWatermarkAsset(): string;
     costGem?: Gem;
     attackGem?: Gem;
     healthGem?: Gem;

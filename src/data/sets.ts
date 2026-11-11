@@ -1,4 +1,4 @@
-/** Set code -> display name and release year (used for "close" clues). New sets must also be appended to SHARE_SETS in src/pool/shareCode.ts (a test checks). */
+/** Set code -> display name and release year (used for "close" clues). New sets must also be appended to SHARE_SETS in src/pool/shareCode.ts and get a set icon (see src/card/sunwell.ts); tests check both. */
 export const SETS: Record<string, { name: string; year: number }> = {
   // HearthstoneJSON's LEGACY is the original Basic set (Fireball, Chillwind Yeti). The game now files Basic and Classic both under "Legacy".
   LEGACY: { name: 'Basic', year: 2014 },

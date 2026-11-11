@@ -83,6 +83,7 @@ Sunwell is older than some of the game, so:
 - **Multiclass cards** use the neutral frame. The class is shown in a chip under the card.
 - **Newer tribes** such as Undead and Naga: we set the tribe banner text ourselves.
 - **Spell schools** are shown in a chip under the card.
+- **Set icons** stop at Rise of Shadows (2019). Icons for later sets (`public/sunwell/set-<set>.webp`, listed in `src/card/sunwell.ts`) come from the [Hearthstone wiki](https://hearthstone.wiki.gg), shaded to match Sunwell's. Add one for each new set (a test checks).
 - **Fonts:** the real card fonts are proprietary, so Merriweather and Libre Franklin stand in.
 
 Sunwell's `linebreak` dependency is overridden to 1.1.0 (the old version reads a file at runtime), and `src/polyfills.ts` provides `Buffer`.

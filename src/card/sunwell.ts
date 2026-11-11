@@ -38,6 +38,20 @@ function getSunwell(): Sunwell {
   return sunwell;
 }
 
+/**
+ * Set icons Sunwell doesn't have (it stops at Rise of Shadows, 2019). Files are
+ * public/sunwell/set-<code in lower case>.webp, from the Hearthstone wiki,
+ * recoloured to match Sunwell's own. Basic (LEGACY) has no icon in the game either.
+ */
+const NEWER_SET_ICONS = new Set([
+  'ULDUM', 'DRAGONS', 'YEAR_OF_THE_DRAGON', 'DEMON_HUNTER_INITIATE', 'BLACK_TEMPLE', 'SCHOLOMANCE', 'DARKMOON_FAIRE',
+  'CORE', 'THE_BARRENS', 'STORMWIND', 'ALTERAC_VALLEY', 'THE_SUNKEN_CITY', 'REVENDRETH', 'PATH_OF_ARTHAS',
+  'RETURN_OF_THE_LICH_KING', 'BATTLE_OF_THE_BANDS', 'TITANS', 'WILD_WEST', 'WHIZBANGS_WORKSHOP', 'WONDERS',
+  'ISLAND_VACATION', 'SPACE', 'EMERALD_DREAM', 'THE_LOST_CITY', 'TIME_TRAVEL', 'CATACLYSM', 'ESCAPEFROM_VIOLET_HOLD',
+  'BE', 'EVENT',
+]);
+export const setIconAsset = (set: string) => (NEWER_SET_ICONS.has(set) ? `set-${set.toLowerCase()}` : null);
+
 /** The tribe banner image, loaded up front so spells can use it too. */
 let banner: Promise<unknown> | null = null;
 function loadBanner() {
@@ -194,6 +208,8 @@ export async function drawCard(canvas: HTMLCanvasElement, card: Card, shown: Sho
       // Our DH frames are recolored from other class frames (scripts/make-dh-frames.py).
       sw.getCardFrameAsset = () => `${sw.baseCardFrameAsset}demonhunter`;
     }
+    const icon = setIconAsset(card.set);
+    if (icon) sw.getWatermarkAsset = () => icon;
     if (card.type === 'SPELL') {
       // Reuse the minion tribe banner as the spell-school banner, at the bottom of the card.
       sw.raceBannerAsset = 'race-banner';
