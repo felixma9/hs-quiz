@@ -69,15 +69,9 @@ body::before { display: none; }
 .feedback.bad { border: 0; }
 .tile { box-shadow: none; }
 
-/* ---- Icons as squircles instead of circles ---- */
-/*
- * Class icon images are round emblems with a gold ring. Zoom in past the ring
- * and clip to a rounded square; the clip is drawn before the zoom, so the
- * icon ends up its usual size.
- */
-img.class-icon, .chip-class-icon, .class-tile-icon, .class-inline img {
-  border-radius: 0; transform: scale(1.34); clip-path: inset(12.7% round 22%); box-shadow: none; border: 0;
-}
-.class-icon:not(img) { border-radius: 28%; }
-/* Round card art (thumbnails, results strips, HSdle) */
-.art-crop, .qf-thumb, .named-card, .center-hit, .center-art { border-radius: 28%; }
+/* ---- Small icons and badges as squircles instead of circles and pills ---- */
+/* Streak, speed and steal badges, counts, tags. */
+.hot-badge, .vs-hot, .speed-badge, .hot-callout, .steal-tag, .count-pill, .tag { border-radius: 6px; }
+/* Round marks and icon buttons. */
+.run-mark, .avatar, .top-back, .zoom-close, .mode-go, .solo-final { border-radius: 30%; }
+.seat.hot .avatar-wrap::before { border-radius: 34%; }
