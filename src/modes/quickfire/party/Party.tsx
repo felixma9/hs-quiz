@@ -13,6 +13,7 @@ import { GameCard } from '../../../card/GameCard';
 import { preloadArt } from '../../../card/sunwell';
 import { howTo } from '../../gauntlet/round';
 import { loadSettings } from '../../gauntlet/settings';
+import { confirmLeave, setLeaveGuard } from '../../../app/leaveGuard';
 import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './net';
 
 const HOST_ID = 'host';
@@ -199,6 +200,15 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
 
   // A new turn starts with an empty speech bubble.
   useEffect(() => setTyping(null), [state?.round]);
+
+  // In a room, ask before leaving it (any way: button, title bar, back, closing the tab).
+  const inRoom = mode.role !== 'solo' && !!state && !!me && !error;
+  const hosting = mode.role === 'host';
+  useEffect(() => {
+    if (!inRoom) return;
+    setLeaveGuard(hosting ? 'Close the room? Everyone in it will be disconnected.' : 'Leave the room?');
+    return () => setLeaveGuard(null);
+  }, [inRoom, hosting]);
   const over = state?.phase === 'over';
   useEffect(() => {
     if (!over) return;
@@ -234,6 +244,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
   }
 
   const isHost = mode.role === 'host';
+  const leave = () => confirmLeave() && onLeave();
   const kbClass = keyboardOpen && state.phase === 'playing' ? 'kb' : '';
   if (mode.role === 'solo') {
     return (
@@ -292,7 +303,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
         <Play state={state} me={me} deadline={deadline} typing={typing} all={all} drawable={drawable} onAnswer={answer} onTyping={sendTyping} />
       )}
       {state.phase === 'over' && <Over state={state} me={me} isHost={isHost} all={all} onAgain={() => game.current?.toLobby()} />}
-      <button className="link party-leave" onClick={onLeave}>
+      <button className="link party-leave" onClick={leave}>
         {isHost ? 'Close room' : 'Leave room'}
       </button>
     </div>

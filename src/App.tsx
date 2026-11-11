@@ -10,6 +10,7 @@ import { SharePanel, SharedBanner } from './pool/SharePanel';
 import { codeFromLocation, decodeSetup, type SharedSetup } from './pool/shareCode';
 import { saveSettings } from './modes/gauntlet/settings';
 import { parseRoute, type Route } from './app/routes';
+import { confirmLeave, isGuarded } from './app/leaveGuard';
 import { TitleBar } from './app/TitleBar';
 import { Menu } from './app/Menu';
 import { CardPreview } from './app/CardPreview';
@@ -39,7 +40,17 @@ export function App() {
   };
 
   useEffect(() => {
+    // The page we're on, to go back to if the player cancels leaving a room.
+    let here = location.hash;
     const on = () => {
+      if (isGuarded() && parseRoute() !== parseRoute(here)) {
+        if (!confirmLeave()) {
+          // Stay: put the room's address back without another hashchange.
+          history.replaceState(null, '', here);
+          return;
+        }
+      }
+      here = location.hash;
       // Cross-fade between pages where the browser supports view transitions.
       const go = () => flushSync(() => setRoute(parseRoute()));
       const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;

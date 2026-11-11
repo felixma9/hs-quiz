@@ -75,3 +75,6 @@ body::before { display: none; }
 /* Round marks and icon buttons. */
 .run-mark, .avatar, .top-back, .zoom-close, .mode-go, .solo-final { border-radius: 30%; }
 .seat.hot .avatar-wrap::before { border-radius: 34%; }
+/* Room settings selectors (game, lives, seconds): squircle segments instead of pills. */
+.seg { border-radius: 12px; }
+.seg button { border-radius: 9px; }
