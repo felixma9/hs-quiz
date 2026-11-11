@@ -97,7 +97,7 @@
   transition: filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease; }
 .seat-lives .life.on { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); opacity: 1; }
 .seat.active .avatar-wrap { margin: 1.4cqw 0; }
-.seat.active .avatar { transform: scale(1.15); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold); }
+.seat.active .avatar { transform: scale(1.15); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold), 0 0 20px rgba(226, 182, 90, 0.55); }
 .seat.active .seat-name { color: var(--gold); }
 .seat.me .seat-name { font-weight: 700; }
 .seat.out { opacity: 0.3; filter: grayscale(1); }
@@ -138,10 +138,11 @@
 .turn-banner .avatar { width: 32px; height: 32px; font-size: 0.95rem; }
 .turn-banner-text { font-weight: 600; font-size: 1.15rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.turn-banner.mine { background: var(--gold); color: #1d1606; }
-.turn-banner.mine .turn-banner-text { font-weight: 700; }
+.turn-banner.mine { background: var(--gold); color: #1d1606; box-shadow: 0 0 0 4px rgba(226, 182, 90, 0.18), 0 6px 24px rgba(226, 182, 90, 0.35); }
+.turn-banner.mine .turn-banner-text { font-weight: 700; font-size: 1.35rem; }
 .turn-banner.mine .avatar { box-shadow: 0 0 0 2px #2a1a00; }
-.my-turn-glow { position: fixed; inset: 0; z-index: 30; pointer-events: none; box-shadow: inset 0 0 0 3px var(--gold-dim); }
+.my-turn-glow { position: fixed; inset: 0; z-index: 30; pointer-events: none;
+  box-shadow: inset 0 0 0 3px rgba(226, 182, 90, 0.85), inset 0 0 60px rgba(226, 182, 90, 0.3); }
 
 /* Speech bubble over whoever's up, showing what they're typing. */
 .seat { z-index: 1; }
@@ -172,7 +173,7 @@
 .rope-ring.hot, .rope-orbit.hot { --rope: #ff5b4f; --rope-glow: rgba(255, 91, 79, 0.7); }
 .rope-ring circle { fill: none; }
 .rope-track { stroke: rgba(255, 255, 255, 0.07); stroke-width: 3; }
-.rope-cord { stroke: var(--rope); stroke-width: 5; stroke-linecap: round; transition: stroke 0.5s ease; }
+.rope-cord { stroke: var(--rope); stroke-width: 5; stroke-linecap: round; filter: drop-shadow(0 0 2.5px var(--rope-glow)); transition: stroke 0.5s ease; }
 .rope-braid { stroke: rgba(0, 0, 0, 0.22); stroke-width: 5; }
 .rope-ember { position: absolute; left: 50%; width: 0; height: 0; z-index: 2; pointer-events: none; }
 .ember-glow { position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%;
@@ -215,10 +216,13 @@
 .avatar-wrap { position: relative; display: grid; place-items: center; }
 .hot-badge { position: absolute; z-index: 2; top: -22%; right: -42%; padding: 1px 5px; border-radius: 6px; font-size: max(10px, 3.2cqw); font-weight: 700;
   line-height: 1.3; color: #fff; white-space: nowrap; background: #c9581f; box-shadow: 0 0 0 2px var(--bg); }
-/* Hot streak: an orange ring that thickens with the streak (no animation). */
-.seat.hot .avatar { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px #e0803a; }
-.seat.hot-2 .avatar { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #e0803a; }
-.seat.hot-3 .avatar { box-shadow: 0 0 0 2px var(--bg), 0 0 0 5px #f0954a; }
+/* Hot streak: a flame aura behind the avatar that grows with the streak. */
+.seat.hot .avatar-wrap::before { content: ''; position: absolute; inset: -18%; z-index: -1; border-radius: 50%;
+  background: conic-gradient(from 0deg, #ff5e1a, #ffb347, #ff3d00, #ffd36b, #ff5e1a); filter: blur(5px); opacity: 0.55; }
+.seat.hot-2 .avatar-wrap::before { inset: -26%; opacity: 0.8; }
+.seat.hot-3 .avatar-wrap::before { inset: -34%; opacity: 1; filter: blur(4px); }
+.seat.hot .avatar { box-shadow: 0 0 0 2px #ff9a3c; }
+.seat.hot.active .avatar { box-shadow: 0 0 0 3px #ffb347, 0 0 22px rgba(255, 120, 40, 0.75); }
 .seat.hot .seat-name { color: #f0a560; }
 /* Event line callout. */
 .hot-callout { padding: 1px 8px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; color: #f0a560; background: rgba(224, 128, 58, 0.14); }
@@ -321,7 +325,7 @@
 .vs-side.out { opacity: 0.3; filter: grayscale(1); }
 .vs-side .avatar-wrap { position: relative; }
 .vs-side .avatar { width: 40px; height: 40px; font-size: 1.05rem; transition: transform 0.3s var(--ease, ease), box-shadow 0.3s ease; }
-.vs-side.active .avatar { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold); }
+.vs-side.active .avatar { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold), 0 0 16px rgba(226, 182, 90, 0.5); }
 .vs-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.8rem; color: var(--muted); }
 .vs-side.active .vs-name { color: var(--text); }
 .vs-side .seat-lives { display: flex; gap: 2px; }
@@ -394,14 +398,15 @@
 /* A call in the middle of the screen as your turn starts, then it fades. */
 .turn-flash {
   position: fixed; left: 50%; top: 32%; z-index: 40; pointer-events: none; white-space: nowrap;
-  padding: 12px 22px; border-radius: 12px; background: var(--gold); color: #1d1606;
-  font-weight: 700; font-size: 1.5rem; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-  transform: translate(-50%, -50%); animation: turn-flash 1.2s ease forwards;
+  padding: 14px 26px; border-radius: 14px; background: var(--gold); color: #1d1606;
+  font-weight: 700; font-size: 1.8rem; box-shadow: 0 0 0 6px rgba(226, 182, 90, 0.2), 0 10px 40px rgba(0, 0, 0, 0.6);
+  transform: translate(-50%, -50%); animation: turn-flash 1.4s ease forwards;
 }
 @keyframes turn-flash {
-  0% { opacity: 0; transform: translate(-50%, -40%); }
-  15%, 70% { opacity: 1; transform: translate(-50%, -50%); }
-  100% { opacity: 0; visibility: hidden; transform: translate(-50%, -50%); }
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+  14% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+  24%, 72% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; visibility: hidden; transform: translate(-50%, -50%) scale(0.96); }
 }
 
 /* Final count on the results screens. */

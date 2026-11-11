@@ -1,7 +1,7 @@
 /*
  * Motion, kept to what tells you something: things appearing, a miss, a life
- * lost, a tile turning over. Short and without bounce. No looping decoration
- * except where something is live (the rope's ember, typing dots, the caret).
+ * lost, a tile turning over, whose turn it is, a hot streak, a right answer,
+ * your last life, a win. Nothing loops just for decoration.
  * All of it is switched off for "reduce motion" at the bottom.
  */
 @keyframes fade-in { from { opacity: 0; } }
@@ -56,6 +56,7 @@
 .qf-prompt { animation: fade-in var(--med) ease backwards; }
 
 /* Live things: typing bubble, caret, dots, the rope's ember, waiting for the host. */
+/* (Turn, streak, last-life and answer signals are further down.) */
 @keyframes bubble-in { from { opacity: 0; scale: 0.8; } }
 @keyframes bubble-shake { 0%, 100% { translate: 0; } 25% { translate: -4px; } 50% { translate: 3px; } 75% { translate: -2px; } }
 .bubble { animation: bubble-in 0.2s var(--ease) backwards; transform-origin: 50% 100%; transition: background-color 0.2s ease, color 0.2s ease; }
@@ -69,6 +70,43 @@
 .needle { transition: transform 0.4s var(--ease); }
 .seat, .vs-side { transition: opacity 0.3s ease; }
 .seat .avatar, .vs-side .avatar { transition: transform 0.3s var(--ease), box-shadow 0.3s ease; }
+
+/* Signals: right answers glow, your last life beats, the win hops, the rope ticks. */
+@keyframes pop { 0% { opacity: 0; transform: scale(0.5); } 60% { opacity: 1; transform: scale(1.1); } 100% { transform: none; } }
+@keyframes bump { from { transform: scale(1.35); } }
+@keyframes glow-card { 0%, 100% { filter: drop-shadow(0 0 0 rgba(106, 170, 100, 0)); } 30% { filter: drop-shadow(0 0 14px rgba(106, 170, 100, 0.95)); } }
+@keyframes glow-ok { 0% { box-shadow: 0 0 0 0 rgba(106, 170, 100, 0); } 30% { box-shadow: 0 0 0 3px rgba(106, 170, 100, 0.9), 0 0 24px 4px rgba(106, 170, 100, 0.4); } 100% { box-shadow: 0 0 0 0 rgba(106, 170, 100, 0); } }
+@keyframes heart-beat { 0%, 100% { transform: none; } 15% { transform: scale(1.15); } 30% { transform: none; } 45% { transform: scale(1.1); } }
+@keyframes hop { 0%, 100% { transform: none; } 40% { transform: translateY(-14px); } 60% { transform: translateY(2px); } }
+.gauntlet-card.got canvas { animation: glow-card 1s ease 1; }
+.qf-prompt.after-hit { animation: fade-in var(--med) ease backwards, glow-ok 0.5s ease 1; }
+.heart.last { animation: heart-beat 1.4s ease-in-out infinite; }
+.score .stat-value, .qf-count.done { animation: bump 0.3s var(--ease) backwards; }
+.hsdle.won .board-row.newest .tile { animation: flip 0.4s ease both, hop 0.5s ease; animation-delay: var(--d, 0ms), calc(var(--d, 0ms) + 1000ms); }
+.table.urgent .fuse-count, .vs-bar.urgent .fuse-count { animation: bump 0.35s var(--ease) 1; }
+.ember-glow { animation: breathe 0.6s ease-in-out infinite; }
+.rope-orbit.hot .ember-core { animation-duration: 0.25s; }
+.speed-badge, .hot-badge, .hot-callout, .steal-tag, .named-card { animation: pop 0.3s var(--ease) backwards; }
+
+/* Whose turn: the banner pops in; on your turn the screen edge pulses gold. */
+@keyframes banner-in { 0% { opacity: 0; transform: scale(0.85); } 60% { opacity: 1; transform: scale(1.04); } 100% { transform: none; } }
+@keyframes edge-pulse { 50% { opacity: 0.5; } }
+.turn-banner { animation: banner-in 0.35s var(--ease) backwards; }
+.my-turn-glow { animation: fade-in 0.25s ease backwards, edge-pulse 1.6s ease-in-out 0.25s infinite; }
+
+/* Hot streak: the flame turns and flickers, faster when blazing. */
+@keyframes aura-spin { to { transform: rotate(360deg); } }
+@keyframes aura-flicker { 50% { scale: 1.08; } }
+.seat.hot .avatar-wrap::before { animation: aura-spin 3s linear infinite, aura-flicker 0.6s ease-in-out infinite; }
+.seat.hot-3 .avatar-wrap::before { animation-duration: 1.4s, 0.35s; }
+
+/* Results: the podium rises, then the crown lands on the winner. */
+@keyframes rise { from { transform: scaleY(0); } }
+.podium-block { transform-origin: bottom; animation: rise 0.45s var(--ease) backwards; }
+.place-2 .podium-block { animation-delay: 0.1s; }
+.place-1 .podium-block { animation-delay: 0.2s; }
+.podium-spot .avatar, .podium-name, .podium-gem { animation: pop 0.35s var(--ease) 0.45s backwards; }
+.crown { animation: pop 0.5s var(--ease) 0.65s backwards; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
