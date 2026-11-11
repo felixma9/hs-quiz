@@ -654,6 +654,12 @@ function Play({
         </div>
       )}
       {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
+      {/* Gauntlet PvP: a big call in the middle of the screen as your turn starts. */}
+      {myTurn && vs && (
+        <div className="turn-flash" key={`flash-${state.round}`} aria-hidden="true">
+          {state.card?.steal ? 'Your steal!' : 'Your turn!'}
+        </div>
+      )}
       {vs ? (
         <VsBar state={state} me={me} deadline={deadline} total={total} left={left} urgent={urgent} />
       ) : (
@@ -856,7 +862,11 @@ function VsBar({
         </span>
         {/* Whose turn, in place of the big banner. */}
         <span className="vs-turn-label" key={`turn-${state.round}`}>
-          {state.turn === me ? 'Your turn' : `${state.players.find((x) => x.id === state.turn)?.name ?? '…'}'s turn`}
+          {state.turn === me
+            ? state.card?.steal
+              ? 'Your steal!'
+              : 'Your turn!'
+            : `${state.players.find((x) => x.id === state.turn)?.name ?? '…'}'s turn`}
         </span>
       </div>
       {duel && b && side(b)}
