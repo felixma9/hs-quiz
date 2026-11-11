@@ -1,5 +1,5 @@
 /**
- * Ask before leaving a page that would be lost by leaving (a Quickfire room).
+ * Ask before leaving a page that would be lost by leaving (a Quickdraw room).
  * A page sets a message while it's active; every way out (the leave button,
  * the title bar links, the browser's back button, closing the tab) asks first.
  */

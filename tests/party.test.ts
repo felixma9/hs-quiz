@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { PartyGame, type PublicState } from '../src/modes/quickfire/party/game';
+import { PartyGame, type PublicState } from '../src/modes/quickdraw/party/game';
 import type { Card } from '../src/lib/types';
 import { ATTR } from '../src/lib/attributes';
 
@@ -20,7 +20,7 @@ function solve(g: PartyGame): string {
   return p.prompt.answers.find((c) => !p.used.has(c.id))!.name;
 }
 
-describe('quickfire party', () => {
+describe('quickdraw party', () => {
   it('passes the turn on a right answer and keeps it on a wrong one', () => {
     const { g, state } = setup();
     g.start();
@@ -96,7 +96,7 @@ describe('quickfire party', () => {
   });
 });
 
-describe('quickfire party ranking', () => {
+describe('quickdraw party ranking', () => {
   it('records when each player went out', () => {
     let t = 0;
     let last!: PublicState;
@@ -113,9 +113,9 @@ describe('quickfire party ranking', () => {
   });
 });
 
-describe('quickfire party speed-up', () => {
+describe('quickdraw party speed-up', () => {
   it('shortens the fuse on a streak and resets on a burnt fuse', async () => {
-    const { turnSeconds } = await import('../src/modes/quickfire/party/game');
+    const { turnSeconds } = await import('../src/modes/quickdraw/party/game');
     expect(turnSeconds(12, 0)).toBe(12);
     expect(turnSeconds(12, 3)).toBeLessThan(12);
     expect(turnSeconds(12, 50)).toBe(4.8); // floor: 40%
@@ -137,7 +137,7 @@ describe('quickfire party speed-up', () => {
   });
 });
 
-describe('quickfire party hot streaks', () => {
+describe('quickdraw party hot streaks', () => {
   it("counts each player's own run and resets it when their fuse burns", () => {
     let t = 0;
     let last!: PublicState;
@@ -157,7 +157,7 @@ describe('quickfire party hot streaks', () => {
   });
 });
 
-describe('quickfire party results', () => {
+describe('quickdraw party results', () => {
   it('keeps each best streak and the cards named, sent once the game is over', () => {
     let t = 0;
     let last!: PublicState;

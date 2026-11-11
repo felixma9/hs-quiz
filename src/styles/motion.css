@@ -50,7 +50,7 @@
 .board-row.newest .tile { animation: flip 0.4s ease both; animation-delay: var(--d, 0ms); }
 .tile { transition: outline-color var(--fast) ease; }
 
-/* Quickfire: the named card shows in the middle of the table for a moment. */
+/* Quickdraw: the named card shows in the middle of the table for a moment. */
 @keyframes center-hit { 0% { opacity: 0; } 15%, 75% { opacity: 1; } 100% { opacity: 0; } }
 .center-hit { animation: center-hit 1.1s ease forwards; }
 .qf-prompt { animation: fade-in var(--med) ease backwards; }

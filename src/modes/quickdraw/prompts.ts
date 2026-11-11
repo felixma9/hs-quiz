@@ -4,7 +4,7 @@ import { levenshtein, normalizeCardName, normalizeName } from '../../lib/fuzzy';
 import { nameTolerance } from '../../lib/grade';
 
 /**
- * Quickfire prompts: "Name a minion with 4 Attack", "Name a Mage spell that
+ * Quickdraw prompts: "Name a minion with 4 Attack", "Name a Mage spell that
  * costs 2", "Finish the minion name: Chi…". Each prompt is built from a real
  * card in the pool, so it always has an answer.
  */

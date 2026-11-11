@@ -25,7 +25,7 @@ export function newRoomCode(rng = Math.random): string {
 export const cleanCode = (s: string) => s.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
 
 export function roomLink(code: string): string {
-  return `${location.origin}${location.pathname}#/quickfire?room=${code}`;
+  return `${location.origin}${location.pathname}#/quickdraw?room=${code}`;
 }
 export function roomFromLocation(hash = location.hash): string | null {
   const m = hash.match(/[?&]room=([A-Za-z]{4})/);

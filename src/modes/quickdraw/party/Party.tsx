@@ -20,7 +20,7 @@ const HOST_ID = 'host';
 /** Hearthstone's health drop (from the card frame assets), one per life. */
 const HEALTH_ICON = ICON.health;
 const MANA_ICON = ICON.mana;
-/** Card art behind the room code: Al'Akir, as on the Quickfire home screen. */
+/** Card art behind the room code: Al'Akir, as on the Quickdraw home screen. */
 const ROOM_ART = 'https://art.hearthstonejson.com/v1/512x/NEW1_010.jpg';
 
 /** Right answers in a row before a player counts as on a hot streak. */
@@ -51,7 +51,7 @@ interface Props {
   onLeave(): void;
 }
 
-/** A Quickfire room: connection, then lobby / game / results for everyone. */
+/** A Quickdraw room: connection, then lobby / game / results for everyone. */
 export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Props) {
   const [state, setState] = useState<PublicState | null>(null);
   const [me, setMe] = useState<string | null>(mode.role === 'guest' ? null : HOST_ID);
@@ -332,7 +332,7 @@ function Lobby({
     const url = roomLink(code);
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'HS Quiz room', text: `Join my Quickfire room: ${code}`, url });
+        await navigator.share({ title: 'HS Quiz room', text: `Join my Quickdraw room: ${code}`, url });
         return;
       } catch (e) {
         if ((e as Error).name === 'AbortError') return;
@@ -425,7 +425,7 @@ function Lobby({
           <div className="seg game-seg" role="radiogroup" aria-label="Game">
             {(
               [
-                ['quickfire', 'Quickfire'],
+                ['quickdraw', 'Quickdraw'],
                 ['gauntlet', 'Gauntlet PvP'],
               ] as const
             ).map(([g, label]) => (
@@ -1327,7 +1327,7 @@ function RopeRing({ deadline, total }: { deadline: number; total: number }) {
 
 /* ---------------- Solo ---------------- */
 
-const soloKey = (s: PartySettings) => `hsq:quickfire:best:${s.lives}-${s.fuse}`;
+const soloKey = (s: PartySettings) => `hsq:quickdraw:best:${s.lives}-${s.fuse}`;
 
 /** Remembers the best solo run for the current settings; `isNew` after a record. */
 function useSoloBest(state: PublicState | null) {
@@ -1335,7 +1335,8 @@ function useSoloBest(state: PublicState | null) {
   const [isNew, setIsNew] = useState(false);
   const key = state ? soloKey(state.settings) : '';
   useEffect(() => {
-    if (key) setBest(load<number>(key, 0));
+    // Bests saved before the rename from Quickfire still count.
+    if (key) setBest(load<number>(key, 0) || load<number>(key.replace(':quickdraw:', ':quickfire:'), 0));
   }, [key]);
   const phase = state?.phase;
   useEffect(() => {

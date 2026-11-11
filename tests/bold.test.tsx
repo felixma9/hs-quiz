@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Bold } from '../src/modes/quickfire/Bold';
+import { Bold } from '../src/modes/quickdraw/Bold';
 
 const html = (text: string) => renderToStaticMarkup(<Bold text={text} />);
 

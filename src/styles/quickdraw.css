@@ -1,4 +1,4 @@
-/* Quickfire: prompt, input row, rooms. Built for phones first. */
+/* Quickdraw: prompt, input row, rooms. Built for phones first. */
 
 .qf-prompt {
   display: grid; gap: 4px; place-content: center; text-align: center; min-height: 112px;
@@ -22,7 +22,7 @@
   .qf-form .btn { padding: 0 12px; }
 }
 
-/* ---- Quickfire home: name, host, join, practise ---- */
+/* ---- Quickdraw home: name, host, join, practise ---- */
 .qf-home { gap: 14px; }
 .qf-home-intro { margin: 4px 0 0; text-align: center; color: var(--muted); }
 .qf-name { display: grid; gap: 6px; }
@@ -384,7 +384,7 @@
 .party.kb .vs-bar.many .vs-side .avatar { width: 26px; height: 26px; font-size: 0.75rem; }
 .party.kb .vs-bar.many .vs-name { display: none; }
 
-/* ---- Quickfire home: a slice of card art with the three stat gems ---- */
+/* ---- Quickdraw home: a slice of card art with the three stat gems ---- */
 .qf-hero { position: relative; overflow: hidden; height: 96px; border-radius: var(--radius); background: var(--surface); isolation: isolate; }
 .qf-hero .mode-art { inset: 0; -webkit-mask-image: none; mask-image: none; opacity: 0.3; background-position: center 35%; }
 .qf-hero-icons { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 14px; }

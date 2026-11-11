@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Card } from '../lib/types';
-import { SETS, setName } from '../data/sets';
+import { SETS, STANDARD_SETS, setName } from '../data/sets';
 
 interface Props {
   cards: Card[];
@@ -42,10 +42,8 @@ export function SetPicker({ cards, excluded, onChange }: Props) {
     }
     onChange([...next]);
   };
-  const onlyRecent = (n: number) => {
-    const newest = Math.max(...years.map((y) => y.year));
-    onChange(all.filter((s) => (SETS[s]?.year ?? 0) <= newest - n));
-  };
+  const standard = new Set(STANDARD_SETS);
+  const isStandard = all.every((s) => ex.has(s) !== standard.has(s));
 
   return (
     <div className="panel set-picker">
@@ -53,7 +51,7 @@ export function SetPicker({ cards, excluded, onChange }: Props) {
         <span>
           <b>Card sets</b>{' '}
           <span className="muted">
-            {selectedSets === all.length ? 'All sets' : `${selectedSets} of ${all.length} sets`} · {selectedCount.toLocaleString()} cards
+            {selectedSets === all.length ? 'All sets' : isStandard ? 'Standard' : `${selectedSets} of ${all.length} sets`} · {selectedCount.toLocaleString()} cards
           </span>
         </span>
         <span className={`chev ${open ? 'open' : ''}`}>▾</span>
@@ -64,8 +62,8 @@ export function SetPicker({ cards, excluded, onChange }: Props) {
             <button className="btn small" onClick={() => onChange([])}>
               All
             </button>
-            <button className="btn small" onClick={() => onlyRecent(2)}>
-              Last 2 years
+            <button className="btn small" onClick={() => onChange(all.filter((s) => !standard.has(s)))} aria-pressed={isStandard}>
+              Standard
             </button>
             <button className="btn small" onClick={() => onChange(all)}>
               None

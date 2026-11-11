@@ -13,8 +13,8 @@ const MODES = [
     icon: ICON.health,
   },
   {
-    href: '#/quickfire',
-    name: 'Quickfire',
+    href: '#/quickdraw',
+    name: 'Quickdraw',
     blurb: 'Party game: take turns with friends naming cards that fit the prompt before the rope burns out. Or practise solo.',
     art: 'NEW1_010', // Al'Akir the Windlord
     icon: ICON.attack,

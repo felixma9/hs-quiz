@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { findCard, makePrompt, namePrefix } from '../src/modes/quickfire/prompts';
+import { findCard, makePrompt, namePrefix } from '../src/modes/quickdraw/prompts';
 import type { Card } from '../src/lib/types';
 
 const cards: Card[] = JSON.parse(readFileSync('public/cards.json', 'utf8')).filter((c: Card) => c.type !== 'LOCATION');
@@ -10,7 +10,7 @@ function rng(seed: number) {
   return () => ((seed = (seed * 1664525 + 1013904223) % 2 ** 32) / 2 ** 32);
 }
 
-describe('quickfire prompts', () => {
+describe('quickdraw prompts', () => {
   it('always have answers, and every answer passes its own test', () => {
     const r = rng(7);
     for (let i = 0; i < 300; i++) {

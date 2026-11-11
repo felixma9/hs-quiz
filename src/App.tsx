@@ -17,12 +17,12 @@ import { CardPreview } from './app/CardPreview';
 import { CardZoomHost } from './app/CardZoom';
 import { Gauntlet } from './modes/gauntlet/Gauntlet';
 import { Hsdle } from './modes/hsdle/Hsdle';
-import { Quickfire } from './modes/quickfire/Quickfire';
+import { Quickdraw } from './modes/quickdraw/Quickdraw';
 
 export function App() {
   const [route, setRoute] = useState<Route>(() => parseRoute());
   const [cards, setCards] = useState<Card[] | null>(null);
-  /** Every collectible card, including types the card renderer can't draw (Quickfire uses these). */
+  /** Every collectible card, including types the card renderer can't draw (Quickdraw uses these). */
   const [everything, setEverything] = useState<Card[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { pool, setPool, excludedSets, excludedRarities, updateSets, updateRarities } = usePool(cards);
@@ -110,7 +110,7 @@ export function App() {
           )}
           {playable && route === 'gauntlet' && <Gauntlet cards={pool} />}
           {playable && route === 'hsdle' && <Hsdle cards={pool} />}
-          {cards && route === 'quickfire' && <Quickfire everything={everything} cards={cards} pool={pool} />}
+          {cards && route === 'quickdraw' && <Quickdraw everything={everything} cards={cards} pool={pool} />}
           {cards && route === 'card' && <CardPreview cards={cards} />}
         </main>
         <footer className="muted small">

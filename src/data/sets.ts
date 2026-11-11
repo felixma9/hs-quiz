@@ -51,6 +51,18 @@ export const SETS: Record<string, { name: string; year: number }> = {
   EVENT: { name: 'Event', year: 2025 },
 };
 
+/**
+ * Sets legal in Standard: Core, Event, and the expansions of the last two
+ * Hearthstone years. Update at each spring rotation (the year's first expansion).
+ */
+export const STANDARD_SETS: readonly string[] = [
+  'CORE', 'EVENT',
+  // 2025: Year of the Raptor
+  'EMERALD_DREAM', 'THE_LOST_CITY', 'TIME_TRAVEL',
+  // 2026
+  'CATACLYSM', 'ESCAPEFROM_VIOLET_HOLD', 'BE',
+];
+
 /** Year the Core set launched (cards first printed in that first Core, CS3_*). */
 const CORE_YEAR = 2021;
 

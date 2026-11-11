@@ -12,12 +12,12 @@ const NAME_KEY = 'hsq:name';
 type View = { kind: 'home' } | { kind: 'party'; mode: PartyMode };
 
 /**
- * Quickfire: host or join a room and take turns naming cards before the fuse
+ * Quickdraw: host or join a room and take turns naming cards before the fuse
  * burns out, or practise alone against the clock.
  */
-/** Quickfire always plays with every collectible card (the menu's card pool doesn't apply). */
+/** Quickdraw always plays with every collectible card (the menu's card pool doesn't apply). */
 /** Gauntlet PvP rooms use the menu's card pool (`pool`, or every drawable card if that's empty). */
-export function Quickfire({ everything, cards, pool }: { everything: Card[]; cards: Card[]; pool: Card[] }) {
+export function Quickdraw({ everything, cards, pool }: { everything: Card[]; cards: Card[]; pool: Card[] }) {
   const [name, setName] = useState(() => load<string>(NAME_KEY, ''));
   const [code, setCode] = useState(() => roomFromLocation() ?? '');
   const [view, setView] = useState<View>({ kind: 'home' });
@@ -41,7 +41,7 @@ export function Quickfire({ everything, cards, pool }: { everything: Card[]; car
     setView({ kind: 'party', mode });
   };
   const leave = () => {
-    history.replaceState(null, '', '#/quickfire');
+    history.replaceState(null, '', '#/quickdraw');
     setView({ kind: 'home' });
   };
 

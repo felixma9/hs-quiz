@@ -5,7 +5,7 @@ import { findCard, makePrompt, type Prompt } from '../prompts';
 import { newRound } from '../../gauntlet/round';
 
 /**
- * A Quickfire party: players take turns answering prompts before their fuse
+ * A Quickdraw party: players take turns answering prompts before their fuse
  * burns out. Run out of time and you lose a life; the last player standing
  * wins. Each card can be used once per game.
  *
@@ -19,7 +19,7 @@ import { newRound } from '../../gauntlet/round';
  */
 
 /** Which game the room plays. */
-export type RoomGame = 'quickfire' | 'gauntlet';
+export type RoomGame = 'quickdraw' | 'gauntlet';
 
 export interface PartySettings {
   lives: number;
@@ -27,14 +27,14 @@ export interface PartySettings {
   fuse: number;
   game: RoomGame;
 }
-export const DEFAULT_PARTY: PartySettings = { lives: 3, fuse: 12, game: 'quickfire' };
+export const DEFAULT_PARTY: PartySettings = { lives: 3, fuse: 12, game: 'quickdraw' };
 export const LIVES_OPTIONS = [1, 2, 3, 5];
 /** Seconds per turn for each game (Gauntlet answers take longer to fill in). */
 export const FUSE_FOR: Record<RoomGame, { options: number[]; default: number }> = {
-  quickfire: { options: [8, 12, 20], default: 12 },
+  quickdraw: { options: [8, 12, 20], default: 12 },
   gauntlet: { options: [15, 20, 30], default: 20 },
 };
-export const FUSE_OPTIONS = FUSE_FOR.quickfire.options;
+export const FUSE_OPTIONS = FUSE_FOR.quickdraw.options;
 /** Gauntlet PvP: how many players (inclusive). */
 export const VS_MIN_PLAYERS = 2;
 export const VS_MAX_PLAYERS = 8;
