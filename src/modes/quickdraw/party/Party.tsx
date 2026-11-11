@@ -14,7 +14,7 @@ import { preloadArt } from '../../../card/sunwell';
 import { howTo } from '../../gauntlet/round';
 import { loadSettings } from '../../gauntlet/settings';
 import { confirmLeave, setLeaveGuard } from '../../../app/leaveGuard';
-import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './net';
+import { fromWire, hostRoom, joinRoom, roomLink, toWire, type GuestRoom, type HostRoom } from './net';
 
 const HOST_ID = 'host';
 /** Hearthstone's health drop (from the card frame assets), one per life. */
@@ -90,7 +90,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
         all,
         (s) => {
           receive(s);
-          host.current?.send({ t: 'state', state: s });
+          host.current?.send({ t: 'state', state: toWire(s) });
         },
         undefined,
         undefined,
@@ -131,7 +131,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
     const code = mode.code;
     joinRoom(code, name, {
       onMessage(msg) {
-        if (msg.t === 'state') receive(msg.state);
+        if (msg.t === 'state') receive(fromWire(msg.state));
         else if (msg.t === 'welcome') setMe(msg.id);
         else if (msg.t === 'typing') setTyping({ id: msg.id, text: msg.text });
       },

@@ -394,3 +394,14 @@ describe('gauntlet vs rewards and pace', () => {
   });
 
 });
+
+describe('room state on the wire', () => {
+  it('stays readable by pages from before the Quickfire rename, and back', async () => {
+    const { toWire, fromWire } = await import('../src/modes/quickdraw/party/net');
+    const s = { settings: { lives: 3, fuse: 12, game: 'quickdraw' } } as unknown as PublicState;
+    expect(toWire(s).settings.game).toBe('quickfire');
+    expect(fromWire(toWire(s)).settings.game).toBe('quickdraw');
+    const vs = { settings: { lives: 3, fuse: 12, game: 'gauntlet' } } as unknown as PublicState;
+    expect(fromWire(toWire(vs)).settings.game).toBe('gauntlet');
+  });
+});
