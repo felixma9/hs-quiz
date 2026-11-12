@@ -103,7 +103,9 @@ export function CardTimeline({
 }) {
   const past = versions ? versions.length - 1 : 0;
   // Oldest on the left; the current card is always the last slide, keyed 'now' so it stays the same element.
-  const slides = useMemo(() => (open && versions ? [...versions].reverse() : [alone(card)]), [open, versions, card]);
+  // The older versions are there (hidden behind the current card) as soon as the history has loaded,
+  // so they draw while the card is still on its own and are ready by the time the timeline opens.
+  const slides = useMemo(() => (versions ? [...versions].reverse() : [alone(card)]), [versions, card]);
   const last = slides.length - 1;
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>('closed');
@@ -176,7 +178,7 @@ export function CardTimeline({
   useLayoutEffect(() => {
     if (!open) {
       setPhase('closed');
-      setIdx(0);
+      setIdx(last);
       return;
     }
     setIdx(last);
@@ -192,7 +194,7 @@ export function CardTimeline({
       clearTimeout(done);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, last]);
 
   useEffect(() => {
     if (!open) return;
