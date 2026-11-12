@@ -26,7 +26,7 @@ export function Hsdle({ cards }: { cards: Card[] }) {
   if (!minions.length) {
     return (
       <div className="panel center">
-        HSdle needs minions, and your card pool has none. <a href="#/">Change it on the menu.</a>
+        Your card pool has no minions. <a href="#/">Change it.</a>
       </div>
     );
   }
@@ -110,7 +110,7 @@ function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
 
       {!done && (
         <p className="ask">
-          {mode === 'daily' ? "Guess today's Hearthstone minion." : 'Guess the mystery minion.'} Type any minion's name to start.
+          {mode === 'daily' ? "Guess today's minion." : 'Guess the minion.'}
         </p>
       )}
 
@@ -173,8 +173,7 @@ function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
 
       {guesses.length === 0 && !done && (
         <p className="muted small center">
-          Each guess shows how close it is: 🟩 same, 🟨 partly the same (shares a keyword, tribe or class; set from the same year),
-          🟥 different. Arrows point toward the answer: higher stats, a newer set, a rarer card.
+          🟩 same · 🟨 close (shared keyword, tribe or class; same-year set) · 🟥 different. Arrows point toward the answer.
         </p>
       )}
     </div>

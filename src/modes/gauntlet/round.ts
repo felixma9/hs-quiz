@@ -10,12 +10,12 @@ export interface Round {
 
 /** How to fill in each kind of blank on the card. */
 export const HOW: Record<string, string> = {
-  number: 'tap the gem and type a number.',
-  name: 'tap the name banner and type.',
-  text: 'tap the text box and type the gist (shorthand like "dmg" is fine; leave it blank if the card has none).',
-  class: 'tap the card frame to cycle classes, or pick from the list.',
-  rarity: 'tap the gem under the name to cycle rarities.',
-  tribe: 'tap the banner at the bottom of the card to cycle, or pick from the list.',
+  number: 'tap the gem.',
+  name: 'tap the name banner.',
+  text: 'tap the text box and type the gist (blank if none).',
+  class: 'tap the frame.',
+  rarity: 'tap the gem under the name.',
+  tribe: 'tap the banner at the bottom.',
 };
 export const howTo = (k: AttrKey) => HOW[ATTR[k].kind === 'enum' ? k : ATTR[k].kind];
 

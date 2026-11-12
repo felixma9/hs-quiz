@@ -14,7 +14,7 @@ export function GiveUp({ onGiveUp }: { onGiveUp(): void }) {
   }, [armed]);
   return (
     <button className={`give-up ${armed ? 'armed' : ''}`} onClick={() => (armed ? onGiveUp() : setArmed(true))}>
-      {armed ? 'Tap again to give up and see the answer' : 'Give up'}
+      {armed ? 'Tap again to give up' : 'Give up'}
     </button>
   );
 }
@@ -48,7 +48,7 @@ export function Clue({
           {kind === 'art' ? (
             <Art card={answer} crop={crop} className="clue-art" alt="The mystery minion's art" />
           ) : (
-            <p>{answer.text ? plainText(answer.text).split(answer.name).join('???') : 'This minion has no card text.'}</p>
+            <p>{answer.text ? plainText(answer.text).split(answer.name).join('???') : 'No card text.'}</p>
           )}
         </div>
       )}

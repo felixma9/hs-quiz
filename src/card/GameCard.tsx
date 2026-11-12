@@ -203,7 +203,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
             style={boxStyle(layout.text)}
             autoFocus
             value={draft.text ?? ''}
-            placeholder="Card text (leave blank if none)"
+            placeholder="Card text"
             onChange={(e) => set('text', e.target.value)}
             // Close a moment after losing focus, unless a finger is on the symbol keys.
             onBlur={() => setTimeout(() => !keys.pressing.current && document.activeElement !== textBox.current && setActive(null), 150)}

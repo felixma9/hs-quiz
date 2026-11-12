@@ -106,7 +106,7 @@ export function App() {
           )}
           {cards && (route === 'gauntlet' || route === 'hsdle') && pool.length === 0 && (
             <div className="panel center">
-              No cards match your sets and rarities. <a href="#/">Change them on the menu.</a>
+              No cards match your sets and rarities. <a href="#/">Change them.</a>
             </div>
           )}
           {playable && route === 'gauntlet' && <Gauntlet cards={pool} />}
@@ -117,8 +117,7 @@ export function App() {
           {cards && route === 'card' && <CardPreview cards={everything} />}
         </main>
         <footer className="muted small">
-          Card data from <a href="https://hearthstonejson.com">HearthstoneJSON</a>. Hearthstone is © Blizzard Entertainment; this is
-          an unofficial fan quiz.
+          Unofficial fan site. Data from <a href="https://hearthstonejson.com">HearthstoneJSON</a>. Hearthstone © Blizzard.
         </footer>
       </div>
     </>

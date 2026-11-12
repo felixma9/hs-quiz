@@ -8,28 +8,28 @@ const MODES = [
   {
     href: '#/gauntlet',
     name: 'Gauntlet',
-    blurb: 'One blank per card. Three lives. How far can you get?',
+    blurb: 'Fill in the missing part of each card. Three lives.',
     art: 'EX1_116', // Leeroy Jenkins
     icon: ICON.health,
   },
   {
     href: '#/quickdraw',
     name: 'Quickdraw',
-    blurb: 'Party game: take turns with friends naming cards that fit the prompt before the rope burns out. Or practise solo.',
+    blurb: 'Name cards that fit the prompt before the rope burns. With friends or solo.',
     art: 'NEW1_010', // Al'Akir the Windlord
     icon: ICON.attack,
   },
   {
     href: '#/hsdle',
     name: 'HSdle',
-    blurb: 'Guess the daily minion from how close each guess is.',
+    blurb: 'Guess the daily minion.',
     art: 'EX1_298', // Ragnaros the Firelord
     icon: rarityIcon('LEGENDARY'),
   },
   {
     href: '#/carddb',
     name: 'CardDB',
-    blurb: 'Can\'t remember a card? Fill in what you know on a blank card and watch the list narrow down.',
+    blurb: 'Fill in what you remember to find any card.',
     art: 'EX1_559', // Archmage Antonidas
     icon: ICON.mana,
   },

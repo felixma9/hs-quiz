@@ -38,7 +38,7 @@ export function SharePanel({ excludedSets, excludedRarities, onApply }: Props) {
       await navigator.clipboard.writeText(text);
       setNote({ ok: true, text: `${what} copied` });
     } catch {
-      setNote({ ok: false, text: 'Could not copy; select it and copy by hand' });
+      setNote({ ok: false, text: "Couldn't copy" });
     }
   };
   const shareLinkNow = async () => {

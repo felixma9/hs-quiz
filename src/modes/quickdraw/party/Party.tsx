@@ -207,7 +207,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
   const hosting = mode.role === 'host';
   useEffect(() => {
     if (!inRoom) return;
-    setLeaveGuard(hosting ? 'Close the room? Everyone in it will be disconnected.' : 'Leave the room?');
+    setLeaveGuard(hosting ? 'Close the room for everyone?' : 'Leave the room?');
     return () => setLeaveGuard(null);
   }, [inRoom, hosting]);
   const over = state?.phase === 'over';
@@ -399,17 +399,7 @@ function Lobby({
             <li className="party-player-row open-seat" aria-hidden="true">
               <span className="avatar">+</span>
               <span className="party-player-name">
-                {vs
-                  ? state.players.length < VS_MIN_PLAYERS
-                    ? isHost
-                      ? 'Share the code with an opponent'
-                      : 'Waiting for an opponent'
-                    : isHost
-                      ? 'Share the code to fill this seat'
-                      : 'Room for more'
-                  : isHost
-                    ? 'Share the code to fill this seat'
-                    : 'Room for more'}
+                {isHost ? 'Share the code' : vs && state.players.length < VS_MIN_PLAYERS ? 'Waiting for an opponent' : 'Open seat'}
               </span>
             </li>
           )}
@@ -463,8 +453,8 @@ function Lobby({
         <div className="pool-note">
           <img className="setting-icon" src={MANA_ICON} alt="" />
           {vs
-            ? `${VS_MIN_PLAYERS}–${VS_MAX_PLAYERS} players take turns filling in a card's blank. Miss and you lose a life, and the next player gets a free shot at stealing the same card with half the time. A missed steal costs nothing and they take their own turn next (every ${STEALS_FOR_LIFE} steals earns a life). Cards come from the host's card pool and Gauntlet settings: ${state.poolSize.toLocaleString()} cards.`
-            : `Every collectible card counts: ${state.poolSize.toLocaleString()} cards.`}
+            ? `Take turns filling in a card's blank. Miss and lose a life; the next player can steal it with half the time, free (${STEALS_FOR_LIFE} steals = +1 life). ${state.poolSize.toLocaleString()} cards from the host's pool.`
+            : `All ${state.poolSize.toLocaleString()} collectible cards.`}
         </div>
       </section>
 
@@ -483,7 +473,7 @@ function Lobby({
       ) : (
         <div className="waiting-pill" role="status">
           <span className="pulse-dot" aria-hidden="true" />
-          Waiting for the host to start
+          Waiting for the host
         </div>
       )}
     </>
@@ -921,7 +911,7 @@ function VsCard({
         {myTurn ? (
           <>
             Fill in the <b>{label}</b>:{' '}
-            {key === 'text' ? 'tap the text box and type the gist (shorthand like "dmg" is fine). Double time.' : howTo(key)}
+            {key === 'text' ? 'tap the text box and type the gist. Double time.' : howTo(key)}
           </>
         ) : (
           <>
@@ -1414,7 +1404,7 @@ function SoloSetup({
       <div className="solo-intro">
         <h2>Practice</h2>
         <p className="muted">
-          Same game, just you: name a card for each prompt before the rope burns down. Run out of time and you lose a life.
+          Name a card for each prompt before the rope burns. Miss and lose a life.
         </p>
       </div>
       <section className="lobby-panel party-settings">
@@ -1440,7 +1430,7 @@ function SoloSetup({
         <div className="pool-note">
           <img className="setting-icon" src={rarityIcon('LEGENDARY')} alt="" />
           <span>
-            Best with these rules: <b>{best}</b> card{best === 1 ? '' : 's'}
+            Best: <b>{best}</b> card{best === 1 ? '' : 's'}
           </span>
         </div>
       </section>

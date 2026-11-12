@@ -88,6 +88,8 @@ export function RevealCard({
     showText,
   ];
   const filled = parts.filter(Boolean).length;
+  // Unlocked clues not on the card yet (locked ones count down on their own buttons).
+  const addable = [wrong >= ART_AFTER && !art && 'Art', wrong >= TEXT_AFTER && !showText && 'Card text'].filter(Boolean);
 
   return (
     <section className="reveal-card" aria-label="The mystery minion so far">
@@ -97,18 +99,8 @@ export function RevealCard({
         <span className={`chip ${setNew ? 'v-correct' : ''}`}>Set: {setKnown ? setName(answer.set) : '?'}</span>
       </div>
       <p className="muted small center reveal-caption">
-        {filled === 0 ? 'The card fills in as you get things right.' : `${filled} of ${parts.length} parts filled in.`}
-        {wrong < ART_AFTER
-          ? ` Art after ${ART_AFTER} misses, text after ${TEXT_AFTER}.`
-          : wrong < TEXT_AFTER
-            ? `${art ? '' : ' Tap Art below to put it on the card.'} Text after ${TEXT_AFTER} misses.`
-            : !art && !showText
-              ? ' Tap Art or Card text below to put them on the card.'
-              : !art
-                ? ' Tap Art below to put it on the card.'
-                : !showText
-                  ? ' Tap Card text below to put it on the card.'
-                  : ''}
+        {filled === 0 ? 'Fills in as you get things right.' : `${filled}/${parts.length} filled in.`}
+        {addable.length > 0 && ` Tap ${addable.join(' or ')} below to add ${addable.length > 1 ? 'them' : 'it'}.`}
       </p>
     </section>
   );

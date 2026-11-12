@@ -5,6 +5,9 @@ import { artUrl } from '../lib/cards';
 import { fitText } from './fitText';
 import { applyLocationLayout } from './location';
 
+/** Where along Sunwell's hero name curve the name is centred (it uses 0.5). Measured, see the comment where it's used. */
+const HERO_NAME_MIDDLE = 0.58;
+
 /**
  * Drawing cards with HearthSim's Sunwell (MIT, archived 2022). Everything that
  * knows about Sunwell's quirks lives here.
@@ -243,6 +246,9 @@ export async function drawCard(
     const sw = getSunwell().createCard(props, RENDER_WIDTH, false, canvas, () => isLive() && onReady());
     sw.raceText = raceText;
     if (location) applyLocationLayout(sw, crop?.[card.id] ?? 0);
+    // Sunwell's hero name curve puts names about 34 units (of 670) left of the middle; centre them.
+    // Locations are drawn as hero cards, so this covers them too.
+    if (card.type === 'HERO' && sw.nameTextCurve) sw.nameTextCurve.pathMiddle = HERO_NAME_MIDDLE;
     if (props.cardClass === 'DEMONHUNTER') {
       // Sunwell is older than Demon Hunter and would draw the neutral frame.
       // Our DH frames are recolored from other class frames (scripts/make-dh-frames.py).

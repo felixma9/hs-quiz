@@ -70,8 +70,7 @@ export function Quickdraw({ everything, cards, pool }: { everything: Card[]; car
         </span>
       </div>
       <p className="qf-home-intro">
-        Take turns naming cards that fit the prompt before the rope burns out. Run out of time and you lose a life. Last one
-        standing wins. Or play <b>Gauntlet PvP</b>: take turns filling in a card's blank against the rope.
+        Name a card that fits the prompt before the rope burns. Miss and lose a life. Last one standing wins.
       </p>
 
       <label className="qf-name">
@@ -98,7 +97,7 @@ export function Quickdraw({ everything, cards, pool }: { everything: Card[]; car
         <button className="btn qf-host-vs" onClick={() => go({ role: 'host', game: 'gauntlet' })}>
           <img src={ICON.health} alt="" aria-hidden="true" />
           Host Gauntlet PvP
-          <small>2–8 players: fill in the blanks</small>
+          <small>2–8 players · fill in the blanks</small>
         </button>
       </div>
 

@@ -165,7 +165,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
             />
             Minions only
           </label>
-          <div className="muted small">What can be left blank (changing restarts):</div>
+          <div className="muted small">Blanks to ask (changing restarts):</div>
           <div className="chips">
             {ATTRS.map((a) => (
               <label key={a.key} className="check">
@@ -292,7 +292,7 @@ function Feedback({
       <div className="feedback-head">{ok ? '✓ Correct!' : revealed ? 'Revealed (−1 life)' : '✗ Not quite'}</div>
       {attrKey === 'text' ? (
         <>
-          {!revealed && <div className="small">You got {Math.round((result.score ?? 0) * 100)}% of the key words (about 50% passes)</div>}
+          {!revealed && <div className="small">{Math.round((result.score ?? 0) * 100)}% of key words (~50% passes)</div>}
           <div className="truth">
             <TextDiff truth={plainText(card.text)} matched={result.truthMatched} />
           </div>

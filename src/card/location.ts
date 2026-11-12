@@ -56,7 +56,6 @@ function artCoords(cut: number) {
 export const LOCATION_LAYOUT = {
   frame: FRAME,
   nameBanner: { dx: 88, dy: 488, sWidth: 490, sHeight: 122, dWidth: 490, dHeight: 122 },
-  namePathMiddle: 0.58,
   rarityGem: { dx: 299, dy: 572 },
   body: { dx: 150, dy: 642, dWidth: 352, dHeight: 168, sWidth: 352, sHeight: 168 },
   watermark: { dx: 241, dy: 642, dWidth: 170, dHeight: 170 },
@@ -77,8 +76,6 @@ export function applyLocationLayout(card: object, cut = 0) {
   c.artCoords = artCoords(cut);
   c.artClipPolygon = artClipPolygon;
   c.nameBannerCoords = { ...L.nameBanner };
-  // Sunwell puts names a little left of the middle on its hero banner; centre them here.
-  c.nameTextCurve = { ...(c.nameTextCurve as object), pathMiddle: L.namePathMiddle };
   c.rarityGemCoords = { ...L.rarityGem };
   c.bodyTextCoords = { ...L.body };
   c.getWatermarkCoords = () => ({ ...L.watermark });

@@ -129,7 +129,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
 
   return (
     <div className="mode carddb">
-      <p className="ask center">Fill in what you remember. Tap any part of the card.</p>
+      <p className="ask center">Tap the card to fill in what you remember.</p>
 
       <div className="seg carddb-types" role="tablist" aria-label="Card type">
         {TYPES.map((t) => (
@@ -177,7 +177,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
           <span className="count-pill">{matches.length.toLocaleString()}</span>
         </div>
         {matches.length === 0 ? (
-          <p className="muted small center">No card fits all of that. Clear a part to widen the search.</p>
+          <p className="muted small center">No matches. Remove a filter.</p>
         ) : (
           <>
             <div className={`carddb-grid ${one ? 'one' : ''}`}>
