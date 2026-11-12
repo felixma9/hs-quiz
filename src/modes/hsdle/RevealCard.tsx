@@ -4,6 +4,7 @@ import type { AttrKey } from '../../lib/attributes';
 import type { Verdict } from '../../lib/grade';
 import { GameCard } from '../../card/GameCard';
 import { CLUES, compare, type ColumnKey } from './compare';
+import { setName } from '../../data/sets';
 
 /** Board columns that are a part of the card. Keywords go in the text box (see below). */
 const PART: Partial<Record<ColumnKey, AttrKey>> = {
@@ -73,6 +74,11 @@ export function RevealCard({
     ? (answer.text ?? '').split(answer.name).join('???')
     : found.map((k) => `<b>${k}</b>`).join(', ');
   if (!showText && found.length > before.keywords.size) fresh.text = 'correct';
+  // The set icon is a faint watermark in the text box, so outline the box when it appears.
+  // Basic (LEGACY) cards have no icon, in the game or here.
+  const setKnown = now.cols.has('set');
+  const setNew = setKnown && !before.cols.has('set');
+  if (setNew && answer.set !== 'LEGACY') fresh.text = 'correct';
 
   const parts = [
     ...Object.keys(PART).map((k) => now.cols.has(k as ColumnKey)),
@@ -85,7 +91,11 @@ export function RevealCard({
 
   return (
     <section className="reveal-card" aria-label="The mystery minion so far">
-      <GameCard card={answer} hidden={hidden} draft={text ? { text } : {}} verdicts={fresh} pool={pool} extras={{ art, set: now.cols.has('set') }} />
+      <GameCard card={answer} hidden={hidden} draft={text ? { text } : {}} verdicts={fresh} pool={pool} extras={{ art, set: setKnown }} />
+      {/* Named here too: the icon is faint, and Basic cards have none. */}
+      <div className="card-chips">
+        <span className={`chip ${setNew ? 'v-correct' : ''}`}>Set: {setKnown ? setName(answer.set) : '?'}</span>
+      </div>
       <p className="muted small center reveal-caption">
         {filled === 0 ? 'The card fills in as you get things right.' : `${filled} of ${parts.length} parts filled in.`}
         {wrong < ART_AFTER
