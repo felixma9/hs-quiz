@@ -7,7 +7,7 @@
  */
 @media (hover: hover) and (pointer: fine) {
   /* ---- Colour and light (no movement) ---- */
-  .tabs button:not(.on):hover, .seg button:not(.on):not(:disabled):hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
+  .tabs button:not(.on):hover, .seg button:not(.on):not(:disabled):hover, .daily-kind button:not(.on):hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
   .rarity-chip:hover { border-color: var(--line-2); color: var(--text); }
   .rarity-chip.on:hover { border-color: var(--gold); }
   .chip:not(:disabled):hover { border-color: var(--line-2); }

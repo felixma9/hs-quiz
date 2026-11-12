@@ -76,21 +76,21 @@ export function Hsdle({ all, pool }: { all: Card[]; pool: Card[] }) {
         </button>
       </div>
       {daily && (
-        // A small wooden button over to the other daily.
-        <button
-          type="button"
-          className="wood-btn"
-          onClick={() => switchMode(mode === 'standard' ? 'classic' : 'standard')}
-          title={mode === 'standard' ? `Today's card from sets ${CLASSIC_AGE}+ years old` : "Today's card from Standard sets"}
-        >
-          {mode === 'standard' ? (
-            <>
-              Daily Classic <small>{CLASSIC_AGE}+ year old cards</small> →
-            </>
-          ) : (
-            <>← Daily Standard</>
-          )}
-        </button>
+        <div className="daily-kind" role="radiogroup" aria-label="Which daily">
+          <button type="button" role="radio" aria-checked={mode === 'standard'} className={mode === 'standard' ? 'on' : ''} onClick={() => switchMode('standard')}>
+            Standard
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={mode === 'classic'}
+            className={mode === 'classic' ? 'on' : ''}
+            onClick={() => switchMode('classic')}
+            title={`Cards from sets ${CLASSIC_AGE}+ years old`}
+          >
+            Classic
+          </button>
+        </div>
       )}
       {game ? (
         <HsdleGame
