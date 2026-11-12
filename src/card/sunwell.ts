@@ -250,6 +250,9 @@ function roomForTallGemText(gem: object | undefined) {
   };
 }
 
+/** Drawings in progress, by the exact card drawn (see drawCard). */
+const inFlight = new Map<string, Promise<HTMLCanvasElement>>();
+
 /**
  * Draw a card onto the canvas. `shown` says what to draw for each attribute
  * (blank where undefined). Calls onReady once drawn.
@@ -278,14 +281,23 @@ export async function drawCard(
   try {
     // Size the text for this card so long texts aren't clipped.
     Object.assign(getSunwell().options, fitText(String(props.text ?? ''), card.type, BODY_FONT));
-    const drawn = classes.map(
-      (cls, i) =>
-        new Promise<HTMLCanvasElement>((done) => {
-          const target = i === 0 ? canvas : document.createElement('canvas');
-          const sw = getSunwell().createCard({ ...props, cardClass: cls }, RENDER_WIDTH, false, target, () => done(target));
-          setUp(sw, cls);
-        }),
-    );
+    const drawn = classes.map((cls, i) => {
+      const cardProps = { ...props, cardClass: cls };
+      // Sunwell drops a request for a card identical to one still in its queue (and never calls
+      // back), so the same card drawn twice at once (the timeline's two faces) waits its turn.
+      const key = JSON.stringify(cardProps);
+      const draw = (inFlight.get(key) ?? Promise.resolve()).then(
+        () =>
+          new Promise<HTMLCanvasElement>((done) => {
+            const target = i === 0 ? canvas : document.createElement('canvas');
+            const sw = getSunwell().createCard(cardProps, RENDER_WIDTH, false, target, () => done(target));
+            setUp(sw, cls);
+          }),
+      );
+      inFlight.set(key, draw);
+      void draw.then(() => inFlight.get(key) === draw && inFlight.delete(key));
+      return draw;
+    });
     Promise.all(drawn).then(([main, ...rest]) => {
       if (!isLive()) return;
       const ctx = main.getContext('2d');
