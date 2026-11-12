@@ -4,24 +4,22 @@ import type { Card } from '../../../lib/types';
 import { Art, useArtCrop } from '../../hsdle/Art';
 import { VerdictFlash, type Verdict } from '../../../app/VerdictFlash';
 import { zoomCard } from '../../../app/CardZoom';
-import { Bold, ClassName } from '../Bold';
 import { ICON, rarityIcon } from '../../../app/icons';
-import { load, save } from '../../../lib/storage';
 import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
-import { FUSE_FOR, FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, STEALS_FOR_LIFE, VS_MAX_PLAYERS, VS_MIN_PLAYERS, type PartySettings, type PublicState, type RoomGame } from './game';
+import { FUSE_OPTIONS, LIVES_OPTIONS, PartyGame, STEALS_FOR_LIFE, VS_MAX_PLAYERS, VS_MIN_PLAYERS, type PartySettings, type PublicState } from './game';
 import { ATTR, labelFor, plainText, pretty, type AttrKey } from '../../../lib/attributes';
 import { GameCard } from '../../../card/GameCard';
 import { preloadArt } from '../../../card/sunwell';
 import { howTo } from '../../gauntlet/round';
 import { loadSettings } from '../../gauntlet/settings';
 import { confirmLeave, setLeaveGuard } from '../../../app/leaveGuard';
-import { fromWire, hostRoom, joinRoom, roomLink, toWire, type GuestRoom, type HostRoom } from './net';
+import { hostRoom, joinRoom, roomLink, type GuestRoom, type HostRoom } from './net';
 
 const HOST_ID = 'host';
 /** Hearthstone's health drop (from the card frame assets), one per life. */
 const HEALTH_ICON = ICON.health;
 const MANA_ICON = ICON.mana;
-/** Card art behind the room code: Al'Akir, as on the Quickdraw home screen. */
+/** Card art behind the room code: Al'Akir, as on the Gauntlet PvP home screen. */
 const ROOM_ART = 'https://art.hearthstonejson.com/v1/512x/NEW1_010.jpg';
 
 /** Right answers in a row before a player counts as on a hot streak. */
@@ -29,36 +27,33 @@ const HOT = 2;
 /** Streak levels: warm (2), hot (3-4), blazing (5+). */
 const hotClass = (n: number) => (n >= 5 ? 'hot hot-3' : n >= 3 ? 'hot hot-2' : n >= HOT ? 'hot hot-1' : '');
 
+/** What the current player is typing, shown live on everyone's card. */
 interface Typing {
   id: string;
   text: string;
-  /** Set (to the miss event's number) when this text was a rejected guess. */
-  wrong?: number;
 }
 
-/** Host or join a room, or play the same game alone (no network). */
-export type PartyMode = { role: 'host'; game?: RoomGame } | { role: 'guest'; code: string } | { role: 'solo' };
+/** Host a room, or join one by code. */
+export type PartyMode = { role: 'host' } | { role: 'guest'; code: string };
 
 interface Props {
   mode: PartyMode;
   name: string;
-  /** Cards prompts are built from (every collectible card). */
-  pool: Card[];
+  /** Every card, to look up the cards played by id. */
   all: Card[];
-  /** Cards the renderer can draw (Gauntlet VS name suggestions and tribe lists). */
+  /** Cards the renderer can draw (name suggestions and tribe lists). */
   drawable: Card[];
-  /** Gauntlet VS cards when this browser hosts (the menu's pool). */
-  vsPool: Card[];
+  /** The cards to play when this browser hosts (the menu's card pool). */
+  pool: Card[];
   onLeave(): void;
 }
 
-/** A Quickdraw room: connection, then lobby / game / results for everyone. */
-export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Props) {
+/** A Gauntlet PvP room: connection, then lobby / game / results for everyone. */
+export function Party({ mode, name, all, drawable, pool, onLeave }: Props) {
   const [state, setState] = useState<PublicState | null>(null);
   const [me, setMe] = useState<string | null>(mode.role === 'guest' ? null : HOST_ID);
   const [code, setCode] = useState(mode.role === 'guest' ? mode.code : '');
   const [error, setError] = useState<string | null>(null);
-  /** What the current player is typing; `wrong` marks a guess the host just rejected (shown in red until they type again). */
   const [typing, setTyping] = useState<Typing | null>(null);
   /** Local time the current fuse burns out (from the snapshot's fuseLeft). */
   const [deadline, setDeadline] = useState(0);
@@ -75,30 +70,21 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
   // Connect once.
   useEffect(() => {
     let live = true;
-    if (mode.role === 'solo') {
-      const g = new PartyGame(pool, all, receive);
-      game.current = g;
-      g.addPlayer(HOST_ID, name);
-      const tick = setInterval(() => g.tick(), 150);
-      return () => clearInterval(tick);
-    }
     if (mode.role === 'host') {
-      // Gauntlet VS uses the host's Gauntlet settings (minions only, which fields can be blank).
+      // The host's Gauntlet settings apply (minions only, which fields can be blank).
       const gs = loadSettings();
-      const minions = vsPool.filter((c) => c.type === 'MINION');
+      const minions = pool.filter((c) => c.type === 'MINION');
       const g = new PartyGame(
-        pool,
-        all,
+        gs.minionsOnly && minions.length ? minions : pool,
         (s) => {
           receive(s);
-          host.current?.send({ t: 'state', state: toWire(s) });
+          host.current?.send({ t: 'state', state: s });
         },
         undefined,
         undefined,
-        { pool: gs.minionsOnly && minions.length ? minions : vsPool, allowed: gs.allowed },
+        gs.allowed,
       );
       game.current = g;
-      if (mode.game) g.setSettings({ game: mode.game, fuse: FUSE_FOR[mode.game].default });
       hostRoom({
         onGuestMessage(id, msg) {
           if (msg.t === 'hello') {
@@ -132,7 +118,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
     const code = mode.code;
     joinRoom(code, name, {
       onMessage(msg) {
-        if (msg.t === 'state') receive(fromWire(msg.state));
+        if (msg.t === 'state') receive(msg.state);
         else if (msg.t === 'welcome') setMe(msg.id);
         else if (msg.t === 'typing') setTyping({ id: msg.id, text: msg.text });
       },
@@ -167,15 +153,12 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
     const e = state?.last;
     if (!e) return;
     if (e.kind === 'hit') sfx.hit(e.player === me, e.streak);
-    else if (e.kind === 'miss') {
-      sfx.miss();
-      setTyping({ id: e.player, text: e.guess, wrong: e.n });
-    } else if (e.kind === 'boom') {
+    else if (e.kind === 'boom') {
       // A missed steal costs no life: just the miss sound.
       if (e.safe) sfx.miss();
       else sfx.boom();
     }
-    else if (e.kind === 'info' && e.text.endsWith('joined') && mode.role !== 'solo') sfx.join();
+    else if (e.kind === 'info' && e.text.endsWith('joined')) sfx.join();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastN]);
   const myTurnNow = state?.phase === 'playing' && state.turn === me;
@@ -189,10 +172,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
   }, [myTurnNow, state?.round]);
   const keyboardOpen = useKeyboardOpen();
 
-  // Solo: best number of cards named, per lives/seconds setting.
-  const soloBest = useSoloBest(mode.role === 'solo' ? state : null);
-
-  // Gauntlet VS: load the next card's art during this turn, so it shows up straight away.
+  // Load the next card's art during this turn, so it shows up straight away.
   const nextCard = state?.nextCard;
   useEffect(() => {
     const c = nextCard ? all.find((x) => x.id === nextCard) : undefined;
@@ -203,7 +183,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
   useEffect(() => setTyping(null), [state?.round]);
 
   // In a room, ask before leaving it (any way: button, title bar, back, closing the tab).
-  const inRoom = mode.role !== 'solo' && !!state && !!me && !error;
+  const inRoom = !!state && !!me && !error;
   const hosting = mode.role === 'host';
   useEffect(() => {
     if (!inRoom) return;
@@ -213,8 +193,7 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
   const over = state?.phase === 'over';
   useEffect(() => {
     if (!over) return;
-    // Solo: the fanfare is for a new best (soloBest still holds the previous one here).
-    const won = mode.role === 'solo' ? (state?.players[0]?.hits ?? 0) > soloBest.best : state?.winner === me;
+    const won = state?.winner === me;
     const t = setTimeout(() => (won ? sfx.win() : sfx.lose()), 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,43 +226,6 @@ export function Party({ mode, name, pool, all, drawable, vsPool, onLeave }: Prop
   const isHost = mode.role === 'host';
   const leave = () => confirmLeave() && onLeave();
   const kbClass = keyboardOpen && state.phase === 'playing' ? 'kb' : '';
-  if (mode.role === 'solo') {
-    return (
-      <div className={`mode party solo ${kbClass}`}>
-        <SoundToggle />
-        {state.phase === 'lobby' && (
-          <SoloSetup
-            state={state}
-            best={soloBest.best}
-            onSettings={(s) => game.current?.setSettings(s)}
-            onStart={() => {
-              unlock();
-              game.current?.start();
-            }}
-          />
-        )}
-        {state.phase === 'playing' && (
-          <Play solo state={state} me={me} deadline={deadline} typing={null} all={all} drawable={drawable} onAnswer={answer} onTyping={sendTyping} />
-        )}
-        {state.phase === 'over' && (
-          <SoloOver
-            state={state}
-            best={soloBest.best}
-            isNew={soloBest.isNew}
-            all={all}
-            onAgain={() => {
-              unlock();
-              game.current?.start();
-            }}
-            onSettings={() => game.current?.toLobby()}
-          />
-        )}
-        <button className="link party-leave" onClick={onLeave}>
-          Back
-        </button>
-      </div>
-    );
-  }
   return (
     <div className={`mode party ${kbClass}`}>
       <SoundToggle />
@@ -333,7 +275,7 @@ function Lobby({
     const url = roomLink(code);
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'HS Quiz room', text: `Join my Quickdraw room: ${code}`, url });
+        await navigator.share({ title: 'HS Quiz room', text: `Join my Gauntlet PvP room: ${code}`, url });
         return;
       } catch (e) {
         if ((e as Error).name === 'AbortError') return;
@@ -348,14 +290,13 @@ function Lobby({
     }
   };
   const seats = Array.from({ length: state.settings.lives });
-  const vs = state.settings.game === 'gauntlet';
-  const full = vs && state.players.length >= VS_MAX_PLAYERS;
-  const canStart = !vs || (state.players.length >= VS_MIN_PLAYERS && state.players.length <= VS_MAX_PLAYERS);
+  const full = state.players.length >= VS_MAX_PLAYERS;
+  const canStart = state.players.length >= VS_MIN_PLAYERS && state.players.length <= VS_MAX_PLAYERS;
   return (
     <>
       <div className="room-code-box" style={{ '--art': `url(${ROOM_ART})` } as React.CSSProperties}>
         <span className="mode-art room-art" aria-hidden="true" />
-        <div className="section-label">{vs ? 'Gauntlet PvP room' : 'Room code'}</div>
+        <div className="section-label">Gauntlet PvP room</div>
         <div className="room-code" aria-label={`Room code ${code.split('').join(' ')}`}>
           {code.split('').map((ch, i) => (
             <span key={i} style={{ animationDelay: `${i * 60}ms` }}>
@@ -371,7 +312,7 @@ function Lobby({
       <section className="lobby-panel">
         <div className="lobby-head">
           <span className="section-label">Players</span>
-          <span className="count-pill">{vs ? `${state.players.length}/${VS_MAX_PLAYERS}` : state.players.length}</span>
+          <span className="count-pill">{`${state.players.length}/${VS_MAX_PLAYERS}`}</span>
         </div>
         <ul className="party-players">
           {state.players.map((p) => (
@@ -399,7 +340,7 @@ function Lobby({
             <li className="party-player-row open-seat" aria-hidden="true">
               <span className="avatar">+</span>
               <span className="party-player-name">
-                {isHost ? 'Share the code' : vs && state.players.length < VS_MIN_PLAYERS ? 'Waiting for an opponent' : 'Open seat'}
+                {isHost ? 'Share the code' : state.players.length < VS_MIN_PLAYERS ? 'Waiting for an opponent' : 'Open seat'}
               </span>
             </li>
           )}
@@ -410,29 +351,6 @@ function Lobby({
         <div className="lobby-head">
           <span className="section-label">Rules</span>
           {!isHost && <span className="muted small">set by the host</span>}
-        </div>
-        <div className="setting">
-          <span className="setting-label">Game</span>
-          <div className="seg game-seg" role="radiogroup" aria-label="Game">
-            {(
-              [
-                ['quickdraw', 'Quickdraw'],
-                ['gauntlet', 'Gauntlet PvP'],
-              ] as const
-            ).map(([g, label]) => (
-              <button
-                key={g}
-                type="button"
-                role="radio"
-                aria-checked={state.settings.game === g}
-                className={state.settings.game === g ? 'on' : ''}
-                disabled={!isHost}
-                onClick={() => onSettings({ game: g })}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
         <Setting
           icon={<img className="setting-icon" src={HEALTH_ICON} alt="" />}
@@ -445,30 +363,24 @@ function Lobby({
         <Setting
           icon={<RopeIcon />}
           label="Seconds per turn"
-          options={FUSE_FOR[state.settings.game].options}
+          options={FUSE_OPTIONS}
           value={state.settings.fuse}
           disabled={!isHost}
           onPick={(v) => onSettings({ fuse: v })}
         />
         <div className="pool-note">
           <img className="setting-icon" src={MANA_ICON} alt="" />
-          {vs
-            ? `Take turns filling in a card's blank. Miss and lose a life; the next player can steal it with half the time, free (${STEALS_FOR_LIFE} steals = +1 life). ${state.poolSize.toLocaleString()} cards from the host's pool.`
-            : `All ${state.poolSize.toLocaleString()} collectible cards.`}
+          {`Take turns filling in a card's blank. Miss and lose a life; the next player can steal it with half the time, free (${STEALS_FOR_LIFE} steals = +1 life). ${state.poolSize.toLocaleString()} cards from the host's pool.`}
         </div>
       </section>
 
       {isHost ? (
         <button className="btn primary" onClick={onStart} disabled={!canStart}>
-          {vs
-            ? state.players.length < VS_MIN_PLAYERS
-              ? 'Waiting for an opponent'
-              : state.players.length > VS_MAX_PLAYERS
-                ? `Gauntlet PvP fits ${VS_MAX_PLAYERS} (${state.players.length} here)`
-                : 'Start Gauntlet PvP'
-            : state.players.length > 1
-              ? 'Start game'
-              : 'Start (just you)'}
+          {state.players.length < VS_MIN_PLAYERS
+            ? 'Waiting for an opponent'
+            : state.players.length > VS_MAX_PLAYERS
+              ? `Room fits ${VS_MAX_PLAYERS} (${state.players.length} here)`
+              : 'Start game'}
         </button>
       ) : (
         <div className="waiting-pill" role="status">
@@ -535,7 +447,6 @@ function Setting({
 /* ---------------- Game ---------------- */
 
 function Play({
-  solo = false,
   state,
   me,
   deadline,
@@ -553,15 +464,8 @@ function Play({
   drawable: Card[];
   onAnswer(text: string): void;
   onTyping(text: string): void;
-  /** Practising alone: show the running score instead of whose turn it is. */
-  solo?: boolean;
 }) {
   const crop = useArtCrop();
-  const [input, setInput] = useState('');
-  /** My last guess was rejected and I haven't changed it yet: show it in red. */
-  const [myWrong, setMyWrong] = useState(false);
-  const field = useRef<HTMLInputElement>(null);
-  const vs = !!state.card;
   const myTurn = state.turn === me;
   const current = state.players.find((p) => p.id === state.turn);
   const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
@@ -577,216 +481,51 @@ function Play({
     return () => clearInterval(t);
   }, [deadline]);
 
-  // New turn: clear the box, and focus it if it's mine.
-  useEffect(() => {
-    setInput('');
-    setMyWrong(false);
-    if (myTurn) field.current?.focus();
-  }, [state.round, myTurn]);
-
-  // Shake my box when the host rejects my answer.
   const last = state.last;
-  useEffect(() => {
-    if (last?.kind === 'miss' && last.player === me && field.current) {
-      setMyWrong(true);
-      const el = field.current;
-      el.classList.remove('shake');
-      void el.offsetWidth;
-      el.classList.add('shake');
-    }
-  }, [last, me]);
-
-  // The pointer turns the short way round to whoever's up.
-  const n = state.players.length;
-  const seatAngle = (i: number) => (n ? (i / n) * 360 : 0);
-  const turnIdx = Math.max(
-    0,
-    state.players.findIndex((p) => p.id === state.turn),
-  );
-  const angle = useRef(0);
-  const target = seatAngle(turnIdx);
-  const delta = ((((target - angle.current) % 360) + 540) % 360) - 180;
-  angle.current += delta;
-
   const total = state.turnSeconds || state.settings.fuse;
   const urgent = left <= 3;
   // Tick each of the last few seconds.
-  const secs = left;
   useEffect(() => {
-    if (secs > 0 && secs <= 3) sfx.tick(true);
-    else if (secs > 3 && secs <= 5) sfx.tick(false);
-  }, [secs]);
+    if (left > 0 && left <= 3) sfx.tick(true);
+    else if (left > 3 && left <= 5) sfx.tick(false);
+  }, [left]);
   const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? 'Someone';
   const verdict = verdictFor(last, me, nameOf);
   const typed = typing && typing.id === state.turn ? typing.text : '';
-  const hitCard = last?.kind === 'hit' ? byId.get(last.cardId) : undefined;
 
   // A buzz on phones that can when it becomes your turn.
   useEffect(() => {
-    if (myTurn && !solo) navigator.vibrate?.(60);
-  }, [myTurn, state.round, solo]);
+    if (myTurn) navigator.vibrate?.(60);
+  }, [myTurn, state.round]);
 
   return (
     <>
       <VerdictFlash verdict={verdict} />
-      {solo ? (
-        <div className="solo-score" role="status">
-          <b key={state.players[0]?.hits}>{state.players[0]?.hits ?? 0}</b>
-          <span>card{state.players[0]?.hits === 1 ? '' : 's'}</span>
-        </div>
-      ) : vs ? null : (
-        <div className={`turn-banner ${myTurn ? 'mine' : ''}`} key={`turn-${state.round}`} role="status">
-          {current && (
-            <span className="avatar" style={avatarStyle(current.id)}>
-              {current.name.slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <span className="turn-banner-text">
-            {myTurn ? 'Your turn!' : `${current?.name ?? '…'}'s turn`}
-          </span>
-        </div>
-      )}
-      {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
-      {/* Gauntlet PvP: a big call in the middle of the screen as your turn starts. */}
-      {myTurn && vs && (
+      {myTurn && <div className="my-turn-glow" aria-hidden="true" />}
+      {/* A big call in the middle of the screen as your turn starts. */}
+      {myTurn && (
         // Waits for the right / wrong banner from the turn before to clear.
         <div className={`turn-flash ${verdict ? 'after-verdict' : ''}`} key={`flash-${state.round}`} aria-hidden="true">
           {state.card?.steal ? 'Your steal!' : 'Your turn!'}
         </div>
       )}
-      {vs ? (
-        <VsBar state={state} me={me} deadline={deadline} total={total} left={left} urgent={urgent} />
-      ) : (
-      <div className={`table ${myTurn ? 'compact' : ''} ${solo ? 'solo' : ''} ${urgent ? 'urgent' : ''}`}>
-        <div className="needle" style={{ transform: `rotate(${angle.current}deg)` }} aria-hidden="true" />
-        <div className={`table-center ${last?.kind === 'boom' ? 'boom' : ''}`} key={last?.kind === 'boom' ? `boom-${last.n}` : 'center'}>
-          <RopeRing deadline={deadline} total={total} key={`rope-${state.round}`} />
-          {state.streak >= 2 && (
-            <span className="speed-badge" key={`speed-${state.streak}`} title={`${state.streak} right in a row`}>
-              ⚡ {state.turnSeconds}s
-            </span>
-          )}
-          <span className="fuse-count" key={urgent ? Math.ceil(left) : 'calm'} aria-label={`${Math.ceil(left)} seconds left`}>
-            {Math.ceil(left)}
-          </span>
-          {hitCard && (
-            <span className="center-hit" key={`hit-${last!.n}`} aria-hidden="true">
-              <Art card={hitCard} crop={crop} className="center-art" />
-            </span>
-          )}
-        </div>
-        {state.players.map((p, i) => {
-          const a = seatAngle(i);
-          const boom = last?.kind === 'boom' && last.player === p.id;
-          // Bubbles on the left/right seats grow inward so they stay on screen.
-          const x = Math.sin((a * Math.PI) / 180);
-          const side = x < -0.35 ? 'left' : x > 0.35 ? 'right' : 'mid';
-          // Your own words are in your input box, so only other players get a bubble.
-          const speaking = p.id === state.turn && p.id !== me;
-          // Gauntlet VS shows their answer on the card instead.
-          const words = speaking && !vs ? typed : '';
-          const wrong = speaking && typing?.wrong && typing.id === p.id ? typing.wrong : 0;
-          return (
-            <div
-              key={p.id + (boom ? `-boom-${last!.n}` : '')}
-              className={`seat ${p.id === state.turn ? 'active' : ''} ${p.lives === 0 ? 'out' : ''} ${boom ? 'boom' : ''} ${p.id === me ? 'me' : ''} ${hotClass(p.streak)}`}
-              style={{ '--a': `${a}deg` } as React.CSSProperties}
-            >
-              {speaking && (
-                <span className={`bubble side-${side} ${wrong ? 'wrong' : ''}`} key={`bubble-${state.round}-${wrong}`} aria-live="off">
-                  {words ? (
-                    <span className={`bubble-text ${wrong ? 'wrong' : ''}`} key={wrong || 'typing'}>
-                      {words}
-                    </span>
-                  ) : (
-                    <span className="bubble-dots" aria-label="thinking" />
-                  )}
-                </span>
-              )}
-              <span className="avatar-wrap">
-                <span className="avatar" style={avatarStyle(p.id)}>
-                  {p.name.slice(0, 1).toUpperCase()}
-                </span>
-                {p.streak >= HOT && (
-                  <span className="hot-badge" key={`hot-${p.streak}`} aria-label={`${p.streak} in a row`}>
-                    🔥{p.streak}
-                  </span>
-                )}
-              </span>
-              <span className="seat-name">{p.id === me ? 'You' : p.name}</span>
-              <span className="seat-lives" aria-label={`${p.lives} lives`}>
-                {p.lives > 0
-                  ? Array.from({ length: state.settings.lives }, (_, k) => (
-                      <img key={k} className={`life ${k < p.lives ? 'on' : ''}`} src={HEALTH_ICON} alt="" draggable={false} />
-                    ))
-                  : 'out'}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      )}
-
-      {state.card ? (
+      <VsBar state={state} me={me} deadline={deadline} total={total} left={left} urgent={urgent} />
+      {state.card && (
         <>
-        <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
-        <VsCard
-          key={state.round}
-          state={state}
-          myTurn={myTurn}
-          who={current?.name ?? 'Someone'}
-          typed={typed}
-          byId={byId}
-          drawable={drawable}
-          onTyping={onTyping}
-          onAnswer={onAnswer}
-        />
-        </>
-      ) : (
-      <>
-      <div className={`qf-prompt party-prompt ${myTurn ? 'mine' : ''}`} key={state.round}>
-        <div className="qf-text">{state.prompt && <Bold text={state.prompt.text} />}</div>
-        {state.prompt?.hint && (
-          <div className="muted small prompt-hint">
-            <ClassName name={state.prompt.hint} />
-          </div>
-        )}
-      </div>
-
-      {myTurn ? (
-        <form
-          className="qf-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (input.trim()) onAnswer(input);
-          }}
-        >
-          <input
-            ref={field}
-            className={`in qf-input ${myWrong ? 'wrong' : ''}`}
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              setMyWrong(false);
-              onTyping(e.target.value);
-            }}
-            placeholder="Card name"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="words"
-            spellCheck={false}
-            enterKeyHint="go"
-            aria-label="Card name"
+          <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
+          <VsCard
+            key={state.round}
+            state={state}
+            myTurn={myTurn}
+            who={current?.name ?? 'Someone'}
+            typed={typed}
+            byId={byId}
+            drawable={drawable}
+            onTyping={onTyping}
+            onAnswer={onAnswer}
           />
-          <button type="submit" className="btn primary" onMouseDown={(e) => e.preventDefault()} disabled={!input.trim()}>
-            Go
-          </button>
-        </form>
-      ) : null}
-      </>
+        </>
       )}
-
-      {!vs && <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />}
     </>
   );
 }
@@ -1010,9 +749,6 @@ function EventLine({
         )}
       </>
     );
-  } else if (last.kind === 'miss') {
-    cls = 'bad';
-    body = <span>✗ {last.text}</span>;
   } else if (last.kind === 'boom' && last.cardId) {
     // Gauntlet VS: a wrong answer or a burnt rope. Passed on for a steal, or the answer.
     const c = byId.get(last.cardId);
@@ -1114,8 +850,8 @@ function verdictFor(last: PublicState['last'], me: string, nameOf: (id: string) 
     const text = mine ? (last.stole ? 'Stolen!' : 'Correct!') : `${who} ${last.stole ? 'stole it' : 'got it'}!`;
     return { tone: 'ok', text, id: last.n };
   }
-  // Quickdraw's rejected guesses ('miss') and Gauntlet PvP's wrong answers have a guess; the rest is the rope.
-  const timeUp = last.kind === 'boom' && last.guess === undefined;
+  // Wrong answers have a guess; the rest is the rope.
+  const timeUp = last.guess === undefined;
   const text = timeUp ? (mine ? "Time's up!" : `${who}: time's up!`) : mine ? 'Wrong!' : `${who}: wrong!`;
   return { tone: 'bad', text, id: last.n };
 }
@@ -1213,21 +949,20 @@ function LastAnswer({ state, me, all }: { state: PublicState; me: string; all: C
   );
 }
 
-/** Every card named this game, as a strip of art; tap one for its name. */
+/** Every card played this game, as a strip of art marked right or wrong; tap one for its name. */
 function NamedCards({ state, me, all }: { state: PublicState; me: string; all: Card[] }) {
   const crop = useArtCrop();
   const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
   const [open, setOpen] = useState<number | null>(null);
   const list = state.named.map((x) => ({ ...x, card: byId.get(x.cardId) })).filter((x) => x.card);
   if (!list.length) return null;
-  const solo = state.players.length === 1;
   const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? '?';
   const who = (id: string) => (id === me ? 'you' : nameOf(id));
   const sel = open !== null ? list[open] : null;
   return (
     <section className="named">
       <div className="lobby-head">
-        <span className="section-label">{state.settings.game === 'gauntlet' ? 'Cards played' : 'Cards named'}</span>
+        <span className="section-label">Cards played</span>
         <span className="count-pill">{list.length}</span>
       </div>
       <div className="named-strip">
@@ -1241,17 +976,11 @@ function NamedCards({ state, me, all }: { state: PublicState; me: string; all: C
             title={x.card!.name}
             onClick={() => {
               setOpen(i);
-              zoomCard(x.card!, solo ? undefined : `${x.ok === undefined ? 'Named by' : x.ok ? 'Got right by' : 'Missed by'} ${who(x.player)}`);
+              zoomCard(x.card!, `${x.ok ? 'Got right by' : 'Missed by'} ${who(x.player)}`);
             }}
           >
             <Art card={x.card!} crop={crop} className="named-art" />
             {x.ok !== undefined && <span className="run-mark">{x.ok ? '✓' : '✗'}</span>}
-            {/* Gauntlet VS marks right/wrong instead; the caption says who. */}
-            {!solo && x.ok === undefined && (
-              <span className="avatar mini" style={avatarStyle(x.player)}>
-                {nameOf(x.player).slice(0, 1).toUpperCase()}
-              </span>
-            )}
           </button>
         ))}
       </div>
@@ -1259,7 +988,7 @@ function NamedCards({ state, me, all }: { state: PublicState; me: string; all: C
         {sel ? (
           <>
             <b>{sel.card!.name}</b>
-            {!solo && <> · {sel.ok === undefined ? 'named by' : sel.ok ? 'got right by' : 'missed by'} {who(sel.player)}</>}
+            <> · {sel.ok ? 'got right by' : 'missed by'} {who(sel.player)}</>
           </>
         ) : (
           'Tap a card to see it.'
@@ -1355,145 +1084,6 @@ function RopeRing({ deadline, total }: { deadline: number; total: number }) {
         </span>
       )}
     </>
-  );
-}
-
-/* ---------------- Solo ---------------- */
-
-const soloKey = (s: PartySettings) => `hsq:quickdraw:best:${s.lives}-${s.fuse}`;
-
-/** Remembers the best solo run for the current settings; `isNew` after a record. */
-function useSoloBest(state: PublicState | null) {
-  const [best, setBest] = useState(0);
-  const [isNew, setIsNew] = useState(false);
-  const key = state ? soloKey(state.settings) : '';
-  useEffect(() => {
-    // Bests saved before the rename from Quickfire still count.
-    if (key) setBest(load<number>(key, 0) || load<number>(key.replace(':quickdraw:', ':quickfire:'), 0));
-  }, [key]);
-  const phase = state?.phase;
-  useEffect(() => {
-    if (!state) return;
-    if (phase === 'playing') setIsNew(false);
-    if (phase !== 'over') return;
-    const hits = state.players[0]?.hits ?? 0;
-    const prev = load<number>(key, 0);
-    if (hits > prev) {
-      save(key, hits);
-      setBest(hits);
-      setIsNew(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
-  return { best, isNew };
-}
-
-function SoloSetup({
-  state,
-  best,
-  onSettings,
-  onStart,
-}: {
-  state: PublicState;
-  best: number;
-  onSettings(s: Partial<PartySettings>): void;
-  onStart(): void;
-}) {
-  return (
-    <>
-      <div className="solo-intro">
-        <h2>Practice</h2>
-        <p className="muted">
-          Name a card for each prompt before the rope burns. Miss and lose a life.
-        </p>
-      </div>
-      <section className="lobby-panel party-settings">
-        <div className="lobby-head">
-          <span className="section-label">Rules</span>
-        </div>
-        <Setting
-          icon={<img className="setting-icon" src={HEALTH_ICON} alt="" />}
-          label="Lives"
-          options={LIVES_OPTIONS}
-          value={state.settings.lives}
-          disabled={false}
-          onPick={(v) => onSettings({ lives: v })}
-        />
-        <Setting
-          icon={<RopeIcon />}
-          label="Seconds per turn"
-          options={FUSE_OPTIONS}
-          value={state.settings.fuse}
-          disabled={false}
-          onPick={(v) => onSettings({ fuse: v })}
-        />
-        <div className="pool-note">
-          <img className="setting-icon" src={rarityIcon('LEGENDARY')} alt="" />
-          <span>
-            Best: <b>{best}</b> card{best === 1 ? '' : 's'}
-          </span>
-        </div>
-      </section>
-      <button className="btn primary" onClick={onStart}>
-        Start
-      </button>
-    </>
-  );
-}
-
-function SoloOver({
-  state,
-  best,
-  isNew,
-  all,
-  onAgain,
-  onSettings,
-}: {
-  state: PublicState;
-  best: number;
-  isNew: boolean;
-  all: Card[];
-  onAgain(): void;
-  onSettings(): void;
-}) {
-  const p = state.players[0];
-  const hits = p?.hits ?? 0;
-  return (
-    <div className="panel party-over solo-over">
-      <LastAnswer state={state} me={p?.id ?? ''} all={all} />
-      <div className="over-head">
-        <span className="over-kicker">Game over</span>
-        <h2>{isNew ? 'New best!' : hits ? 'Nice run' : 'Out of rope'}</h2>
-      </div>
-      <div className={`solo-final ${isNew ? 'record' : ''}`}>
-        <b className="qf-count done">{hits}</b>
-        <span>{hits === 1 ? 'card' : 'cards'}</span>
-      </div>
-      <div className="solo-stats">
-        <span>
-          <small>Best</small>
-          <b>{best}</b>
-        </span>
-        <span>
-          <small>Longest streak</small>
-          <b>{p?.bestStreak ?? 0}</b>
-        </span>
-        <span>
-          <small>Rules</small>
-          <b>
-            {state.settings.lives}
-            <img className="stat-icon" src={HEALTH_ICON} alt=" lives" /> · {state.settings.fuse}s
-          </b>
-        </span>
-      </div>
-      <NamedCards state={state} me={p?.id ?? ''} all={all} />
-      <button className="btn primary" onClick={onAgain}>
-        Play again
-      </button>
-      <button className="btn" onClick={onSettings}>
-        Change settings
-      </button>
-    </div>
   );
 }
 

@@ -219,6 +219,44 @@ export function frameCard(card: Card): Card {
   return card.type === 'LOCATION' ? { ...card, type: 'HERO', armor: card.health } : card;
 }
 
+/** How far down (px) gem text is moved in Sunwell's scratch canvas. */
+const GEM_TEXT_DROP = 30;
+let gemTextPatched = false;
+/**
+ * Sunwell writes gem text 10px from the top of a scratch canvas with a
+ * "hanging" baseline and a 10px black outline. Digits fit, but a "?" (our
+ * blank) rises above that line, so its top was clipped flat. Moving the text
+ * down inside the scratch canvas fixes it; Sunwell then crops to the ink and
+ * centres it on the gem, so where digits land doesn't change. Patched once,
+ * on the class that owns every gem's render.
+ */
+function roomForTallGemText(gem: object | undefined) {
+  if (gemTextPatched || !gem) return;
+  let proto = Object.getPrototypeOf(gem);
+  while (proto && !Object.prototype.hasOwnProperty.call(proto, 'render')) proto = Object.getPrototypeOf(proto);
+  if (!proto) return;
+  gemTextPatched = true;
+  const render = proto.render as (this: { sunwell: Sunwell }, ...args: unknown[]) => void;
+  proto.render = function (this: { sunwell: Sunwell & { getBuffer(w: number, h: number, clear: boolean): HTMLCanvasElement } }, ...args: unknown[]) {
+    const sw = this.sunwell;
+    const getBuffer = sw.getBuffer;
+    let used: CanvasRenderingContext2D | null = null;
+    sw.getBuffer = (w, h, clear) => {
+      const buffer = getBuffer.call(sw, w, h, clear);
+      used = buffer.getContext('2d');
+      used?.setTransform(1, 0, 0, 1, 0, GEM_TEXT_DROP);
+      return buffer;
+    };
+    try {
+      render.apply(this, args);
+    } finally {
+      sw.getBuffer = getBuffer;
+      // Buffers are pooled: hand this one back as it was.
+      (used as CanvasRenderingContext2D | null)?.setTransform(1, 0, 0, 1, 0, 0);
+    }
+  };
+}
+
 /**
  * Draw a card onto the canvas. `shown` says what to draw for each attribute
  * (blank where undefined). Calls onReady once drawn.
@@ -265,6 +303,7 @@ export async function drawCard(
     fitRaceText(sw);
     fitBoxes(sw, card.type);
     for (const g of [sw.costGem, sw.attackGem, sw.healthGem]) if (g) g.textSize = GEM_TEXT_SIZE;
+    roomForTallGemText(sw.costGem);
     // We draw straight onto our canvas. Without this Sunwell also copies it into an image,
     // which fails because the art is cross-origin.
     sw.target = null;

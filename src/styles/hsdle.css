@@ -151,3 +151,65 @@
 .reveal-card { display: grid; gap: 6px; justify-items: center; }
 .reveal-card .game-card-frame { width: min(230px, 62vw); }
 .reveal-caption { margin: 0; max-width: 320px; }
+
+/*
+ * HSdle's own look, in the spirit of Loldle: dark brown panels with a warm
+ * dim-gold (brown) edge, a soft gold glow on the things you use (search, clues,
+ * the card), and tiles with a frame and a little depth. Only inside .hsdle.
+ */
+.hsdle {
+  --hs-edge: #7a5a2e;
+  --hs-edge-hi: #b88a45;
+  --hs-panel: linear-gradient(180deg, rgba(60, 42, 22, 0.55), rgba(28, 20, 12, 0.7));
+  --hs-glow: 0 0 16px rgba(226, 182, 90, 0.16);
+  --hs-glow-hi: 0 0 0 3px rgba(226, 182, 90, 0.16), 0 0 22px rgba(226, 182, 90, 0.3);
+}
+
+/* Daily / Unlimited */
+.hsdle .tabs { background: var(--hs-panel); border: 1px solid var(--hs-edge); }
+.hsdle .tabs button.on { background: rgba(184, 138, 69, 0.22); color: var(--gold-2); box-shadow: inset 0 0 0 1px var(--hs-edge-hi); }
+
+/* The question, framed like a title plate. */
+.hsdle .ask {
+  padding: 10px 14px; border-radius: var(--radius); color: var(--text);
+  background: var(--hs-panel); border: 1px solid var(--hs-edge); box-shadow: var(--hs-glow);
+}
+
+/* Search: a brown-gold frame that glows when you type. */
+.hsdle .search .in {
+  background: #17110b; border: 2px solid var(--hs-edge); box-shadow: var(--hs-glow);
+  transition: border-color var(--fast) ease, box-shadow var(--fast) ease;
+}
+.hsdle .search .in:focus { outline: 0; border-color: var(--hs-edge-hi); box-shadow: var(--hs-glow-hi); }
+.hsdle .search-list { background: #1b140c; border: 1px solid var(--hs-edge); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), var(--hs-glow); }
+.hsdle .search-list button.hi { background: rgba(184, 138, 69, 0.16); }
+.hsdle .search-list .thumb, .hsdle .name-cell .thumb { box-shadow: 0 0 0 2px var(--hs-edge); }
+
+/* The mystery card: a soft gold light behind it. */
+.hsdle .reveal-card .game-card-frame, .hsdle .hsdle-result .game-card-frame { isolation: isolate; }
+.hsdle .reveal-card .game-card-frame::before, .hsdle .hsdle-result .game-card-frame::before {
+  content: ''; position: absolute; inset: 6% 2%; z-index: -1; border-radius: 40%;
+  background: radial-gradient(closest-side, rgba(226, 182, 90, 0.22), transparent); filter: blur(12px);
+}
+.hsdle .card-chips .chip { border-color: var(--hs-edge); background: rgba(60, 42, 22, 0.45); }
+
+/* Clues: locked ones are plain brown panels; unlocked ones get gold text and a glow. */
+.hsdle .clue-btn { background: var(--hs-panel); border: 1px solid var(--hs-edge); color: #8d7a5c; }
+.hsdle .clue-btn.unlocked { color: var(--gold-2); border-color: var(--hs-edge-hi); box-shadow: var(--hs-glow); }
+.hsdle .clue-btn.on { background: rgba(184, 138, 69, 0.24); box-shadow: var(--hs-glow-hi); }
+.hsdle .clue-art { box-shadow: 0 0 0 2px var(--hs-edge-hi), var(--hs-glow); }
+.hsdle .give-up:not(.armed) { border-color: var(--hs-edge); background: rgba(60, 42, 22, 0.35); }
+
+/* Board: brown rule under the headings; tiles framed with a little depth. */
+.hsdle .board-head .board-cell, .hsdle .board-head .board-cell.name-cell { border-bottom: 2px solid var(--hs-edge); color: #c9b48d; }
+.hsdle .tile {
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 0 rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.hsdle .tile.t-correct { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -2px 0 rgba(0, 0, 0, 0.2), 0 0 10px rgba(63, 138, 71, 0.45); }
+.hsdle .tile.t-close { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -2px 0 rgba(0, 0, 0, 0.2), 0 0 10px rgba(166, 143, 52, 0.4); }
+.hsdle .board-detail { background: var(--hs-panel); border: 1px solid var(--hs-edge); }
+.hsdle .reveal-caption { color: #b9a682; }
+
+/* Result: the win / give-up panel in the same frame. */
+.hsdle .hsdle-result .feedback { border: 1px solid var(--hs-edge-hi); box-shadow: var(--hs-glow-hi); }

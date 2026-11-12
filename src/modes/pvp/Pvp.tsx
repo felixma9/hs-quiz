@@ -12,12 +12,11 @@ const NAME_KEY = 'hsq:name';
 type View = { kind: 'home' } | { kind: 'party'; mode: PartyMode };
 
 /**
- * Quickdraw: host or join a room and take turns naming cards before the fuse
- * burns out, or practise alone against the clock.
+ * Gauntlet PvP: host or join a room and take turns filling in a card's blank
+ * before the rope burns out. Rooms use the host's card pool (`pool`, or every
+ * drawable card if that's empty).
  */
-/** Quickdraw always plays with every collectible card (the menu's card pool doesn't apply). */
-/** Gauntlet PvP rooms use the menu's card pool (`pool`, or every drawable card if that's empty). */
-export function Quickdraw({ everything, cards, pool }: { everything: Card[]; cards: Card[]; pool: Card[] }) {
+export function Pvp({ everything, cards, pool }: { everything: Card[]; cards: Card[]; pool: Card[] }) {
   const [name, setName] = useState(() => load<string>(NAME_KEY, ''));
   const [code, setCode] = useState(() => roomFromLocation() ?? '');
   const [view, setView] = useState<View>({ kind: 'home' });
@@ -41,7 +40,7 @@ export function Quickdraw({ everything, cards, pool }: { everything: Card[]; car
     setView({ kind: 'party', mode });
   };
   const leave = () => {
-    history.replaceState(null, '', '#/quickdraw');
+    history.replaceState(null, '', '#/pvp');
     setView({ kind: 'home' });
   };
 
@@ -50,10 +49,9 @@ export function Quickdraw({ everything, cards, pool }: { everything: Card[]; car
       <Party
         mode={view.mode}
         name={name.trim() || 'You'}
-        pool={everything}
         all={everything}
         drawable={cards}
-        vsPool={pool.length ? pool : cards}
+        pool={pool.length ? pool : cards}
         onLeave={leave}
       />
     );
@@ -70,7 +68,8 @@ export function Quickdraw({ everything, cards, pool }: { everything: Card[]; car
         </span>
       </div>
       <p className="qf-home-intro">
-        Name a card that fits the prompt before the rope burns. Miss and lose a life. Last one standing wins.
+        Take turns filling in a card's blank before the rope burns. Miss and lose a life; the next player can steal it. Last one
+        standing wins.
       </p>
 
       <label className="qf-name">
@@ -90,16 +89,10 @@ export function Quickdraw({ everything, cards, pool }: { everything: Card[]; car
         {needName && !name.trim() && <span className="small bad-text">Pick a name first.</span>}
       </label>
 
-      <div className="qf-host-row">
-        <button className="btn primary qf-host" onClick={() => go({ role: 'host' })}>
-          Host a room
-        </button>
-        <button className="btn qf-host-vs" onClick={() => go({ role: 'host', game: 'gauntlet' })}>
-          <img src={ICON.health} alt="" aria-hidden="true" />
-          Host Gauntlet PvP
-          <small>2–8 players · fill in the blanks</small>
-        </button>
-      </div>
+      <button className="btn primary qf-host" onClick={() => go({ role: 'host' })}>
+        Host a room
+        <small>2–8 players</small>
+      </button>
 
       <form
         className="qf-join"
@@ -125,16 +118,6 @@ export function Quickdraw({ everything, cards, pool }: { everything: Card[]; car
         </button>
       </form>
 
-      <div className="qf-or">or</div>
-      <button
-        className="btn qf-solo"
-        onClick={() => {
-          unlock();
-          setView({ kind: 'party', mode: { role: 'solo' } });
-        }}
-      >
-        Practise solo
-      </button>
     </div>
   );
 }

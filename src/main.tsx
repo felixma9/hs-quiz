@@ -8,7 +8,7 @@ import './styles/menu.css';
 import './styles/card.css';
 import './styles/gauntlet.css';
 import './styles/hsdle.css';
-import './styles/quickdraw.css';
+import './styles/pvp.css';
 import './styles/carddb.css';
 import './styles/motion.css';
 

@@ -1,28 +1,13 @@
-/* Quickdraw: prompt, input row, rooms. Built for phones first. */
+/* Gauntlet PvP: home, rooms, the game. Built for phones first. */
 
-.qf-prompt {
-  display: grid; gap: 4px; place-content: center; text-align: center; min-height: 112px;
-  padding: 16px 14px; border-radius: var(--radius); background: var(--surface);
-}
-.qf-text { font-size: 1.35rem; line-height: 1.3; }
-.qf-text b { color: var(--gold-2); font-weight: 600; }
-
-.qf-form { display: flex; gap: 6px; }
-.qf-input { flex: 1; min-width: 0; font-size: 1.05rem; min-height: 52px; }
-.qf-form .btn { min-height: 52px; padding: 0 16px; }
 
 
 .qf-thumb { display: block; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; }
 .qf-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
 
-@media (max-width: 600px) {
-  .qf-prompt { min-height: 96px; padding: 12px; }
-  .qf-text { font-size: 1.2rem; }
-  .qf-form .btn { padding: 0 12px; }
-}
 
-/* ---- Quickdraw home: name, host, join, practise ---- */
+/* ---- Home: name, host, join ---- */
 .qf-home { gap: 14px; }
 .qf-home-intro { margin: 4px 0 0; text-align: center; color: var(--muted); }
 .qf-name { display: grid; gap: 6px; }
@@ -31,8 +16,8 @@
 .room-input { flex: 1; text-align: center; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.35em; text-transform: uppercase; }
 .room-input::placeholder { letter-spacing: 0.4em; font-weight: 600; }
 .qf-join .btn { min-width: 96px; }
-.qf-or { text-align: center; color: var(--faint); font-size: 0.85rem; }
-.qf-solo { background: transparent; border: 1px solid var(--line-2); }
+.qf-host { display: grid; gap: 2px; justify-items: center; padding-block: 10px; }
+.qf-host small { font-size: 0.78rem; font-weight: 400; opacity: 0.85; }
 .party-leave { justify-self: center; font-size: 0.9rem; margin-top: 4px; padding: 10px 18px; }
 
 /* ---- Lobby ---- */
@@ -58,8 +43,6 @@
 .seg button:disabled:not(.on) { opacity: 0.5; }
 
 /* ---- In game ---- */
-.party-prompt { min-height: 120px; }
-.party-prompt.mine { border-color: var(--gold-dim); }
 .party-event { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; text-align: center; font-size: 0.95rem; }
 .party-event.ok { color: var(--ok-text); }
 .party-event.ok b { color: var(--text); }
@@ -67,41 +50,13 @@
 .party-event.boom { color: #f0956b; }
 .event-thumb { width: 34px; height: 34px; border-width: 1px; }
 
-/* ---- The table: players seated round a fuse ring, a pointer at whoever's up ---- */
-.table { position: relative; width: min(100%, 330px); aspect-ratio: 1; margin: 6px auto 0; container-type: inline-size;
-  transition: width 0.35s var(--ease, ease); }
-.table.compact { width: 210px; }
-.table::before { content: ''; position: absolute; inset: 13%; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05); }
-.table-center { position: absolute; inset: 27%; border-radius: 50%; display: grid; place-items: center;
-  background: var(--surface); }
 .fuse-count { font-size: 15cqw; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
-.table.urgent .fuse-count { color: var(--bad-text); }
-.center-hit { position: absolute; inset: 6%; border-radius: 50%; overflow: hidden; pointer-events: none; }
-.center-art { width: 100%; height: 100%; border-radius: 50%; }
-.needle { position: absolute; left: calc(50% - 7cqw); top: 16cqw; width: 14cqw; height: 34cqw; transform-origin: 50% 100%;
-  transition: transform 0.45s cubic-bezier(0.3, 1.5, 0.5, 1); pointer-events: none;
-  background: linear-gradient(180deg, var(--gold-2, #ffe7a3), rgba(240, 199, 94, 0.0) 70%);
-  clip-path: polygon(50% 0, 64% 40%, 36% 40%); }
-.table.urgent .needle { background: linear-gradient(180deg, #ff8a8d, rgba(229, 72, 77, 0) 70%); }
 
-.seat { position: absolute; left: 50%; top: 50%; display: grid; justify-items: center; gap: 2px; width: 26cqw;
-  transform: translate(-50%, -50%) rotate(var(--a)) translateY(-42cqw) rotate(calc(-1 * var(--a)));
-  transition: opacity 0.3s ease; }
-.seat .avatar { width: 15cqw; height: 15cqw; font-size: 6.5cqw; transition: transform 0.3s var(--ease, ease), box-shadow 0.3s ease; }
-.seat-name { font-size: 3.6cqw; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seat-lives { display: flex; gap: 2px; font-size: 3cqw; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
 .seat-lives { align-items: center; gap: 1px; }
 .seat-lives .life { width: max(11px, 3.8cqw); height: auto; display: block; filter: grayscale(1) brightness(0.45); opacity: 0.5;
   transition: filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease; }
 .seat-lives .life.on { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); opacity: 1; }
-.seat.active .avatar-wrap { margin: 1.4cqw 0; }
-.seat.active .avatar { transform: scale(1.15); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold), 0 0 20px rgba(226, 182, 90, 0.55); }
-.seat.active .seat-name { color: var(--gold); }
-.seat.me .seat-name { font-weight: 700; }
-.seat.out { opacity: 0.3; filter: grayscale(1); }
-.table.compact .seat-name { font-size: 4.6cqw; }
 
 .avatar { background-size: cover; }
 
@@ -132,40 +87,10 @@
 .sound-toggle .stroke { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .sound-toggle.off { color: var(--muted); }
 
-/* Whose turn: a big banner on top; on your turn it's gold and the screen edges glow. */
-.turn-banner { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 14px; border-radius: var(--radius);
-  margin: 0 46px; background: var(--surface); }
-.turn-banner .avatar { width: 32px; height: 32px; font-size: 0.95rem; }
-.turn-banner-text { font-weight: 600; font-size: 1.15rem;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.turn-banner.mine { background: var(--gold); color: #1d1606; box-shadow: 0 0 0 4px rgba(226, 182, 90, 0.18), 0 6px 24px rgba(226, 182, 90, 0.35); }
-.turn-banner.mine .turn-banner-text { font-weight: 700; font-size: 1.35rem; }
-.turn-banner.mine .avatar { box-shadow: 0 0 0 2px #2a1a00; }
+/* Your turn: the screen edges glow. */
 .my-turn-glow { position: fixed; inset: 0; z-index: 30; pointer-events: none;
   box-shadow: inset 0 0 0 3px rgba(226, 182, 90, 0.85), inset 0 0 60px rgba(226, 182, 90, 0.3); }
 
-/* Speech bubble over whoever's up, showing what they're typing. */
-.seat { z-index: 1; }
-.seat.active { z-index: 4; }
-.bubble { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 58cqw;
-  padding: 6px 11px; border-radius: 12px; background: #fff; color: #15161f; font-weight: 600; font-size: 0.95rem; line-height: 1.2;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); overflow-wrap: anywhere; text-align: left; pointer-events: none; }
-.bubble::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -7px; border: 7px solid transparent; border-top-color: #fff; border-bottom: 0; }
-.bubble.side-left { left: 0; transform: none; }
-.bubble.side-left::after { left: 22px; }
-.bubble.side-right { left: auto; right: 0; transform: none; }
-.bubble.side-right::after { left: auto; right: 15px; }
-.bubble-text::after { content: ''; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: #15161f; }
-.bubble-dots { display: inline-block; width: 26px; height: 8px;
-  background: radial-gradient(circle, #8a8a99 3px, transparent 3.5px) 0 50% / 9px 8px repeat-x; }
-.table.compact .bubble { font-size: 0.85rem; max-width: 70cqw; }
-
-/* A rejected guess: red in the speaker's bubble (for everyone) and in your own box. */
-.bubble.wrong { background: #c2453f; color: #fff; }
-.bubble.wrong::after { border-top-color: #c2453f; }
-.bubble-text.wrong { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: rgba(255, 255, 255, 0.7); }
-.bubble-text.wrong::after { display: none; }
-.qf-input.wrong { color: var(--bad-text); border-color: rgba(239, 107, 103, 0.6); }
 
 /* ---- The rope: a smooth cord round the clock that burns down clockwise, gold -> orange -> red, with a glowing ember at the end ---- */
 .rope-ring { position: absolute; inset: -7%; width: 114%; height: 114%; overflow: visible; pointer-events: none; --rope: #e8c27a; --rope-glow: rgba(232, 194, 122, 0.55); }
@@ -182,62 +107,21 @@
   background: radial-gradient(circle at 40% 35%, #fff, #ffe7a3 35%, var(--rope, #f59e4b) 75%); box-shadow: 0 0 6px var(--rope-glow, rgba(255, 170, 60, 0.8)); }
 .rope-orbit { --rope: #e8c27a; --rope-glow: rgba(232, 194, 122, 0.55); }
 
-/* Solo practice: running score where the turn banner would be. */
-.solo-score { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin: 0 46px; }
-.solo-score b { display: inline-block; font-size: 2.2rem; font-weight: 700; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
-.solo-score span { color: var(--muted); font-size: 0.9rem; }
-.solo-intro { padding-right: 50px; }
-.solo-intro h2 { margin: 0 0 4px; }
-.solo-intro p { margin: 0; }
 
-/* Keyboard up (phones): pull everything in tight so the turn, timer, prompt,
-   input and last result all fit in the space above the keyboard. */
+/* Keyboard up (phones): pull everything in tight so the timer, card and last
+   result fit in the space above the keyboard. */
 .party.kb { gap: 6px; }
-.party.kb .turn-banner, .party.kb .solo-score { padding: 4px 12px; margin: 0 44px; }
-.party.kb .turn-banner .avatar { width: 24px; height: 24px; font-size: 0.75rem; }
-.party.kb .turn-banner-text, .party.kb .turn-banner.mine .turn-banner-text { font-size: 1.05rem; }
-.party.kb .solo-score b { font-size: 1.6rem; }
-.party.kb .table, .party.kb .table.compact { width: 150px; margin-top: 2px; }
-.party.kb .table .seat-name, .party.kb .table .seat-lives { display: none; }
-.party.kb .party-prompt { min-height: 0; padding: 8px 12px; }
-.party.kb .qf-text { font-size: 1.05rem; }
-.party.kb .qf-form .btn, .party.kb .qf-input { min-height: 44px; }
 .party.kb .party-event { min-height: 0; font-size: 0.82rem; }
 .party.kb .party-leave, .app:has(.party.kb) footer { display: none; }
 .party.kb .sound-toggle { width: 30px; height: 30px; top: 2px; right: 4px; }
 
-/* Streak: the fuse gets shorter; a badge under the countdown shows the new time. */
-.speed-badge { position: absolute; bottom: 14%; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 1;
-  font-size: max(11px, 3.4cqw); font-weight: 700; padding: 1px 6px; border-radius: 6px; color: var(--gold-2); z-index: 3;
-  background: var(--gold-bg); }
-.party.kb .speed-badge { font-size: 11px; }
 
-/* ---- Hot streaks: a 🔥 count on the avatar and an aura that grows with the streak ---- */
+/* ---- Hot streaks ---- */
 .avatar-wrap { position: relative; display: grid; place-items: center; }
-.hot-badge { position: absolute; z-index: 2; top: -22%; right: -42%; padding: 1px 5px; border-radius: 6px; font-size: max(10px, 3.2cqw); font-weight: 700;
-  line-height: 1.3; color: #fff; white-space: nowrap; background: #c9581f; box-shadow: 0 0 0 2px var(--bg); }
-/* Hot streak: a flame aura behind the avatar that grows with the streak. */
-.seat.hot .avatar-wrap::before { content: ''; position: absolute; inset: -18%; z-index: -1; border-radius: 50%;
-  background: conic-gradient(from 0deg, #ff5e1a, #ffb347, #ff3d00, #ffd36b, #ff5e1a); filter: blur(5px); opacity: 0.55; }
-.seat.hot-2 .avatar-wrap::before { inset: -26%; opacity: 0.8; }
-.seat.hot-3 .avatar-wrap::before { inset: -34%; opacity: 1; filter: blur(4px); }
-.seat.hot .avatar { box-shadow: 0 0 0 2px #ff9a3c; }
-.seat.hot.active .avatar { box-shadow: 0 0 0 3px #ffb347, 0 0 22px rgba(255, 120, 40, 0.75); }
-.seat.hot .seat-name { color: #f0a560; }
 /* Event line callout. */
 .hot-callout { padding: 1px 8px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; color: #f0a560; background: rgba(224, 128, 58, 0.14); }
 .hot-callout.hot-3 { color: #fff; background: #c9581f; }
 
-/* Seats sit far enough out that names and lives clear the rope; the margins
-   leave room for the top and bottom seats (and the top seat's bubble). */
-.table, .table.compact { margin: 22px auto 14px; }
-/* Watching: the top seat may have a typing bubble above it. */
-.table:not(.compact) { margin-top: 40px; }
-/* Solo: the one seat is you, so no name tag. */
-.table.solo .seat-name { display: none; }
-@media (min-width: 700px) and (min-height: 760px) {
-  .table.compact { width: 250px; }
-}
 
 /* ---- Lobby: art behind the code, panels for players and rules ---- */
 .room-code-box { position: relative; overflow: hidden; isolation: isolate; padding: 20px 16px 18px; }
@@ -288,11 +172,10 @@
 .named-card { position: relative; flex: none; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; scroll-snap-align: start; }
 .named-art { width: 52px; height: 52px; border: 2px solid var(--line-2); transition: transform 0.2s var(--ease), border-color 0.2s ease; }
 .named-card.on .named-art { border-color: var(--gold); transform: scale(1.08); }
-.avatar.mini { position: absolute; right: -3px; bottom: -3px; width: 20px; height: 20px; font-size: 0.6rem; box-shadow: 0 0 0 2px var(--bg); }
 .named-caption { min-height: 1.3em; text-align: center; }
 .named-caption b { color: var(--text); }
 
-/* Solo results */
+/* Results stats (Gauntlet's game over) */
 .solo-final { justify-self: center; display: grid; place-items: center; align-content: center; gap: 2px; padding: 4px 0; }
 .solo-final span { font-size: 0.9rem; color: var(--muted); }
 .solo-final.record .qf-count { color: var(--gold); }
@@ -303,11 +186,6 @@
 .stat-icon { width: 12px; height: 17px; object-fit: contain; }
 
 /* ---- Gauntlet VS ---- */
-.qf-host-row { display: grid; gap: 8px; }
-.qf-host-vs { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 10px; text-align: left; padding: 10px 16px; }
-.qf-host-vs img { grid-row: span 2; width: 22px; height: 28px; object-fit: contain; }
-.qf-host-vs small { font-size: 0.78rem; font-weight: 400; color: var(--muted); }
-.game-seg button { padding: 0 12px; font-size: 0.85rem; white-space: nowrap; }
 .vs-turn { display: grid; gap: 10px; justify-items: center; }
 .vs-ask { text-align: center; font-size: 0.95rem; color: var(--muted); max-width: 34ch; }
 .vs-ask b { color: var(--text); }
@@ -384,7 +262,7 @@
 .party.kb .vs-bar.many .vs-side .avatar { width: 26px; height: 26px; font-size: 0.75rem; }
 .party.kb .vs-bar.many .vs-name { display: none; }
 
-/* ---- Quickdraw home: a slice of card art with the three stat gems ---- */
+/* ---- Gauntlet PvP home: a slice of card art with the three stat gems ---- */
 .qf-hero { position: relative; overflow: hidden; height: 96px; border-radius: var(--radius); background: var(--surface); isolation: isolate; }
 .qf-hero .mode-art { inset: 0; -webkit-mask-image: none; mask-image: none; opacity: 0.3; background-position: center 35%; }
 .qf-hero-icons { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 14px; }

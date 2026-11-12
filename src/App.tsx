@@ -17,13 +17,13 @@ import { CardPreview } from './app/CardPreview';
 import { CardZoomHost } from './app/CardZoom';
 import { Gauntlet } from './modes/gauntlet/Gauntlet';
 import { Hsdle } from './modes/hsdle/Hsdle';
-import { Quickdraw } from './modes/quickdraw/Quickdraw';
+import { Pvp } from './modes/pvp/Pvp';
 import { CardDb } from './modes/carddb/CardDb';
 
 export function App() {
   const [route, setRoute] = useState<Route>(() => parseRoute());
   const [cards, setCards] = useState<Card[] | null>(null);
-  /** Every collectible card, including types the card renderer can't draw (Quickdraw uses these). */
+  /** Every collectible card, including types the card renderer can't draw (CardDB and card lookups use these). */
   const [everything, setEverything] = useState<Card[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { pool, setPool, excludedSets, excludedRarities, updateSets, updateRarities } = usePool(cards);
@@ -111,7 +111,7 @@ export function App() {
           )}
           {playable && route === 'gauntlet' && <Gauntlet cards={pool} />}
           {playable && route === 'hsdle' && <Hsdle cards={pool} />}
-          {cards && route === 'quickdraw' && <Quickdraw everything={everything} cards={cards} pool={pool} />}
+          {cards && route === 'pvp' && <Pvp everything={everything} cards={cards} pool={pool} />}
           {/* Every card, not the menu's pool: it's for finding any card (locations too). */}
           {cards && route === 'carddb' && <CardDb cards={everything} />}
           {cards && route === 'card' && <CardPreview cards={everything} />}

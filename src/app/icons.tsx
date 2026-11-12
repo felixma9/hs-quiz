@@ -20,13 +20,3 @@ const RARITY_FILE: Record<string, string> = {
 };
 export const rarityIcon = (r: string) => `${BASE}sunwell/${RARITY_FILE[r] ?? 'rarity-common'}.webp`;
 export const classIcon = (cls: string) => `${BASE}class-icons/${cls}.webp`;
-
-/** A stat drawn the way the card shows it: the number on its gem. */
-export function StatGem({ kind, n }: { kind: 'mana' | 'attack' | 'health'; n: number | string }) {
-  return (
-    <span className={`gem-inline gem-${kind}`} aria-label={`${n} ${kind === 'mana' ? 'mana' : kind}`}>
-      <img src={ICON[kind]} alt="" draggable={false} />
-      <b>{n}</b>
-    </span>
-  );
-}

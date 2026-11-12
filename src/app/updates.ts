@@ -9,7 +9,7 @@ import { registerSW } from 'virtual:pwa-register';
  * We check for a new version on launch, when the app comes back to the
  * foreground, and every half hour. A new version installs and takes over by
  * itself; the page then reloads into it, but only on the main menu: a reload
- * mid-game would end a Gauntlet run or drop you from a Quickdraw room. If
+ * mid-game would end a Gauntlet run or drop you from a Gauntlet PvP room. If
  * you're in a game, the page carries on as it is until you go back to the menu.
  */
 

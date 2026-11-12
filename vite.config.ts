@@ -19,7 +19,7 @@ export default defineConfig({
         id: './',
         name: 'HS Quiz',
         short_name: 'HS Quiz',
-        description: 'Hearthstone card quizzes: Gauntlet, HSdle and Quickdraw.',
+        description: 'Hearthstone card quizzes: Gauntlet, Gauntlet PvP, HSdle and CardDB.',
         start_url: './',
         scope: './',
         display: 'standalone',

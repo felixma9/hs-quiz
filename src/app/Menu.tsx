@@ -13,9 +13,9 @@ const MODES = [
     icon: ICON.health,
   },
   {
-    href: '#/quickdraw',
-    name: 'Quickdraw',
-    blurb: 'Name cards that fit the prompt before the rope burns. With friends or solo.',
+    href: '#/pvp',
+    name: 'Gauntlet PvP',
+    blurb: 'Gauntlet with friends: take turns against the rope, steal what they miss.',
     art: 'NEW1_010', // Al'Akir the Windlord
     icon: ICON.attack,
   },

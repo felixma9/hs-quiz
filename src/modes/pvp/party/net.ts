@@ -53,26 +53,11 @@ export function newRoomCode(rng = Math.random): string {
 export const cleanCode = (s: string) => s.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
 
 export function roomLink(code: string): string {
-  return `${location.origin}${location.pathname}#/quickdraw?room=${code}`;
+  return `${location.origin}${location.pathname}#/pvp?room=${code}`;
 }
 export function roomFromLocation(hash = location.hash): string | null {
   const m = hash.match(/[?&]room=([A-Za-z]{4})/);
   return m ? m[1].toUpperCase() : null;
-}
-
-/**
- * Room state as sent between browsers. Before the rename, Quickdraw rooms were
- * 'quickfire' on the wire; we keep sending that so open pages from before the
- * rename can still join, and read any value that isn't Gauntlet as Quickdraw.
- */
-type WireGame = 'quickfire' | 'gauntlet';
-export function toWire(state: PublicState): PublicState {
-  const game: WireGame = state.settings.game === 'gauntlet' ? 'gauntlet' : 'quickfire';
-  return { ...state, settings: { ...state.settings, game: game as PublicState['settings']['game'] } };
-}
-export function fromWire(state: PublicState): PublicState {
-  const game = (state.settings?.game as string) === 'gauntlet' ? 'gauntlet' : 'quickdraw';
-  return { ...state, settings: { ...state.settings, game } };
 }
 
 function describeError(e: { type?: string; message?: string }): string {

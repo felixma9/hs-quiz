@@ -25,7 +25,7 @@
 .btn.reveal .cost { color: var(--bad-text); margin-left: 4px; white-space: nowrap; }
 @media (hover: hover) { .btn.reveal:hover:not(:disabled) { background: transparent; color: var(--text); } }
 
-/* Game over: reuses the Quickdraw results pieces (score ring, stat tiles, art strip). */
+/* Game over: reuses the Gauntlet PvP results pieces (score ring, stat tiles, art strip). */
 .gauntlet-over { margin-top: 4px; }
 .gauntlet-over .feedback { text-align: center; }
 .solo-stats .of { font-style: normal; font-size: 0.8rem; font-weight: 600; color: var(--muted); align-self: flex-end; margin-bottom: 2px; }
