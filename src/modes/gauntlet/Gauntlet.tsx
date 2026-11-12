@@ -10,7 +10,7 @@ import { GameCard } from '../../card/GameCard';
 import { Art, useArtCrop } from '../hsdle/Art';
 import { zoomCard } from '../../app/CardZoom';
 import { TextDiff } from './TextDiff';
-import { VerdictFlash } from '../../app/VerdictFlash';
+import { CardGlow, VerdictFlash } from '../../app/VerdictFlash';
 import { loadSettings, saveSettings, type GauntletSettings as Settings } from './settings';
 
 const LIVES = 3;
@@ -132,8 +132,9 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
                 tone: result.verdict === 'correct' ? 'ok' : 'bad',
                 text: result.verdict === 'correct' ? 'Correct!' : revealed ? 'Revealed' : 'Wrong!',
                 id: history.length,
-                // A right answer is just a tick; misses keep the banner.
-                minimal: result.verdict === 'correct',
+                // No banners: a right answer gets a small tick, a miss only a red glow behind
+                // the card (CardGlow below). Both are still read out.
+                minimal: true,
               }
             : null
         }
@@ -189,6 +190,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
       )}
 
       <div className={`gauntlet-card ${result ? (result.verdict === 'correct' ? 'got' : 'miss') : ''}`}>
+        {result && <CardGlow key={history.length} tone={result.verdict === 'correct' ? 'ok' : 'bad'} />}
         <GameCard
           card={round.card}
           hidden={hidden}

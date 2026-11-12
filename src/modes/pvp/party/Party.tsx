@@ -3,7 +3,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { Card } from '../../../lib/types';
 import { cardsById } from '../../../lib/cards';
 import { Art, useArtCrop } from '../../hsdle/Art';
-import { VerdictFlash, type Verdict } from '../../../app/VerdictFlash';
+import { CardGlow, VerdictFlash, type Verdict } from '../../../app/VerdictFlash';
 import { zoomCard } from '../../../app/CardZoom';
 import { ICON, rarityIcon } from '../../../app/icons';
 import { isMuted, setMuted, sfx, unlock } from '../../../lib/sound';
@@ -505,7 +505,7 @@ function Play({
       {myTurn && <div className="my-turn-glow" aria-hidden="true" />}
       {/* A big call in the middle of the screen as your turn starts. */}
       {myTurn && (
-        // Waits for the right / wrong banner from the turn before to clear.
+        // Waits for the tick from the turn before to clear.
         <div className={`turn-flash ${verdict ? 'after-verdict' : ''}`} key={`flash-${state.round}`} aria-hidden="true">
           {state.card?.steal ? 'Your steal!' : 'Your turn!'}
         </div>
@@ -661,6 +661,7 @@ function VsCard({
         )}
       </div>
       <div className="vs-card" data-card={card.id} data-hidden={key}>
+        {state.last && state.last.kind !== 'info' && <CardGlow key={state.last.n} tone={state.last.kind === 'hit' ? 'ok' : 'bad'} />}
         <GameCard
           card={card}
           hidden={hidden}
@@ -842,19 +843,23 @@ function EventLine({
   );
 }
 
-/** The big right / wrong banner for a game event: "Correct!" / "Wrong!" for you, "Sam got it!" for others. */
+/**
+ * What a game event says: "Correct!" / "Wrong!" for you, "Sam got it!" for others.
+ * No banner: a right answer shows a small tick and either one a glow behind the
+ * card (see CardGlow); the event line says who. The text is read out.
+ */
 function verdictFor(last: PublicState['last'], me: string, nameOf: (id: string) => string): Verdict | null {
   if (!last || last.kind === 'info') return null;
   const mine = last.player === me;
   const who = nameOf(last.player);
   if (last.kind === 'hit') {
     const text = mine ? (last.stole ? 'Stolen!' : 'Correct!') : `${who} ${last.stole ? 'stole it' : 'got it'}!`;
-    return { tone: 'ok', text, id: last.n };
+    return { tone: 'ok', text, id: last.n, minimal: true };
   }
   // Wrong answers have a guess; the rest is the rope.
   const timeUp = last.guess === undefined;
   const text = timeUp ? (mine ? "Time's up!" : `${who}: time's up!`) : mine ? 'Wrong!' : `${who}: wrong!`;
-  return { tone: 'bad', text, id: last.n };
+  return { tone: 'bad', text, id: last.n, minimal: true };
 }
 
 /* ---------------- Results ---------------- */

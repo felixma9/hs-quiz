@@ -50,6 +50,12 @@ export function CardZoomHost() {
       show = null;
     };
   }, []);
+  // Leaving the page (Back, a link) closes the zoom rather than leaving it over the next page.
+  useEffect(() => {
+    const close = () => setZ(null);
+    window.addEventListener('hashchange', close);
+    return () => window.removeEventListener('hashchange', close);
+  }, []);
   // A new card starts closed; the history file loads the first time a card that wants it opens.
   useEffect(() => setOpen(false), [z]);
   useEffect(() => {
@@ -71,9 +77,9 @@ export function CardZoomHost() {
   if (open && versions) {
     return (
       <div className="zoom zoom-timeline" role="dialog" aria-modal="true" aria-label={`${z.card.name}: every version`} onClick={close}>
-        {/* Taps on the timeline stay there; tapping the dim around it (or Escape) closes. */}
-        <div className="tl-wrap" onClick={(e) => e.stopPropagation()}>
-          <header className="tl-head">
+        {/* Taps on the cards, rail and details stay there; tapping anywhere else (or Escape) closes. */}
+        <div className="tl-wrap">
+          <header className="tl-head" onClick={(e) => e.stopPropagation()}>
             <h2>{z.card.name}</h2>
             <span className="muted small">
               {past} change{past === 1 ? '' : 's'} since release

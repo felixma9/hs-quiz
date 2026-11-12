@@ -82,10 +82,15 @@ details[open] > :not(summary) { animation: rise-in var(--med) var(--ease) backwa
 /* Signals: right answers glow, your last life beats, the win hops, the rope ticks. */
 @keyframes pop { 0% { opacity: 0; transform: scale(0.5); } 60% { opacity: 1; transform: scale(1.1); } 100% { transform: none; } }
 @keyframes bump { from { transform: scale(1.35); } }
-@keyframes glow-card { 0%, 100% { filter: drop-shadow(0 0 0 rgba(106, 170, 100, 0)); } 30% { filter: drop-shadow(0 0 14px rgba(106, 170, 100, 0.95)); } }
 @keyframes heart-beat { 0%, 100% { transform: none; } 15% { transform: scale(1.15); } 30% { transform: none; } 45% { transform: scale(1.1); } }
 @keyframes hop { 0%, 100% { transform: none; } 40% { transform: translateY(-14px); } 60% { transform: translateY(2px); } }
-.gauntlet-card.got canvas { animation: glow-card 1s ease 1; }
+/* Gauntlet and PvP: a soft glow swells up behind the card, green when right, red when wrong. */
+@keyframes glow-behind {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.85); }
+  30% { opacity: 1; transform: translateX(-50%) scale(1.02); }
+  100% { opacity: 0; transform: translateX(-50%) scale(1.06); }
+}
+.card-glow { animation: glow-behind 1.1s ease-out both; }
 .heart.last { animation: heart-beat 1.4s ease-in-out infinite; }
 .score .stat-value, .qf-count.done { animation: bump 0.3s var(--ease) backwards; }
 .hsdle.won .board-row.newest .tile { animation: flip 0.4s ease both, hop 0.5s ease; animation-delay: var(--d, 0ms), calc(var(--d, 0ms) + 1000ms); }
@@ -125,13 +130,14 @@ details[open] > :not(summary) { animation: rise-in var(--med) var(--ease) backwa
 @keyframes verdict-shake { 0%, 100% { transform: translate(-50%, -50%); } 25% { transform: translate(calc(-50% - 8px), -50%); } 50% { transform: translate(calc(-50% + 7px), -50%); } 75% { transform: translate(calc(-50% - 3px), -50%); } }
 .verdict-flash { animation: verdict-pop 0.3s var(--ease) backwards; }
 /* The tick pops in and draws itself, stroke by stroke. */
-.verdict-check { animation: verdict-pop 0.35s var(--ease) backwards; }
+.verdict-check { animation: verdict-pop 0.28s var(--ease) backwards; }
 @keyframes tick-draw { from { stroke-dashoffset: 90; } }
-.verdict-check path { stroke-dasharray: 90; animation: tick-draw 0.32s var(--ease) 0.06s backwards; }
+.verdict-check path { stroke-dasharray: 90; animation: tick-draw 0.26s var(--ease) 0.04s backwards; }
 .verdict-check .vc-shine { stroke-dasharray: 20; animation: none; }
 .verdict-flash.bad { animation: verdict-pop 0.3s var(--ease) backwards, verdict-shake 0.3s ease 0.3s; }
 
-/* The timeline unfolds down the page, one version after another. */
+/* The timeline carousel settles in; each version's details fade in as it comes into focus. */
 .zoom-timeline { animation: none; }
-.tl-head { animation: rise-in var(--med) var(--ease) backwards; }
-.tl-item { animation: rise-in 0.3s var(--ease) backwards; animation-delay: calc(min(var(--i, 0), 8) * 45ms); }
+.tl-head, .lc-stage { animation: rise-in var(--med) var(--ease) backwards; }
+.lc-rail { animation: fade-in 0.3s ease 0.1s backwards; }
+.lc-info { animation: rise-in 0.25s var(--ease) backwards; }
