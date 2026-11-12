@@ -19,15 +19,27 @@ export function GiveUp({ onGiveUp }: { onGiveUp(): void }) {
   );
 }
 
-/** A clue button that unlocks after enough wrong guesses. */
-export function Clue({ label, left, answer, kind }: { label: string; left: number; answer: Card; kind: 'art' | 'text' }) {
+/** A clue button that unlocks after enough wrong guesses. Open or not is up to the caller (the art also goes on the card). */
+export function Clue({
+  label,
+  left,
+  answer,
+  kind,
+  open,
+  onToggle,
+}: {
+  label: string;
+  left: number;
+  answer: Card;
+  kind: 'art' | 'text';
+  open: boolean;
+  onToggle(): void;
+}) {
   const crop = useArtCrop();
-  const [open, setOpen] = useState(false);
   const unlocked = left <= 0;
-  useEffect(() => setOpen(false), [answer.id]);
   return (
     <div className="clue">
-      <button className={`clue-btn ${unlocked ? 'unlocked' : ''} ${open ? 'on' : ''}`} disabled={!unlocked} onClick={() => setOpen((o) => !o)}>
+      <button className={`clue-btn ${unlocked ? 'unlocked' : ''} ${open ? 'on' : ''}`} disabled={!unlocked} onClick={onToggle}>
         {label}
         <span className="small">{unlocked ? (open ? 'Hide' : 'Show') : `in ${left} ${left === 1 ? 'try' : 'tries'}`}</span>
       </button>

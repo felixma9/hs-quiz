@@ -73,6 +73,12 @@ function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
     update({ ...game, guesses: [...game.guesses, c.id] });
   };
 
+  // Clues the player has opened, for this answer only (a new minion starts with them closed).
+  const [opened, setOpened] = useState<{ answerId: string; keys: string[] }>({ answerId: '', keys: [] });
+  const openClues = opened.answerId === game.answerId ? opened.keys : [];
+  const toggleClue = (k: string) =>
+    setOpened({ answerId: game.answerId, keys: openClues.includes(k) ? openClues.filter((x) => x !== k) : [...openClues, k] });
+
   const [shared, setShared] = useState(false);
   const share = async () => {
     const rows = guesses.map((g) => {
@@ -110,12 +116,20 @@ function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
 
       {!done && <Search minions={minions} exclude={game.guesses} onPick={guess} />}
 
-      {!done && <RevealCard answer={answer} guesses={guesses} wrong={wrong} pool={cards} />}
+      {!done && <RevealCard answer={answer} guesses={guesses} wrong={wrong} artShown={openClues.includes('art')} textShown={openClues.includes('text')} pool={cards} />}
 
       {!done && (
         <div className="clues">
           {CLUES.map((clue) => (
-            <Clue key={clue.key} label={clue.label} left={clue.after - wrong} answer={answer} kind={clue.key} />
+            <Clue
+              key={clue.key}
+              label={clue.label}
+              left={clue.after - wrong}
+              answer={answer}
+              kind={clue.key}
+              open={openClues.includes(clue.key)}
+              onToggle={() => toggleClue(clue.key)}
+            />
           ))}
         </div>
       )}
