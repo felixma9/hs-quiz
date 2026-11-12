@@ -117,6 +117,13 @@ export function CardTimeline({
   const dragged = useRef(false);
   const canDraw = drawable([card]).length > 0;
   const go = (i: number) => setIdx(Math.max(0, Math.min(last, i)));
+  // When the focused card last changed: a tap on it only folds the timeline once it has been in focus
+  // (and still) for a moment, so a tap right after scrolling to a card focuses it instead of closing.
+  const focusedAt = useRef(0);
+  useEffect(() => {
+    focusedAt.current = performance.now();
+  }, [idx]);
+  const SETTLE_MS = 500;
   const stage = useRef<HTMLDivElement>(null);
   /** One version's width on screen, card plus gap (what a drag of one step covers). */
   const stepPx = () => {
@@ -299,8 +306,17 @@ export function CardTimeline({
                     return;
                   }
                   e.stopPropagation();
+                  // A scroll still pending, or a card that only just came into focus: the tap is about
+                  // focusing this card, not closing the timeline.
+                  const scrolling = wheel.current.timer !== 0 || drag !== 0;
+                  if (scrolling) {
+                    clearTimeout(wheel.current.timer);
+                    wheel.current = { dx: 0, timer: 0 };
+                    setDrag(0);
+                  }
+                  const justFocused = performance.now() - focusedAt.current < SETTLE_MS;
                   // The focused card toggles the timeline back closed; a side card comes into focus.
-                  if (focus) collapse();
+                  if (focus && !scrolling && !justFocused) collapse();
                   else go(i);
                 }}
               >
