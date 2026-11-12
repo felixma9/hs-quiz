@@ -14,9 +14,11 @@ export type Change = [patch: string, was: Partial<Card>];
 export interface HistoryFile {
   built: string;
   latest: string;
-  /** Release date (YYYY-MM-DD) of each patch that changed a card. */
+  /** Release date (YYYY-MM-DD) of each patch that changed or released a listed card. */
   dates: Record<string, string>;
   cards: Record<string, Change[]>;
+  /** The patch each listed card came out in (its timeline starts there). */
+  released?: Record<string, string>;
 }
 
 let file: Promise<HistoryFile | null> | null = null;
@@ -60,6 +62,7 @@ export interface Version {
   card: Card;
   /** The patch that brought this version in (undefined: the card as released). */
   patch?: string;
+  /** When this version came in: the patch's date, or the card's release date. */
   date?: string;
   /** What changed from the version before, and how to tag it. */
   diffs: FieldDiff[];
@@ -132,7 +135,7 @@ export function timeline(current: Card, h: HistoryFile | null): Version[] {
     if (i < changes.length) {
       const [patch, was] = changes[i];
       out.push({ card, patch, date: h!.dates[patch], ...describe(was, card) });
-    } else out.push({ card, diffs: [], tags: [] });
+    } else out.push({ card, date: h?.dates[h.released?.[current.id] ?? ''], diffs: [], tags: [] });
     card = next;
   }
   return out;

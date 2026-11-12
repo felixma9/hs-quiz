@@ -228,6 +228,11 @@ export function CardTimeline({
                   else go(i);
                 }}
               >
+                {/* When this version came in: the release date for the first, then each change's. */}
+                <div className="lc-when" aria-hidden={!open}>
+                  <b>{v.date ? monthYear(v.date) : ' '}</b>
+                  <span>{v.patch ? `Patch ${v.patch}` : 'Released'}</span>
+                </div>
                 {/* The card in focus tilts toward the pointer; the others stay flat. */}
                 <Tilt active={focus}>{face(v)}</Tilt>
               </div>

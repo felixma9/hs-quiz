@@ -221,13 +221,15 @@ footer a { color: var(--faint); }
 .zoom.zoom-history { place-items: start center; overflow: hidden auto; overscroll-behavior: contain; padding: 0 0 32px; }
 .lc {
   --w: min(320px, 76vw, calc((100dvh - 120px) * 500 / 746)); --h: calc(var(--w) * 746 / 500); --gap: 22px;
-  --top: max(64px, calc((100dvh - var(--h)) / 2 - 12px));
+  /* Each card has its date title above it (--title tall); the card itself stays centred. */
+  --title: 46px;
+  --top: max(64px, calc((100dvh - var(--h)) / 2 - 12px - var(--title)));
   position: relative; width: 100vw; display: grid; gap: 14px; justify-items: center; padding: var(--top) 16px 0; box-sizing: border-box;
 }
 .tl-head { display: grid; gap: 2px; justify-items: center; text-align: center; cursor: default; }
 .tl-head h2 { margin: 0; font-size: 1.2rem; }
-.lc .tl-head { position: absolute; left: 0; right: 0; top: calc(var(--top) - 62px); }
-.lc-stage { position: relative; width: 100%; height: var(--h); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.lc .tl-head { position: absolute; left: 0; right: 0; top: calc(var(--top) - 56px); }
+.lc-stage { position: relative; width: 100%; height: calc(var(--h) + var(--title)); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .lc-track {
   position: absolute; top: 0; left: 50%; display: flex; gap: var(--gap); align-items: flex-start;
   transform: translateX(calc(-1 * (var(--i) + 0.5) * var(--w) - var(--i) * var(--gap) + var(--drag, 0px)));
@@ -256,9 +258,15 @@ footer a { color: var(--faint); }
 .lc.no-history .lc-slide { cursor: default; }
 .lc-slide .game-card-frame, .lc-slide .zoom-render { width: 100%; }
 .lc-slide .card-chips { display: none; }
+/* The date title over each version: when it came in. Space is kept while closed so the card doesn't move. */
+.lc-when { height: var(--title); display: grid; align-content: end; justify-items: center; gap: 1px; padding-bottom: 6px; box-sizing: border-box; text-align: center; transition: opacity 0.3s ease; }
+.lc-when b { font-size: 1rem; font-weight: 700; color: var(--text); }
+.lc-when span { font-size: 0.74rem; color: var(--muted); }
+.lc-slide.focus .lc-when b { color: var(--gold-2); }
+.lc:not(.is-open) .lc-when, .lc.collapsing .lc-when { opacity: 0; }
 .lc .zoom-hint.has-history { color: var(--gold-2); }
 .lc-nav {
-  position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; z-index: 5;
+  position: absolute; top: calc(50% + var(--title) / 2); transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; z-index: 5;
   display: grid; place-items: center; font: inherit; font-size: 1.5rem; line-height: 1; padding: 0 0 3px;
   color: var(--text); background: rgba(31, 32, 39, 0.85); border: 1px solid var(--line-2); cursor: pointer;
 }

@@ -99,7 +99,7 @@ for (const [i, list] of lists.entries()) {
   dates[patch] ??= date;
 }
 
-const out: HistoryFile = { built: new Date().toISOString().slice(0, 10), latest: builds.at(-1)!.patch, dates: {}, cards: {} };
+const out: HistoryFile = { built: new Date().toISOString().slice(0, 10), latest: builds.at(-1)!.patch, dates: {}, cards: {}, released: {} };
 for (const c of cards) {
   const v = versions.get(c.id);
   // Not in any build's list (shouldn't happen): its history is unknown, so it gets none.
@@ -110,6 +110,9 @@ for (const c of cards) {
   if (!changes.length) continue;
   out.cards[c.id] = changes;
   for (const [patch] of changes) out.dates[patch] = dates[patch];
+  // Where its timeline starts. Cards from launch read 1.0.0 (March 2014).
+  out.released![c.id] = v[0].patch;
+  out.dates[v[0].patch] = dates[v[0].patch];
 }
 out.dates = Object.fromEntries(Object.entries(out.dates).sort(([, a], [, b]) => a.localeCompare(b)));
 
