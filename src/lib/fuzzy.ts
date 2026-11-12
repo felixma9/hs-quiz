@@ -71,7 +71,7 @@ const stem = (w: string) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss'
  * typo: 1 letter off for words of 4+ letters, 2 letters for 8+. Numbers must
  * match exactly.
  */
-export function sameWord(a: string, b: string): boolean {
+function sameWord(a: string, b: string): boolean {
   if (a === b) return true;
   if (/\d/.test(a) || /\d/.test(b)) return false;
   const x = stem(a);

@@ -18,7 +18,7 @@ export interface Tile {
   label: string;
 }
 
-export interface Column {
+interface Column {
   key: ColumnKey;
   label: string;
 }
@@ -38,9 +38,6 @@ export function columnsFor(type: Card['type']): Column[] {
       return [c('cost', 'Mana'), c('attack', 'Attack'), c('health', 'Health'), c('rarity', 'Rarity'), c('tribe', 'Tribe'), ...tail];
   }
 }
-
-/** A minion's columns (the most there are). */
-export const COLUMNS = columnsFor('MINION');
 
 const RARITY_ORDER = ['FREE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY'];
 const arrow = (guess: number, answer: number): Tile['arrow'] => (answer > guess ? 'up' : answer < guess ? 'down' : undefined);

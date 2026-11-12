@@ -18,16 +18,16 @@ export interface PartySettings {
   /** Seconds per turn. */
   fuse: number;
 }
-export const DEFAULT_PARTY: PartySettings = { lives: 3, fuse: 20 };
+const DEFAULT_PARTY: PartySettings = { lives: 3, fuse: 20 };
 export const LIVES_OPTIONS = [1, 2, 3, 5];
 export const FUSE_OPTIONS = [15, 20, 30];
 /** How many players (inclusive). */
 export const VS_MIN_PLAYERS = 2;
 export const VS_MAX_PLAYERS = 8;
 /** card text takes a while to type, so those turns get this many times the seconds. */
-export const TEXT_TIME = 2;
+const TEXT_TIME = 2;
 /** a steal gets this share of the turn's seconds. */
-export const STEAL_TIME = 0.5;
+const STEAL_TIME = 0.5;
 /** successful steals for an extra life. */
 export const STEALS_FOR_LIFE = 3;
 

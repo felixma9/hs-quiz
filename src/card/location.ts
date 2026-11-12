@@ -53,7 +53,7 @@ function artCoords(cut: number) {
 }
 
 /** Layout values, tuned by eye against HearthstoneJSON's renders of real locations. */
-export const LOCATION_LAYOUT = {
+const LOCATION_LAYOUT = {
   frame: FRAME,
   nameBanner: { dx: 88, dy: 488, sWidth: 490, sHeight: 122, dWidth: 490, dHeight: 122 },
   rarityGem: { dx: 299, dy: 572 },

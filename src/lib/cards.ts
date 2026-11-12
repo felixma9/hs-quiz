@@ -10,7 +10,7 @@ export async function loadCards(): Promise<Card[]> {
 export const artUrl = (c: Card) => `https://art.hearthstonejson.com/v1/512x/${c.id}.jpg`;
 
 /** Small seeded PRNG. */
-export function mulberry32(seed: number): () => number {
+function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -21,7 +21,7 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-export function hashString(s: string): number {
+function hashString(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
   return h >>> 0;

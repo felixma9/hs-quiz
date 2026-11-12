@@ -4,7 +4,7 @@ import { RARITIES } from './RarityPicker';
 import { SHARE_SETS, decodeSetup, encodeSetup, shareLink, type SharedSetup } from './shareCode';
 
 /** One line describing a setup, e.g. "Legendary · 3 sets · minions only". */
-export function describeSetup(s: SharedSetup): string {
+function describeSetup(s: SharedSetup): string {
   const rarities = RARITIES.filter((r) => !s.excludedRarities.includes(r.value)).map((r) => r.label);
   const sets = SHARE_SETS.length - s.excludedSets.filter((x) => SHARE_SETS.includes(x)).length;
   const parts = [

@@ -7,10 +7,10 @@ import { gradeEnum, gradeName, gradeNumber, gradeText, type Grade } from './grad
  */
 export type AttrKey = 'name' | 'class' | 'cost' | 'attack' | 'health' | 'rarity' | 'tribe' | 'text';
 
-export type Kind = 'number' | 'enum' | 'name' | 'text';
-export type Value = string | number | null;
+type Kind = 'number' | 'enum' | 'name' | 'text';
+type Value = string | number | null;
 
-export interface Attr {
+interface Attr {
   key: AttrKey;
   label: string;
   kind: Kind;

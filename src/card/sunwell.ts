@@ -150,8 +150,8 @@ function sunwellProps(card: Card, v: Shown, texture: HTMLImageElement | null) {
  * on some frames: long weapon and hero names ran off the banner (and got cut),
  * and weapon text ran past the sides of the dark plate. Narrow them.
  */
-export const NAME_MAX: Record<string, number> = { WEAPON: 350, HERO: 350 };
-export const WEAPON_BODY = { dx: 168, width: 344 };
+const NAME_MAX: Record<string, number> = { WEAPON: 350, HERO: 350 };
+const WEAPON_BODY = { dx: 168, width: 344 };
 function fitBoxes(sw: SunwellCard, type: string) {
   const max = NAME_MAX[type];
   if (max && sw.nameTextCurve) sw.nameTextCurve.maxWidth = max;
@@ -216,7 +216,7 @@ export interface Extras {
  * durability where a hero has armor. applyLocationLayout then swaps in the
  * location frame and layout.
  */
-export function frameCard(card: Card): Card {
+function frameCard(card: Card): Card {
   return card.type === 'LOCATION' ? { ...card, type: 'HERO', armor: card.health } : card;
 }
 

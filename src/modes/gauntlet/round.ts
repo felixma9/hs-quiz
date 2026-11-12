@@ -9,7 +9,7 @@ export interface Round {
 }
 
 /** How to fill in each kind of blank on the card. */
-export const HOW: Record<string, string> = {
+const HOW: Record<string, string> = {
   number: 'tap the gem.',
   name: 'tap the name banner.',
   text: 'tap the text box and type the gist (blank if none).',

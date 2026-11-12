@@ -3,8 +3,8 @@ import type { AttrKey } from '../lib/attributes';
 
 /** [x, y, width, height] in Sunwell's 670 x 1000 reference space. */
 export type Box = [number, number, number, number];
-export const REF_W = 670;
-export const REF_H = 1000;
+const REF_W = 670;
+const REF_H = 1000;
 
 const COST: Box = [47, 105, 140, 144];
 

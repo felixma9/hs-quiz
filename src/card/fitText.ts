@@ -50,7 +50,7 @@ function countLines(words: string[], fontPx: number, width: number, font: string
   return lines;
 }
 
-export interface TextFit {
+interface TextFit {
   bodyFontSize: number;
   bodyLineHeight: number;
   bodyFontOffset: { x: number; y: number };

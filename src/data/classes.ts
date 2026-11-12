@@ -2,7 +2,7 @@
  * Class badges for the class picker. These are original stand-ins (a color
  * and a symbol per class), not Blizzard's class icons.
  */
-export const CLASS_BADGE: Record<string, { color: string; symbol: string }> = {
+const CLASS_BADGE: Record<string, { color: string; symbol: string }> = {
   DEATHKNIGHT: { color: '#4a9cc4', symbol: '💀' },
   DEMONHUNTER: { color: '#2f8a4a', symbol: '🦇' },
   DRUID: { color: '#8a5a2b', symbol: '🌿' },

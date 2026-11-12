@@ -27,7 +27,7 @@ const PREFIX = 'hsquiz-room-';
  */
 const TURN_USER: string | undefined = import.meta.env.VITE_TURN_USERNAME;
 const TURN_PASS: string | undefined = import.meta.env.VITE_TURN_CREDENTIAL;
-export const ICE_SERVERS: RTCIceServer[] = [
+const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' },
   ...(TURN_USER && TURN_PASS
@@ -47,7 +47,7 @@ export const ICE_SERVERS: RTCIceServer[] = [
 ];
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I or O
 
-export function newRoomCode(rng = Math.random): string {
+function newRoomCode(rng = Math.random): string {
   return Array.from({ length: 4 }, () => LETTERS[Math.floor(rng() * LETTERS.length)]).join('');
 }
 export const cleanCode = (s: string) => s.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);

@@ -12,10 +12,10 @@ export interface Grade {
   truthMatched?: boolean[];
 }
 
-export const TEXT_PASS = 0.7;
-export const TEXT_CLOSE = 0.4;
+const TEXT_PASS = 0.7;
+const TEXT_CLOSE = 0.4;
 /** Gauntlet VS (against the rope): share of the card's key words you need. */
-export const TEXT_PASS_LENIENT = 0.5;
+const TEXT_PASS_LENIENT = 0.5;
 
 export function gradeNumber(guess: number | null, truth: number | null): Grade {
   if (guess === truth) return { verdict: 'correct' };
@@ -36,7 +36,7 @@ export function gradeEnum(guess: string, truth: string): Grade {
 }
 
 /** How many typos a name of this length allows. */
-export function nameTolerance(len: number): number {
+function nameTolerance(len: number): number {
   if (len <= 4) return 0;
   if (len <= 8) return 1;
   return 2;
