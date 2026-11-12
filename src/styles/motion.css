@@ -141,5 +141,5 @@ details[open] > :not(summary) { animation: rise-in var(--med) var(--ease) backwa
 .lc-rail { animation: rise-in 0.35s var(--ease) 0.2s backwards; }
 .lc-info { animation: rise-in 0.25s var(--ease) backwards; }
 .lc-nav { animation: fade-in 0.3s ease 0.35s backwards; }
-/* The history zoom pops its card in like the plain zoom (only while closed, so opening doesn't replay it). */
-.zoom-history:not(.open) .lc-slide.now { animation: zoom-card-in 0.26s var(--ease) backwards; }
+/* The history zoom pops its card in like the plain zoom, once: the stage stays mounted while the timeline opens and closes. */
+.zoom-history .lc-stage { animation: zoom-card-in 0.26s var(--ease) backwards; }

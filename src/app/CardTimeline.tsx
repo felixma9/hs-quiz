@@ -69,21 +69,26 @@ function VersionInfo({ v, next, isNow }: { v: Version; next?: Version; isNow: bo
 /** Before the timeline opens, the current card alone: what the zoom shows. */
 const alone = (card: Card): Version => ({ card, diffs: [], tags: [] });
 
-type Phase = 'closed' | 'opening' | 'expanding' | 'open';
+type Phase = 'closed' | 'opening' | 'expanding' | 'open' | 'collapsing';
+
+/** How long folding the timeline back up takes. */
+const COLLAPSE_MS = 380;
 
 /**
  * A zoomed card that opens into a carousel of every version of it. Closed, it
  * is just the card. Tapping it (when it has a history) slides the older
  * versions out from behind its left side, oldest furthest left, with a time
- * rail and the focused version's changes below. The current card is the same
- * drawing throughout, so it never redraws or moves. Drag, the arrow keys, the
- * side cards or the rail move between versions.
+ * rail and the focused version's changes below. Tapping the focused card
+ * again folds them back behind it. The current card is the same drawing
+ * throughout, so it never redraws or moves. Drag, the arrow keys, the side
+ * cards or the rail move between versions.
  */
 export function CardTimeline({
   card,
   versions,
   open,
   onOpen,
+  onClose,
   hint,
 }: {
   card: Card;
@@ -91,6 +96,8 @@ export function CardTimeline({
   versions: Version[] | null;
   open: boolean;
   onOpen(): void;
+  /** Called once the timeline has folded back into the single card. */
+  onClose(): void;
   hint: string;
 }) {
   const past = versions ? versions.length - 1 : 0;
@@ -104,6 +111,15 @@ export function CardTimeline({
   const dragged = useRef(false);
   const canDraw = drawable([card]).length > 0;
   const go = (i: number) => setIdx(Math.max(0, Math.min(last, i)));
+  const collapsing = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(collapsing.current), []);
+  /** Fold the older versions back behind the current card, then close. */
+  const collapse = () => {
+    if (phase === 'collapsing') return;
+    setIdx(last);
+    setPhase('collapsing');
+    collapsing.current = setTimeout(onClose, COLLAPSE_MS);
+  };
 
   // Opening: the older cards appear stacked behind the current one (no transition),
   // then slide out to their places, nearest first.
@@ -142,7 +158,7 @@ export function CardTimeline({
     canDraw ? <GameCard card={v.card} hidden={NONE} pool={[]} /> : <img className="zoom-render" src={renderUrl(v.card)} alt={v.card.name} />;
 
   return (
-    <div className={`lc ${open ? 'is-open' : ''}`}>
+    <div className={`lc ${open ? 'is-open' : ''} ${phase === 'collapsing' ? 'collapsing' : ''}`}>
       {open && versions && (
         <header className="tl-head" onClick={(e) => e.stopPropagation()}>
           <h2>{card.name}</h2>
@@ -208,7 +224,9 @@ export function CardTimeline({
                     return;
                   }
                   e.stopPropagation();
-                  if (!focus) go(i);
+                  // The focused card toggles the timeline back closed; a side card comes into focus.
+                  if (focus) collapse();
+                  else go(i);
                 }}
               >
                 {face(v)}

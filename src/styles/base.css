@@ -233,19 +233,25 @@ footer a { color: var(--faint); }
   transform: translateX(calc(-1 * (var(--i) + 0.5) * var(--w) - var(--i) * var(--gap) + var(--drag, 0px)));
   transition: transform 0.45s var(--ease);
 }
-.lc-track.opening, .lc-stage.dragging .lc-track { transition: none; }
+.lc-track.closed, .lc-track.opening, .lc-stage.dragging .lc-track { transition: none; }
 .lc-slide {
   flex: none; width: var(--w); position: relative; z-index: 1; cursor: pointer;
   transform: scale(0.86); filter: brightness(0.5) saturate(0.85);
   transition: transform 0.45s var(--ease), filter 0.35s ease, opacity 0.35s ease;
 }
 .lc-slide.focus { transform: none; filter: none; z-index: 2; }
-.lc.is-open .lc-slide.focus { cursor: default; }
 .lc-slide.now { z-index: 3; }
 /* Opening: the older versions start stacked behind the current card, unseen... */
 .lc-track.opening .lc-slide:not(.now) { transform: translateX(calc(var(--back) * (var(--w) + var(--gap)))) scale(0.86); opacity: 0; }
 /* ...then slide out to the left, nearest first. */
 .lc-track.expanding .lc-slide { transition-delay: calc(var(--back) * 70ms); }
+/* Tapping the focused card again folds them back behind it, and the title, rail and details fade out. */
+.lc-track.collapsing .lc-slide:not(.now) {
+  transform: translateX(calc(var(--back) * (var(--w) + var(--gap)))) scale(0.86); opacity: 0;
+  transition-duration: 0.36s, 0.3s, 0.3s;
+}
+.lc.collapsing .tl-head, .lc.collapsing .lc-rail, .lc.collapsing .lc-info, .lc.collapsing .lc-nav { opacity: 0; transition: opacity 0.2s ease; }
+.lc.is-open .lc-slide.focus { cursor: pointer; }
 .lc-slide .game-card-frame, .lc-slide .zoom-render { width: 100%; }
 .lc-slide .card-chips { display: none; }
 .lc .zoom-hint.has-history { color: var(--gold-2); }
