@@ -17,7 +17,7 @@ export { versionAt } from '../src/lib/history';
 
 /** Fields whose changes are recorded. */
 export const TRACKED = [
-  'cost', 'attack', 'health', 'durability', 'armor', 'text', 'rarity', 'races', 'spellSchool', 'cardClass', 'classes', 'set',
+  'type', 'cost', 'attack', 'health', 'durability', 'armor', 'text', 'rarity', 'races', 'spellSchool', 'cardClass', 'classes', 'set',
 ] as const satisfies readonly (keyof Card)[];
 type Tracked = (typeof TRACKED)[number];
 
@@ -65,6 +65,10 @@ export function diff(older: Card, newer: Card): Partial<Card> | null {
   let any = false;
   for (const k of TRACKED) {
     if (older[k] === undefined && LATE_FIELDS.has(k)) continue;
+    // Every hero card has armor; one without it in an old build is a gap in the data (the Death
+    // Knight heroes lacked it in 9.0.0), not a hero that had none. A minion that later became a
+    // hero (Lord Jaraxxus) did gain armor, and its old version isn't a hero, so it still counts.
+    if (k === 'armor' && older.armor === undefined && older.type === 'HERO') continue;
     if (same(k, older[k], newer[k])) continue;
     (was as Record<string, unknown>)[k] = older[k] ?? null;
     any = true;

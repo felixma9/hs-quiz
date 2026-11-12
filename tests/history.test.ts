@@ -85,3 +85,15 @@ describe('data quirks', () => {
     expect(h).toEqual([['11.0.0', { cost: 4 }]]);
   });
 });
+
+describe('hero armor', () => {
+  const rexxar = { id: 'ICC_828', dbfId: 3, name: 'Deathstalker Rexxar', type: 'HERO', set: 'ICECROWN', cardClass: 'HUNTER', cost: 6, health: 30, text: '<b>Battlecry:</b> Deal 2 damage to all enemy minions.' };
+  it("ignores a hero's armor missing from an old build", () => {
+    expect(diff(toCard(rexxar), toCard({ ...rexxar, armor: 5 }))).toBeNull();
+  });
+  it('still records armor a minion gained when it became a hero', () => {
+    const jaraxxus = { id: 'EX1_323', dbfId: 4, name: 'Lord Jaraxxus', set: 'EXPERT1', cardClass: 'WARLOCK', cost: 9, text: '<b>Battlecry:</b> Equip a 3/8 Blood Fury.' };
+    expect(diff(toCard({ ...jaraxxus, type: 'MINION', attack: 3, health: 15 }), toCard({ ...jaraxxus, type: 'HERO', health: 30, armor: 0 }))).toMatchObject({ armor: null });
+  });
+});
+

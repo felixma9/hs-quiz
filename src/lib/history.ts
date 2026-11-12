@@ -86,6 +86,7 @@ const show = (k: keyof Card, v: unknown): string => {
   if (k === 'rarity') return pretty('rarity', v as string);
   if (k === 'spellSchool') return pretty('tribe', v as string);
   if (k === 'set') return setName(v as string);
+  if (k === 'type') return (v as string).charAt(0) + (v as string).slice(1).toLowerCase();
   return String(v);
 };
 
@@ -106,7 +107,7 @@ export function describe(was: Partial<Card>, now: Card): Pick<Version, 'diffs' |
       diffs.push({ key, label: stat, from: String(old), to: String(cur), tone: better ? 'buff' : 'nerf' });
       continue;
     }
-    const label = stat ?? { races: 'Tribe', spellSchool: 'School', rarity: 'Rarity', cardClass: 'Class', classes: 'Classes', set: 'Set' }[key as string] ?? String(key);
+    const label = stat ?? { type: 'Type', races: 'Tribe', spellSchool: 'School', rarity: 'Rarity', cardClass: 'Class', classes: 'Classes', set: 'Set' }[key as string] ?? String(key);
     diffs.push({ key, label, from: show(key, old), to: show(key, cur) });
   }
   if (up && !down) tags.push({ label: 'Buff', tone: 'buff' });
@@ -114,6 +115,7 @@ export function describe(was: Partial<Card>, now: Card): Pick<Version, 'diffs' |
   else if (up && down) tags.push({ label: 'Stats changed', tone: 'other' });
   const textChanged = 'text' in was;
   if (textChanged) tags.push({ label: 'Text changed', tone: 'other' });
+  if ('type' in was) tags.push({ label: 'Card type', tone: 'other' });
   if ('races' in was) tags.push({ label: 'Tribe', tone: 'other' });
   if ('spellSchool' in was) tags.push({ label: 'School', tone: 'other' });
   if ('rarity' in was) tags.push({ label: 'Rarity', tone: 'other' });
