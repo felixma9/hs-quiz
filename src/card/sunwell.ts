@@ -190,14 +190,29 @@ export function truth(card: Card, k: AttrKey): string {
   return v === null ? '' : String(v);
 }
 
+/** Parts of a card that aren't attributes: false leaves them off (the art blank, no set icon). */
+export interface Extras {
+  art?: boolean;
+  set?: boolean;
+}
+
 /**
  * Draw a card onto the canvas. `shown` says what to draw for each attribute
  * (blank where undefined). Calls onReady once drawn.
  */
-export async function drawCard(canvas: HTMLCanvasElement, card: Card, shown: Shown, onReady: () => void, isLive: () => boolean) {
-  const [texture] = await Promise.all([loadArt(card), loadFonts(), loadBanner()]);
+export async function drawCard(
+  canvas: HTMLCanvasElement,
+  card: Card,
+  shown: Shown,
+  onReady: () => void,
+  isLive: () => boolean,
+  { art = true, set = true }: Extras = {},
+) {
+  const [loaded] = await Promise.all([art ? loadArt(card) : null, loadFonts(), loadBanner()]);
   if (!isLive()) return;
-  const { props, raceText } = sunwellProps(card, shown, texture);
+  const { props, raceText } = sunwellProps(card, shown, loaded);
+  // No set: no watermark (Sunwell draws none for an unknown set).
+  if (!set) props.set = '';
   try {
     // Size the text for this card so long texts aren't clipped.
     Object.assign(getSunwell().options, fitText(String(props.text ?? ''), card.type, BODY_FONT));
@@ -208,7 +223,7 @@ export async function drawCard(canvas: HTMLCanvasElement, card: Card, shown: Sho
       // Our DH frames are recolored from other class frames (scripts/make-dh-frames.py).
       sw.getCardFrameAsset = () => `${sw.baseCardFrameAsset}demonhunter`;
     }
-    const icon = setIconAsset(card.set);
+    const icon = set ? setIconAsset(card.set) : null;
     if (icon) sw.getWatermarkAsset = () => icon;
     if (card.type === 'SPELL') {
       // Reuse the minion tribe banner as the spell-school banner, at the bottom of the card.

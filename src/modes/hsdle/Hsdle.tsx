@@ -7,6 +7,7 @@ import { CLUES, COLUMNS, EMOJI, compare } from './compare';
 import { Search } from './Search';
 import { Clue, GiveUp } from './Clues';
 import { Board } from './Board';
+import { RevealCard } from './RevealCard';
 
 /** HSdle: guess the mystery minion; each guess shows how its stats compare. */
 
@@ -108,6 +109,8 @@ function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
       )}
 
       {!done && <Search minions={minions} exclude={game.guesses} onPick={guess} />}
+
+      {!done && <RevealCard answer={answer} guesses={guesses} wrong={wrong} pool={cards} />}
 
       {!done && (
         <div className="clues">

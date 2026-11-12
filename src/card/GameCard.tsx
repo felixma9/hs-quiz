@@ -4,7 +4,7 @@ import { ATTR, enumOptions, pretty, type AttrKey } from '../lib/attributes';
 import type { Verdict } from '../lib/grade';
 import { classIcon } from '../app/icons';
 import { boxStyle, layoutFor } from './layout';
-import { BLANK, drawCard, truth, type Shown } from './sunwell';
+import { BLANK, drawCard, truth, type Extras, type Shown } from './sunwell';
 import { NameEditor } from './NameEditor';
 import { ClassPicker, TribePicker } from './Pickers';
 import { useTapPick } from './tap';
@@ -27,13 +27,15 @@ interface Props {
   pool: Card[];
   /** Called on Enter in a number or name field (Gauntlet submits). */
   onEnter?(): void;
+  /** Leave the art or the set icon off (HSdle's card starts blank). Both are shown by default. */
+  extras?: Extras;
 }
 
 /**
  * The card drawn with in-game frames (HearthSim's Sunwell). Hidden fields are
  * blank, and the player fills them in by tapping that part of the card.
  */
-export function GameCard({ card, hidden, draft = {}, editable = new Set(), onChange, verdicts = {}, pool, onEnter }: Props) {
+export function GameCard({ card, hidden, draft = {}, editable = new Set(), onChange, verdicts = {}, pool, onEnter, extras }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
   const [active, setActive] = useState<AttrKey | null>(null);
@@ -52,7 +54,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
   for (const k of Object.keys(ATTR) as AttrKey[]) {
     shown[k] = hidden.has(k) ? draft[k] || undefined : truth(card, k);
   }
-  const shownKey = JSON.stringify(shown);
+  const shownKey = JSON.stringify([shown, extras?.art ?? true, extras?.set ?? true]);
 
   useEffect(() => setActive(null), [card.id]);
 
@@ -64,7 +66,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
     if (fresh) setReady(false);
     let live = true;
     const t = setTimeout(
-      () => canvas.current && drawCard(canvas.current, card, shown, () => setReady(true), () => live),
+      () => canvas.current && drawCard(canvas.current, card, shown, () => setReady(true), () => live, extras),
       fresh ? 0 : 120,
     );
     return () => {
