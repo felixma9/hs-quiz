@@ -37,7 +37,8 @@ export function Art({
   zoom?: boolean;
 }) {
   const cut = Math.min(crop[card.id] ?? 0, 0.3);
-  const scale = cut ? 1.04 / (1 - 2 * cut) : 1.08;
+  // Keep in step with scripts/measure-art.py (MARGIN, NO_CUT_ZOOM).
+  const scale = cut ? 1.06 / (1 - 2 * cut) : 1.08;
   return (
     <span className={`art-crop ${className} ${zoom ? 'zoomable' : ''}`} {...(zoom ? zoomProps(card) : {})}>
       {/* The zoom is a variable, so hover effects can scale on top of it (see desktop.css). */}

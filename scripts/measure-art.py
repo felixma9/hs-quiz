@@ -22,15 +22,16 @@ ROOT = Path(__file__).resolve().parent.parent
 CARDS = ROOT / 'public' / 'cards.json'
 OUT = ROOT / 'public' / 'art-crop.json'
 URL = 'https://art.hearthstonejson.com/v1/256x/{}.jpg'
-# A line counts as padding when it is nearly one colour: its brightness strays
-# from its mean by under SPREAD on average, and by under RANGE at most.
-SPREAD = 6
-RANGE = 60
+# A line counts as padding when it is nearly one colour: at least SHARE of its
+# pixels are within NEAR of its median brightness. (Not all of them: a padding
+# bar often has a few pixels of art or JPEG noise poking into it.)
+NEAR = 14
+SHARE = 0.92
 
 
 def flat(line) -> bool:
-    mean = sum(line) / len(line)
-    return sum(abs(v - mean) for v in line) / len(line) < SPREAD and max(line) - min(line) < RANGE
+    m = sorted(line)[len(line) // 2]
+    return sum(abs(v - m) <= NEAR for v in line) >= SHARE * len(line)
 
 
 def edge(px, w, h, horizontal: bool, from_start: bool) -> int:
@@ -46,17 +47,74 @@ def edge(px, w, h, horizontal: bool, from_start: bool) -> int:
     return n
 
 
+# How the icons zoom (src/modes/hsdle/Art.tsx): a cut of c per side shows the
+# art at MARGIN / (1 - 2c), a card with no cut at NO_CUT_ZOOM. Keep in step.
+MARGIN = 1.06
+NO_CUT_ZOOM = 1.08
+# The icon is a squircle (rounded square, corner radius 30% of its side).
+RADIUS = 0.3
+# Some padding isn't a straight bar (tilted art leaves white wedges, a corner
+# can be white): after the bar crop, zoom in further while more than
+# WHITE_SHARE of the icon's outline is padding white, by STEP, up to MAX_CUT.
+# Padding white is bright and neutral (channels within NEUTRAL of each other);
+# glows and snow in the art are tinted, so they don't count.
+WHITE = 232
+NEUTRAL = 10
+WHITE_SHARE = 0.01
+STEP = 0.005
+MAX_CUT = 0.18
+
+
+def zoom(cut: float) -> float:
+    return MARGIN / (1 - 2 * cut) if cut else NO_CUT_ZOOM
+
+
+def outline(n: int = 240) -> list[tuple[float, float]]:
+    """Points just inside the squircle's edge, in icon coordinates (0..1)."""
+    inset, r = 0.005, RADIUS
+    lo, hi = inset, 1 - inset
+    pts = []
+    for k in range(n):
+        t = k / n * 4
+        side, f = int(t), t - int(t)
+        # Walk each side; near a corner, pull the point onto the rounded corner.
+        x, y = [(lo + f * (hi - lo), lo), (hi, lo + f * (hi - lo)), (hi - f * (hi - lo), hi), (lo, hi - f * (hi - lo))][side]
+        cx, cy = min(max(x, lo + r), hi - r), min(max(y, lo + r), hi - r)
+        dx, dy = x - cx, y - cy
+        d = (dx * dx + dy * dy) ** 0.5
+        if d > r:
+            x, y = cx + dx / d * r, cy + dy / d * r
+        pts.append((x, y))
+    return pts
+
+
+OUTLINE = outline()
+
+
+def white_share(rgb, w: int, h: int, cut: float) -> float:
+    s = zoom(cut)
+    white = 0
+    for x, y in OUTLINE:
+        px = rgb[min(w - 1, int((0.5 + (x - 0.5) / s) * w)), min(h - 1, int((0.5 + (y - 0.5) / s) * h))]
+        white += min(px) > WHITE and max(px) - min(px) < NEUTRAL
+    return white / len(OUTLINE)
+
+
 def measure(card_id: str) -> tuple[str, float | None]:
     try:
         req = urllib.request.Request(URL.format(card_id), headers={'User-Agent': 'hs-quiz art measure'})
         data = urllib.request.urlopen(req, timeout=20).read()
-        im = Image.open(io.BytesIO(data)).convert('L')
+        im = Image.open(io.BytesIO(data)).convert('RGB')
     except Exception:
         return card_id, None
     w, h = im.size
-    px = im.load()
-    sides = [edge(px, w, h, True, True), edge(px, w, h, True, False), edge(px, w, h, False, True), edge(px, w, h, False, False)]
-    return card_id, round(max(sides) / w, 3)
+    grey = im.convert('L').load()
+    sides = [edge(grey, w, h, True, True), edge(grey, w, h, True, False), edge(grey, w, h, False, True), edge(grey, w, h, False, False)]
+    cut = max(sides) / w
+    rgb = im.load()
+    while cut < MAX_CUT and white_share(rgb, w, h, cut) > WHITE_SHARE:
+        cut = max(cut, 0.03) + STEP if cut else 0.03
+    return card_id, round(min(cut, MAX_CUT), 3)
 
 
 def main() -> None:

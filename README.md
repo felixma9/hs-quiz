@@ -67,7 +67,7 @@ Art is loaded from `art.hearthstonejson.com` (art only, so it doesn't give the a
 
 ## Art cropping
 
-Much of the art is padded with flat bars (white, grey or black). `python3 -I scripts/measure-art.py` downloads each card's small art once, measures how far a flat edge runs in from each side and writes `public/art-crop.json`; the round-cornered (squircle) art icons zoom in just enough per card. Rerun it after `npm run cards` (it only measures new cards; `--all` measures every card again).
+Much of the art is padded with flat bars (white, grey or black). `python3 -I scripts/measure-art.py` downloads each card's small art once, measures how far a flat edge runs in from each side (a row or column that is at least 92% one colour), then zooms further while any of the icon's rounded outline still lands on neutral white (tilted art leaves white wedges), up to an 18% cut per side. It writes `public/art-crop.json`; the round-cornered (squircle) art icons zoom in just enough per card. The zoom formula is shared with `src/modes/hsdle/Art.tsx`, so change both together. Rerun it after `npm run cards` (it only measures new cards; `--all` measures every card again).
 
 ## Decor
 
