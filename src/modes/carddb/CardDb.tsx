@@ -228,7 +228,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
           <>
             <div className={`carddb-grid ${one ? 'one' : ''}`}>
               {matches.slice(0, shown).map((c) => (
-                <button key={c.id} type="button" className="carddb-hit" onClick={() => zoomCard(c)} title={c.name}>
+                <button key={c.id} type="button" className="carddb-hit" onClick={() => zoomCard(c, undefined, { history: true })} title={c.name}>
                   <Art card={c} crop={crop} className="carddb-art" />
                   <span className="carddb-name">{c.name}</span>
                   <span className="carddb-meta muted">

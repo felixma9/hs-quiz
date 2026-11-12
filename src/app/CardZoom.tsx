@@ -2,16 +2,19 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Card } from '../lib/types';
 import { drawable } from '../pool/pool';
 import { GameCard } from '../card/GameCard';
+import { loadHistory, timeline, type HistoryFile } from '../lib/history';
+import { CardTimeline } from './CardTimeline';
 
 /**
  * Tap a card's round art icon to see the whole card. Any screen calls
- * zoomCard(); the one CardZoomHost in App shows it.
+ * zoomCard(); the one CardZoomHost in App shows it. With `history` (CardDB),
+ * tapping the card again opens every version of it on a timeline.
  */
-type Zoom = { card: Card; note?: ReactNode } | null;
+type Zoom = { card: Card; note?: ReactNode; history?: boolean } | null;
 let show: ((z: Zoom) => void) | null = null;
 
-export function zoomCard(card: Card, note?: ReactNode) {
-  show?.({ card, note });
+export function zoomCard(card: Card, note?: ReactNode, opts: { history?: boolean } = {}) {
+  show?.({ card, note, history: opts.history });
 }
 
 /** Props for an art icon that opens the whole card (for icons that aren't already inside a button). */
@@ -39,12 +42,19 @@ const renderUrl = (c: Card) => `https://art.hearthstonejson.com/v1/render/latest
 
 export function CardZoomHost() {
   const [z, setZ] = useState<Zoom>(null);
+  const [open, setOpen] = useState(false);
+  const [hist, setHist] = useState<HistoryFile | null | undefined>(undefined);
   useEffect(() => {
     show = setZ;
     return () => {
       show = null;
     };
   }, []);
+  // A new card starts closed; the history file loads the first time a card that wants it opens.
+  useEffect(() => setOpen(false), [z]);
+  useEffect(() => {
+    if (z?.history && hist === undefined) loadHistory().then(setHist);
+  }, [z, hist]);
   useEffect(() => {
     if (!z) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setZ(null);
@@ -53,18 +63,54 @@ export function CardZoomHost() {
   }, [z]);
   // Our own renderer draws minions, spells, weapons and heroes; anything else uses HearthstoneJSON's render.
   const canDraw = useMemo(() => !!z && drawable([z.card]).length > 0, [z]);
+  const versions = useMemo(() => (z?.history && hist !== undefined ? timeline(z.card, hist) : null), [z, hist]);
   if (!z) return null;
+  const past = versions ? versions.length - 1 : 0;
+  const close = () => setZ(null);
+
+  if (open && versions) {
+    return (
+      <div className="zoom zoom-timeline" role="dialog" aria-modal="true" aria-label={`${z.card.name}: every version`} onClick={close}>
+        {/* Taps on the timeline stay there; tapping the dim around it (or Escape) closes. */}
+        <div className="tl-wrap" onClick={(e) => e.stopPropagation()}>
+          <header className="tl-head">
+            <h2>{z.card.name}</h2>
+            <span className="muted small">
+              {past} change{past === 1 ? '' : 's'} since release
+            </span>
+          </header>
+          <CardTimeline versions={versions} />
+        </div>
+      </div>
+    );
+  }
+
+  // The card itself: opens the timeline when there is one, otherwise closes like the rest.
+  const onCard = (e: React.MouseEvent) => {
+    if (!past) return;
+    e.stopPropagation();
+    setOpen(true);
+  };
+  const hint = !z.history
+    ? 'Tap anywhere to close'
+    : versions === null
+      ? 'Loading history…'
+      : past
+        ? `Tap the card for its history (${past} change${past === 1 ? '' : 's'}) · tap outside to close`
+        : hist === null
+          ? 'Tap anywhere to close'
+          : 'No changes since release · tap anywhere to close';
   return (
-    <div className="zoom" role="dialog" aria-modal="true" aria-label={z.card.name} onClick={() => setZ(null)}>
-      {/* Tap anywhere (the card too) or press Escape to close: no close button. */}
-      <figure className="zoom-card">
+    <div className="zoom" role="dialog" aria-modal="true" aria-label={z.card.name} onClick={close}>
+      {/* Tap anywhere (the card too, unless it has a history) or press Escape to close: no close button. */}
+      <figure className={`zoom-card ${past ? 'has-history' : ''}`} onClick={onCard}>
         {canDraw ? (
           <GameCard card={z.card} hidden={NONE} pool={[]} />
         ) : (
           <img className="zoom-render" src={renderUrl(z.card)} alt={z.card.name} />
         )}
         {z.note && <figcaption className="zoom-note">{z.note}</figcaption>}
-        <span className="zoom-hint">Tap anywhere to close</span>
+        <span className="zoom-hint">{hint}</span>
       </figure>
     </div>
   );

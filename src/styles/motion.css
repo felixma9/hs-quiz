@@ -130,3 +130,8 @@ details[open] > :not(summary) { animation: rise-in var(--med) var(--ease) backwa
 .verdict-check path { stroke-dasharray: 90; animation: tick-draw 0.32s var(--ease) 0.06s backwards; }
 .verdict-check .vc-shine { stroke-dasharray: 20; animation: none; }
 .verdict-flash.bad { animation: verdict-pop 0.3s var(--ease) backwards, verdict-shake 0.3s ease 0.3s; }
+
+/* The timeline unfolds down the page, one version after another. */
+.zoom-timeline { animation: none; }
+.tl-head { animation: rise-in var(--med) var(--ease) backwards; }
+.tl-item { animation: rise-in 0.3s var(--ease) backwards; animation-delay: calc(min(var(--i, 0), 8) * 45ms); }
