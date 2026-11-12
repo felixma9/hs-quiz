@@ -10,6 +10,7 @@ import { GameCard } from '../../card/GameCard';
 import { Art, useArtCrop } from '../hsdle/Art';
 import { zoomCard } from '../../app/CardZoom';
 import { TextDiff } from './TextDiff';
+import { useEnter } from '../../app/useEnter';
 import { CardGlow, VerdictFlash } from '../../app/VerdictFlash';
 import { loadSettings, saveSettings, type GauntletSettings as Settings } from './settings';
 
@@ -103,6 +104,8 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
     restart(s);
   };
 
+  // Before that, Enter anywhere submits the answer (after picking a class or rarity, say, when no field is focused).
+  useEnter(!result && !over, submit);
   // Once a card is answered, Enter moves on (or starts a new game after the last life).
   useEffect(() => {
     if (!result) return;

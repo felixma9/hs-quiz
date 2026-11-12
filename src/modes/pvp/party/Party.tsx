@@ -3,6 +3,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { Card } from '../../../lib/types';
 import { cardsById } from '../../../lib/cards';
 import { usePill } from '../../../app/usePill';
+import { useEnter } from '../../../app/useEnter';
 import { Art, useArtCrop } from '../../hsdle/Art';
 import { CardGlow, VerdictFlash, type Verdict } from '../../../app/VerdictFlash';
 import { zoomCard } from '../../../app/CardZoom';
@@ -646,6 +647,8 @@ function VsCard({
     setSent(true);
     onAnswer(draft);
   };
+  // Enter anywhere submits on your turn (fields submit themselves).
+  useEnter(myTurn && canSend, submit);
   return (
     <div className={`vs-turn ${myTurn ? 'mine' : ''}`}>
       <div className="vs-ask">

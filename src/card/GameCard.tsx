@@ -221,9 +221,11 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
             // Close a moment after losing focus, unless a finger is on the symbol keys.
             onBlur={() => setTimeout(() => !keys.pressing.current && document.activeElement !== textBox.current && setActive(null), 150)}
             onKeyDown={(e) => {
+              // Enter submits (Shift + Enter is a new line).
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 setActive(null);
+                onEnter?.();
               }
             }}
           />
