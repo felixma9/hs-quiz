@@ -7,6 +7,14 @@ export async function loadCards(): Promise<Card[]> {
   return res.json();
 }
 
+/** Cards by id, built once per card list and shared by everything that looks cards up. */
+const indexes = new WeakMap<Card[], Map<string, Card>>();
+export function cardsById(cards: Card[]): Map<string, Card> {
+  let m = indexes.get(cards);
+  if (!m) indexes.set(cards, (m = new Map(cards.map((c) => [c.id, c]))));
+  return m;
+}
+
 export const artUrl = (c: Card) => `https://art.hearthstonejson.com/v1/512x/${c.id}.jpg`;
 
 /** Small seeded PRNG. */

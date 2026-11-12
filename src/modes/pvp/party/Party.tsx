@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../../lib/types';
+import { cardsById } from '../../../lib/cards';
 import { Art, useArtCrop } from '../../hsdle/Art';
 import { VerdictFlash, type Verdict } from '../../../app/VerdictFlash';
 import { zoomCard } from '../../../app/CardZoom';
@@ -175,7 +176,7 @@ export function Party({ mode, name, all, drawable, pool, onLeave }: Props) {
   // Load the next card's art during this turn, so it shows up straight away.
   const nextCard = state?.nextCard;
   useEffect(() => {
-    const c = nextCard ? all.find((x) => x.id === nextCard) : undefined;
+    const c = nextCard ? cardsById(all).get(nextCard) : undefined;
     if (c) preloadArt(c);
   }, [nextCard, all]);
 
@@ -468,7 +469,7 @@ function Play({
   const crop = useArtCrop();
   const myTurn = state.turn === me;
   const current = state.players.find((p) => p.id === state.turn);
-  const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
+  const byId = cardsById(all);
 
   // Whole seconds left. Only this (not the rope's smooth burn) re-renders the screen, once a second:
   // re-rendering everything 10x a second made phones re-scroll to the focused field while you held the page.
@@ -937,7 +938,7 @@ function Over({ state, me, isHost, all, onAgain }: { state: PublicState; me: str
  */
 function LastAnswer({ state, me, all }: { state: PublicState; me: string; all: Card[] }) {
   const crop = useArtCrop();
-  const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
+  const byId = cardsById(all);
   const last = state.last;
   if (!last || (last.kind !== 'boom' && last.kind !== 'hit')) return null;
   const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? 'Someone';
@@ -952,7 +953,7 @@ function LastAnswer({ state, me, all }: { state: PublicState; me: string; all: C
 /** Every card played this game, as a strip of art marked right or wrong; tap one for its name. */
 function NamedCards({ state, me, all }: { state: PublicState; me: string; all: Card[] }) {
   const crop = useArtCrop();
-  const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
+  const byId = cardsById(all);
   const [open, setOpen] = useState<number | null>(null);
   const list = state.named.map((x) => ({ ...x, card: byId.get(x.cardId) })).filter((x) => x.card);
   if (!list.length) return null;

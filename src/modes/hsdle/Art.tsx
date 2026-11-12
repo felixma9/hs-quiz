@@ -2,21 +2,18 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { zoomProps } from '../../app/CardZoom';
+import { loadArtCrop } from '../../lib/artCrop';
 
 
 /**
  * Per-card art crop (fraction cut from each side), measured by
  * scripts/measure-art.py: some art is padded with light bars.
  */
-let artCrop: Promise<Record<string, number>> | null = null;
 export function useArtCrop() {
   const [crop, setCrop] = useState<Record<string, number>>({});
   useEffect(() => {
-    artCrop ??= fetch(`${import.meta.env.BASE_URL}art-crop.json`)
-      .then((r) => (r.ok ? r.json() : {}))
-      .catch(() => ({}));
     let live = true;
-    artCrop.then((c) => live && setCrop(c));
+    loadArtCrop().then((c) => live && setCrop(c));
     return () => {
       live = false;
     };

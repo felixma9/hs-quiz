@@ -2,6 +2,7 @@ import Sunwell, { type SunwellCard } from 'sunwell/dist/sunwell.web.js';
 import type { Card } from '../lib/types';
 import { ATTR, pretty, type AttrKey } from '../lib/attributes';
 import { artUrl } from '../lib/cards';
+import { loadArtCrop } from '../lib/artCrop';
 import { fitText } from './fitText';
 import { applyLocationLayout } from './location';
 
@@ -88,15 +89,6 @@ function loadArt(card: Card) {
     art.set(card.id, p);
   }
   return p;
-}
-
-/** How much of each side of a card's art is padding (scripts/measure-art.py). Locations need it to hide their white bars. */
-let artCrop: Promise<Record<string, number>> | null = null;
-function loadArtCrop() {
-  artCrop ??= fetch(`${import.meta.env.BASE_URL}art-crop.json`)
-    .then((r) => (r.ok ? r.json() : {}))
-    .catch(() => ({}));
-  return artCrop;
 }
 
 /** Start loading a card's art now (e.g. the next card, during this turn) so it draws without a wait. */
