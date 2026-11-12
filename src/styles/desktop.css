@@ -1,0 +1,78 @@
+/*
+ * Desktop polish: hover feedback and a little extra motion for mouse and
+ * trackpad users. Everything here is inside (hover: hover) and (pointer: fine),
+ * so phones and tablets are untouched, and anything that moves is also inside
+ * (prefers-reduced-motion: no-preference). Kept subtle: a lift, a brighten, a
+ * slow zoom on art. Loaded after motion.css.
+ */
+@media (hover: hover) and (pointer: fine) {
+  /* ---- Colour and light (no movement) ---- */
+  .tabs button:not(.on):hover, .seg button:not(.on):not(:disabled):hover, .daily-kind button:not(.on):hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
+  .rarity-chip:hover { border-color: var(--line-2); color: var(--text); }
+  .rarity-chip.on:hover { border-color: var(--gold); }
+  .chip:not(:disabled):hover { border-color: var(--line-2); }
+  .in:hover:not(:focus) { border-color: var(--line-2); }
+  .clue-btn.unlocked:hover { background: var(--gold-bg); border-color: var(--gold); }
+  .give-up:not(.armed):hover { color: var(--text); border-color: var(--line-2); }
+  .set-row:hover, .set-summary:hover { background: rgba(255, 255, 255, 0.03); }
+  .set-row, .set-summary { border-radius: 6px; transition: background-color var(--fast) ease; }
+  .party-player-row:not(.open-seat):hover { background: rgba(255, 255, 255, 0.03); }
+  .tile { transition: filter var(--fast) ease; }
+  .tile:hover { filter: brightness(1.12); }
+  .board-cell.name-cell:hover .name-text { color: var(--gold-2); }
+  .sound-toggle:hover, .zoom-close:hover { background: var(--surface-2); color: var(--text); }
+  .hotspot.editable:hover { outline-color: rgba(255, 255, 255, 0.85); }
+  .link { text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  .link:hover { text-decoration: underline; }
+
+  /* ---- Movement ---- */
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+
+    /* Buttons lift a pixel and cast a soft shadow; pressing still dips. */
+    .btn { transition: background-color var(--fast) ease, color var(--fast) ease, opacity var(--fast) ease,
+        transform var(--fast) var(--ease), box-shadow var(--fast) ease; }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
+    .btn.primary:hover:not(:disabled) { box-shadow: 0 4px 16px rgba(63, 143, 74, 0.35); }
+    .btn:active:not(:disabled) { transform: translateY(0) scale(0.98); box-shadow: none; }
+
+    /* Mode cards: rise, the art eases in and drifts, the arrow slides on. */
+    .mode-card { transition: background-color var(--med) ease, transform var(--med) var(--ease), box-shadow var(--med) ease; }
+    .mode-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4); }
+    .mode-art { transition: opacity 0.4s ease, transform 0.6s var(--ease); }
+    .mode-card:hover .mode-art { opacity: 0.55; transform: scale(1.04); }
+    .mode-go { transition: color var(--fast) ease, transform var(--med) var(--ease); }
+    .mode-card:hover .mode-go { transform: translateX(4px); }
+    .mode-icon { transition: transform var(--med) var(--ease); }
+    .mode-card:hover .mode-icon { transform: scale(1.12) rotate(-6deg); }
+
+    /* The menu settles in: mode cards one after another. */
+    .mode-list .mode-card { animation: rise-in 0.35s var(--ease) backwards; }
+    .mode-list .mode-card:nth-child(2) { animation-delay: 50ms; }
+    .mode-list .mode-card:nth-child(3) { animation-delay: 100ms; }
+    .mode-list .mode-card:nth-child(4) { animation-delay: 150ms; }
+    .mode-list .mode-card:nth-child(5) { animation-delay: 200ms; }
+    .pool-section { animation: rise-in 0.35s var(--ease) 0.2s backwards; }
+
+    /* Round card art you can tap (strips, board, event lines, CardDB): a slow zoom. */
+    .art-crop img, .qf-thumb img { transition: transform 0.35s var(--ease); }
+    .named-card:hover .art-crop img, .board-cell.name-cell:hover .art-crop img, .qf-thumb:hover img,
+    .carddb-hit:hover .art-crop img, .search-list button:hover .art-crop img { transform: scale(1.1); }
+    .named-art { transition: transform 0.2s var(--ease), border-color 0.2s ease; }
+    .named-card:hover .named-art { border-color: var(--line-2); transform: translateY(-2px); }
+
+    /* CardDB results lift a little. */
+    .carddb-hit { transition: background-color var(--fast) ease, transform var(--med) var(--ease); }
+    .carddb-hit:hover { transform: translateY(-2px); }
+
+    /* Chips, rarity chips and clue buttons ease their colour and lift slightly. */
+    .rarity-chip, .clue-btn.unlocked { transition: background-color var(--fast) ease, border-color var(--fast) ease,
+        color var(--fast) ease, transform var(--fast) var(--ease); }
+    .rarity-chip:hover, .clue-btn.unlocked:hover { transform: translateY(-1px); }
+    .rarity-chip-gem { transition: opacity var(--fast) ease, transform var(--med) var(--ease); }
+    .rarity-chip:hover .rarity-chip-gem { transform: scale(1.15); }
+
+    /* The title bar's back arrow nudges back. */
+    .top-back:hover { transform: translateX(-2px); }
+  }
+}

@@ -11,6 +11,7 @@ import './styles/hsdle.css';
 import './styles/pvp.css';
 import './styles/carddb.css';
 import './styles/motion.css';
+import './styles/desktop.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
