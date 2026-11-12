@@ -252,6 +252,8 @@ footer a { color: var(--faint); }
 }
 .lc.collapsing .tl-head, .lc.collapsing .lc-rail, .lc.collapsing .lc-info, .lc.collapsing .lc-nav { opacity: 0; transition: opacity 0.2s ease; }
 .lc.is-open .lc-slide.focus { cursor: pointer; }
+/* No history: the card doesn't react to taps. */
+.lc.no-history .lc-slide { cursor: default; }
 .lc-slide .game-card-frame, .lc-slide .zoom-render { width: 100%; }
 .lc-slide .card-chips { display: none; }
 .lc .zoom-hint.has-history { color: var(--gold-2); }
@@ -296,4 +298,12 @@ footer a { color: var(--faint); }
 }
 .card-glow.ok { background: radial-gradient(closest-side, rgba(110, 235, 120, 0.95), rgba(80, 210, 100, 0.4) 55%, transparent); }
 .card-glow.bad { background: radial-gradient(closest-side, rgba(255, 96, 86, 0.95), rgba(240, 70, 64, 0.4) 55%, transparent); }
+
+/* A zoomed card tilts toward the pointer and lifts, with a shadow that follows (Tilt.tsx). */
+.tilt { position: relative; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
+.tilt-rotor { position: relative; transform-style: preserve-3d; will-change: transform; }
+.tilt-shadow {
+  position: absolute; inset: 12% 10% 2%; border-radius: 18px; background: rgba(0, 0, 0, 0.55); filter: blur(24px);
+  pointer-events: none; opacity: 0; will-change: transform;
+}
 

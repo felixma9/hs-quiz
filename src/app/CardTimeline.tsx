@@ -3,6 +3,7 @@ import type { Card } from '../lib/types';
 import { drawable } from '../pool/pool';
 import { GameCard } from '../card/GameCard';
 import { monthYear, wordDiff, type Version } from '../lib/history';
+import { Tilt } from './Tilt';
 
 const NONE = new Set<never>();
 const renderUrl = (c: Card) => `https://art.hearthstonejson.com/v1/render/latest/enUS/512x/${c.id}.png`;
@@ -158,7 +159,7 @@ export function CardTimeline({
     canDraw ? <GameCard card={v.card} hidden={NONE} pool={[]} /> : <img className="zoom-render" src={renderUrl(v.card)} alt={v.card.name} />;
 
   return (
-    <div className={`lc ${open ? 'is-open' : ''} ${phase === 'collapsing' ? 'collapsing' : ''}`}>
+    <div className={`lc ${open ? 'is-open' : ''} ${phase === 'collapsing' ? 'collapsing' : ''} ${past ? '' : 'no-history'}`}>
       {open && versions && (
         <header className="tl-head" onClick={(e) => e.stopPropagation()}>
           <h2>{card.name}</h2>
@@ -215,12 +216,10 @@ export function CardTimeline({
                 style={{ '--back': last - i } as React.CSSProperties}
                 aria-current={focus || undefined}
                 onClick={(e) => {
-                  // Closed: the card opens its history (or, with none, the tap closes the zoom like any other).
+                  // Closed: the card opens its history; with none, a tap on it does nothing.
                   if (!open) {
-                    if (past) {
-                      e.stopPropagation();
-                      onOpen();
-                    }
+                    e.stopPropagation();
+                    if (past) onOpen();
                     return;
                   }
                   e.stopPropagation();
@@ -229,7 +228,8 @@ export function CardTimeline({
                   else go(i);
                 }}
               >
-                {face(v)}
+                {/* The card in focus tilts toward the pointer; the others stay flat. */}
+                <Tilt active={focus}>{face(v)}</Tilt>
               </div>
             );
           })}

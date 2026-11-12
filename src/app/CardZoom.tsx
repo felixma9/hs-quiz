@@ -4,6 +4,7 @@ import { drawable } from '../pool/pool';
 import { GameCard } from '../card/GameCard';
 import { loadHistory, timeline, type HistoryFile } from '../lib/history';
 import { CardTimeline } from './CardTimeline';
+import { Tilt } from './Tilt';
 
 /**
  * Tap a card's round art icon to see the whole card. Any screen calls
@@ -81,8 +82,8 @@ export function CardZoomHost() {
       : past
         ? `Tap the card for its history (${past} change${past === 1 ? '' : 's'}) · tap outside to close`
         : hist === null
-          ? 'Tap anywhere to close'
-          : 'No changes since release · tap anywhere to close';
+          ? "Couldn't load this card's history · tap outside to close"
+          : 'No timeline to show · tap outside to close';
   // CardDB: the card opens into its timeline in place, over the page.
   if (z.history)
     return (
@@ -101,11 +102,13 @@ export function CardZoomHost() {
     <div className="zoom" role="dialog" aria-modal="true" aria-label={z.card.name} onClick={close}>
       {/* Tap anywhere (the card too) or press Escape to close: no close button. */}
       <figure className="zoom-card">
-        {canDraw ? (
-          <GameCard card={z.card} hidden={NONE} pool={[]} />
-        ) : (
-          <img className="zoom-render" src={renderUrl(z.card)} alt={z.card.name} />
-        )}
+        <Tilt>
+          {canDraw ? (
+            <GameCard card={z.card} hidden={NONE} pool={[]} />
+          ) : (
+            <img className="zoom-render" src={renderUrl(z.card)} alt={z.card.name} />
+          )}
+        </Tilt>
         {z.note && <figcaption className="zoom-note">{z.note}</figcaption>}
         <span className="zoom-hint">{hint}</span>
       </figure>
