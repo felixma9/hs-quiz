@@ -74,29 +74,6 @@ export function CardZoomHost() {
   const past = versions ? versions.length - 1 : 0;
   const close = () => setZ(null);
 
-  if (open && versions) {
-    return (
-      <div className="zoom zoom-timeline" role="dialog" aria-modal="true" aria-label={`${z.card.name}: every version`} onClick={close}>
-        {/* Taps on the cards, rail and details stay there; tapping anywhere else (or Escape) closes. */}
-        <div className="tl-wrap">
-          <header className="tl-head" onClick={(e) => e.stopPropagation()}>
-            <h2>{z.card.name}</h2>
-            <span className="muted small">
-              {past} change{past === 1 ? '' : 's'} since release
-            </span>
-          </header>
-          <CardTimeline versions={versions} />
-        </div>
-      </div>
-    );
-  }
-
-  // The card itself: opens the timeline when there is one, otherwise closes like the rest.
-  const onCard = (e: React.MouseEvent) => {
-    if (!past) return;
-    e.stopPropagation();
-    setOpen(true);
-  };
   const hint = !z.history
     ? 'Tap anywhere to close'
     : versions === null
@@ -106,10 +83,24 @@ export function CardZoomHost() {
         : hist === null
           ? 'Tap anywhere to close'
           : 'No changes since release · tap anywhere to close';
+  // CardDB: the card opens into its timeline in place, over the page.
+  if (z.history)
+    return (
+      <div
+        className={`zoom zoom-history ${open ? 'open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={open ? `${z.card.name}: every version` : z.card.name}
+        onClick={close}
+      >
+        {/* Taps on the cards, rail and details stay there; anywhere else (or Escape) closes. */}
+        <CardTimeline card={z.card} versions={versions} open={open && !!versions} onOpen={() => setOpen(true)} hint={hint} />
+      </div>
+    );
   return (
     <div className="zoom" role="dialog" aria-modal="true" aria-label={z.card.name} onClick={close}>
-      {/* Tap anywhere (the card too, unless it has a history) or press Escape to close: no close button. */}
-      <figure className={`zoom-card ${past ? 'has-history' : ''}`} onClick={onCard}>
+      {/* Tap anywhere (the card too) or press Escape to close: no close button. */}
+      <figure className="zoom-card">
         {canDraw ? (
           <GameCard card={z.card} hidden={NONE} pool={[]} />
         ) : (

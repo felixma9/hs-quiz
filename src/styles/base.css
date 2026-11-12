@@ -195,12 +195,6 @@ footer a { color: var(--faint); }
 .verdict-check.leaving { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
 
 /* ---- CardDB: tap a zoomed card again for every version of it, down a timeline ---- */
-.zoom-card.has-history { cursor: pointer; }
-.zoom-card.has-history .zoom-hint { color: var(--gold-2); }
-.zoom.zoom-timeline { background: var(--bg); place-items: start center; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px 40px; cursor: zoom-out; }
-.tl-wrap { width: min(1100px, 100%); display: grid; gap: 12px; cursor: default; }
-.tl-head { display: grid; gap: 2px; justify-items: center; text-align: center; padding-top: 4px; cursor: default; }
-.tl-head h2 { margin: 0; font-size: 1.25rem; }
 .tl-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .tl-when { font-weight: 700; font-size: 0.92rem; }
 .tl-date { font-size: 0.8rem; color: var(--muted); padding: 1px 8px; border-radius: 999px; background: var(--surface-2); }
@@ -219,57 +213,49 @@ footer a { color: var(--faint); }
 .tl-del { color: var(--bad-text); text-decoration: line-through; }
 .tl-ins { color: var(--ok-text); background: rgba(63, 143, 74, 0.16); border-radius: 3px; padding: 0 2px; }
 
-/* ---- The timeline as a carousel: oldest on the left, the focused version in the middle ---- */
-.lc { --w: min(250px, 58vw); --gap: 22px; display: grid; gap: 14px; }
-.lc-stage {
-  position: relative; height: calc(var(--w) * 746 / 500 + 36px); overflow: hidden;
-  touch-action: pan-y; user-select: none; -webkit-user-select: none;
+/*
+ * CardDB: the zoomed card opens into a carousel of its versions, in place over
+ * the page. The card keeps its spot (--top centres it); the older versions
+ * slide out from behind its left side (CardTimeline.tsx).
+ */
+.zoom.zoom-history { place-items: start center; overflow: hidden auto; overscroll-behavior: contain; padding: 0 0 32px; }
+.lc {
+  --w: min(320px, 76vw, calc((100dvh - 120px) * 500 / 746)); --h: calc(var(--w) * 746 / 500); --gap: 22px;
+  --top: max(64px, calc((100dvh - var(--h)) / 2 - 12px));
+  position: relative; width: 100vw; display: grid; gap: 14px; justify-items: center; padding: var(--top) 16px 0; box-sizing: border-box;
 }
+.tl-head { display: grid; gap: 2px; justify-items: center; text-align: center; cursor: default; }
+.tl-head h2 { margin: 0; font-size: 1.2rem; }
+.lc .tl-head { position: absolute; left: 0; right: 0; top: calc(var(--top) - 62px); }
+.lc-stage { position: relative; width: 100%; height: var(--h); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .lc-track {
-  position: absolute; top: 18px; left: 50%; display: flex; gap: var(--gap); align-items: flex-start;
+  position: absolute; top: 0; left: 50%; display: flex; gap: var(--gap); align-items: flex-start;
   transform: translateX(calc(-1 * (var(--i) + 0.5) * var(--w) - var(--i) * var(--gap) + var(--drag, 0px)));
   transition: transform 0.45s var(--ease);
 }
-.lc-stage.dragging .lc-track { transition: none; }
+.lc-track.opening, .lc-stage.dragging .lc-track { transition: none; }
 .lc-slide {
-  flex: none; width: var(--w); cursor: pointer; transform: scale(0.86); filter: brightness(0.5) saturate(0.85);
-  transition: transform 0.45s var(--ease), filter 0.35s ease;
+  flex: none; width: var(--w); position: relative; z-index: 1; cursor: pointer;
+  transform: scale(0.86); filter: brightness(0.5) saturate(0.85);
+  transition: transform 0.45s var(--ease), filter 0.35s ease, opacity 0.35s ease;
 }
-.lc-slide.focus { transform: none; filter: none; cursor: default; }
+.lc-slide.focus { transform: none; filter: none; z-index: 2; }
+.lc.is-open .lc-slide.focus { cursor: default; }
+.lc-slide.now { z-index: 3; }
+/* Opening: the older versions start stacked behind the current card, unseen... */
+.lc-track.opening .lc-slide:not(.now) { transform: translateX(calc(var(--back) * (var(--w) + var(--gap)))) scale(0.86); opacity: 0; }
+/* ...then slide out to the left, nearest first. */
+.lc-track.expanding .lc-slide { transition-delay: calc(var(--back) * 70ms); }
 .lc-slide .game-card-frame, .lc-slide .zoom-render { width: 100%; }
 .lc-slide .card-chips { display: none; }
+.lc .zoom-hint.has-history { color: var(--gold-2); }
 .lc-nav {
-  position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; z-index: 3;
+  position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; z-index: 5;
   display: grid; place-items: center; font: inherit; font-size: 1.5rem; line-height: 1; padding: 0 0 3px;
   color: var(--text); background: rgba(31, 32, 39, 0.85); border: 1px solid var(--line-2); cursor: pointer;
 }
 .lc-nav.prev { left: max(8px, calc(50% - var(--w) / 2 - 64px)); }
 .lc-nav.next { right: max(8px, calc(50% - var(--w) / 2 - 64px)); }
-
-/* The lenticular card: the front is masked into ribs (drawn in Lenticular.tsx) over the version before it. */
-.lens { position: relative; perspective: 1100px; }
-.lens-card {
-  position: relative; transform-style: preserve-3d;
-  transform: rotateY(calc(var(--lift, 0) * var(--tilt, 12deg) * -1)) translateZ(calc(var(--lift, 0) * 36px));
-}
-.lens-back { position: absolute; inset: 0; }
-.lens.on .lens-front { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
-/* Ribbed sheen and a little foil, over the card's face only (not its transparent corners). */
-.lens-ribs, .lens-foil { position: absolute; inset: 6% 9% 9%; border-radius: 8px; pointer-events: none; }
-.lens-ribs {
-  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.16) calc(50% / var(--strips)), rgba(0, 0, 0, 0.18) calc(100% / var(--strips)));
-  mix-blend-mode: overlay; opacity: calc(var(--lift, 0) * 0.7);
-}
-.lens-foil {
-  background: linear-gradient(110deg, transparent 25%, rgba(255, 120, 200, 0.5) 38%, rgba(120, 220, 255, 0.5) 50%, rgba(170, 255, 140, 0.45) 62%, transparent 75%);
-  background-size: 260% 100%; background-position: calc(100% - var(--turn, 0) * 100%) 0;
-  mix-blend-mode: color-dodge; opacity: calc(var(--lift, 0) * 0.25);
-}
-.lens-label {
-  position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
-  font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; color: #fff;
-  background: rgba(10, 10, 14, 0.85); border: 1px solid var(--gold-dim); opacity: calc((var(--turn, 0) - 0.45) * 4);
-}
 
 /* The time rail: a stop per version, coloured by what changed. */
 .lc-rail { list-style: none; margin: 0 auto; padding: 0 8px; display: flex; justify-content: center; gap: 0; position: relative; max-width: 100%; overflow-x: auto; }
@@ -287,12 +273,11 @@ footer a { color: var(--faint); }
 .lc-rail li.on .lc-year { color: var(--text); font-weight: 700; }
 
 .lc-info {
-  width: min(560px, 100%); justify-self: center; display: grid; gap: 10px; padding: 12px 14px;
+  width: min(560px, 100%); justify-self: center; display: grid; gap: 10px; padding: 12px 14px; box-sizing: border-box;
   border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); cursor: default;
 }
 .lc-info > .tl-tags { justify-content: center; }
 .lc-info .tl-changes:empty { display: none; }
-.lc-hint { text-align: center; margin: 0; }
 
 /* Read out by screen readers, not shown. */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

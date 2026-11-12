@@ -136,8 +136,10 @@ details[open] > :not(summary) { animation: rise-in var(--med) var(--ease) backwa
 .verdict-check .vc-shine { stroke-dasharray: 20; animation: none; }
 .verdict-flash.bad { animation: verdict-pop 0.3s var(--ease) backwards, verdict-shake 0.3s ease 0.3s; }
 
-/* The timeline carousel settles in; each version's details fade in as it comes into focus. */
-.zoom-timeline { animation: none; }
-.tl-head, .lc-stage { animation: rise-in var(--med) var(--ease) backwards; }
-.lc-rail { animation: fade-in 0.3s ease 0.1s backwards; }
+/* The timeline: as the older versions slide out, the title, rail and details fade in; each version's details as it comes into focus. */
+.lc .tl-head { animation: fade-in 0.35s ease 0.15s backwards; }
+.lc-rail { animation: rise-in 0.35s var(--ease) 0.2s backwards; }
 .lc-info { animation: rise-in 0.25s var(--ease) backwards; }
+.lc-nav { animation: fade-in 0.3s ease 0.35s backwards; }
+/* The history zoom pops its card in like the plain zoom (only while closed, so opening doesn't replay it). */
+.zoom-history:not(.open) .lc-slide.now { animation: zoom-card-in 0.26s var(--ease) backwards; }

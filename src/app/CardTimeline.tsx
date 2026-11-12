@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../lib/types';
 import { drawable } from '../pool/pool';
 import { GameCard } from '../card/GameCard';
 import { monthYear, wordDiff, type Version } from '../lib/history';
-import { Lenticular } from './Lenticular';
 
 const NONE = new Set<never>();
 const renderUrl = (c: Card) => `https://art.hearthstonejson.com/v1/render/latest/enUS/512x/${c.id}.png`;
@@ -67,25 +66,70 @@ function VersionInfo({ v, next, isNow }: { v: Version; next?: Version; isNow: bo
   );
 }
 
+/** Before the timeline opens, the current card alone: what the zoom shows. */
+const alone = (card: Card): Version => ({ card, diffs: [], tags: [] });
+
+type Phase = 'closed' | 'opening' | 'expanding' | 'open';
+
 /**
- * Every version of a card on a carousel, oldest on the left, opening on the
- * current one. The focused card is a lenticular print of itself and the
- * version before it: move the pointer across it (or press and hold) to see
- * what it was. Drag, the arrow keys, the side cards or the time rail move
- * between versions.
+ * A zoomed card that opens into a carousel of every version of it. Closed, it
+ * is just the card. Tapping it (when it has a history) slides the older
+ * versions out from behind its left side, oldest furthest left, with a time
+ * rail and the focused version's changes below. The current card is the same
+ * drawing throughout, so it never redraws or moves. Drag, the arrow keys, the
+ * side cards or the rail move between versions.
  */
-export function CardTimeline({ versions }: { versions: Version[] }) {
-  // versions is newest first; the carousel reads left to right through time.
-  const slides = useMemo(() => [...versions].reverse(), [versions]);
+export function CardTimeline({
+  card,
+  versions,
+  open,
+  onOpen,
+  hint,
+}: {
+  card: Card;
+  /** Newest first (from timeline()); null while the history is loading. */
+  versions: Version[] | null;
+  open: boolean;
+  onOpen(): void;
+  hint: string;
+}) {
+  const past = versions ? versions.length - 1 : 0;
+  // Oldest on the left; the current card is always the last slide, keyed 'now' so it stays the same element.
+  const slides = useMemo(() => (open && versions ? [...versions].reverse() : [alone(card)]), [open, versions, card]);
   const last = slides.length - 1;
-  const [idx, setIdx] = useState(last);
+  const [idx, setIdx] = useState(0);
+  const [phase, setPhase] = useState<Phase>('closed');
   const [drag, setDrag] = useState(0);
   const start = useRef<{ x: number; id: number; moved: boolean } | null>(null);
   const dragged = useRef(false);
-  const canDraw = drawable([versions[0].card]).length > 0;
+  const canDraw = drawable([card]).length > 0;
   const go = (i: number) => setIdx(Math.max(0, Math.min(last, i)));
 
+  // Opening: the older cards appear stacked behind the current one (no transition),
+  // then slide out to their places, nearest first.
+  useLayoutEffect(() => {
+    if (!open) {
+      setPhase('closed');
+      setIdx(0);
+      return;
+    }
+    setIdx(last);
+    setPhase('opening');
+    let t = 0;
+    const r = requestAnimationFrame(() => {
+      t = requestAnimationFrame(() => setPhase('expanding'));
+    });
+    const done = setTimeout(() => setPhase('open'), 450 + last * 70 + 100);
+    return () => {
+      cancelAnimationFrame(r);
+      cancelAnimationFrame(t);
+      clearTimeout(done);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') go(idx - 1);
       if (e.key === 'ArrowRight') go(idx + 1);
@@ -98,27 +142,36 @@ export function CardTimeline({ versions }: { versions: Version[] }) {
     canDraw ? <GameCard card={v.card} hidden={NONE} pool={[]} /> : <img className="zoom-render" src={renderUrl(v.card)} alt={v.card.name} />;
 
   return (
-    <div className="lc">
+    <div className={`lc ${open ? 'is-open' : ''}`}>
+      {open && versions && (
+        <header className="tl-head" onClick={(e) => e.stopPropagation()}>
+          <h2>{card.name}</h2>
+          <span className="muted small">
+            {past} change{past === 1 ? '' : 's'} since release
+          </span>
+        </header>
+      )}
       <div
         className={`lc-stage ${drag ? 'dragging' : ''}`}
         onPointerDown={(e) => {
+          if (!open) return;
           start.current = { x: e.clientX, id: e.pointerId, moved: false };
           dragged.current = false;
         }}
         onPointerMove={(e) => {
-          const s = start.current;
-          if (!s || s.id !== e.pointerId) return;
-          const dx = e.clientX - s.x;
-          if (!s.moved && Math.abs(dx) < 8) return;
-          s.moved = true;
+          const st = start.current;
+          if (!st || st.id !== e.pointerId) return;
+          const dx = e.clientX - st.x;
+          if (!st.moved && Math.abs(dx) < 8) return;
+          st.moved = true;
           dragged.current = true;
           setDrag(dx);
         }}
         onPointerUp={() => {
-          const s = start.current;
+          const st = start.current;
           start.current = null;
-          if (!s?.moved) return;
-          // A drag of about a third of a card moves one version; a long fling moves more.
+          if (!st?.moved) return;
+          // About a third of a card moves one version; a long fling moves more.
           const step = Math.round(-drag / 180) || (Math.abs(drag) > 50 ? -Math.sign(drag) : 0);
           go(idx + step);
           setDrag(0);
@@ -135,62 +188,66 @@ export function CardTimeline({ versions }: { versions: Version[] }) {
           }
         }}
       >
-        <div className="lc-track" style={{ '--i': idx, '--drag': `${drag}px` } as React.CSSProperties}>
+        <div className={`lc-track ${phase}`} style={{ '--i': idx, '--drag': `${drag}px` } as React.CSSProperties}>
           {slides.map((v, i) => {
             const focus = i === idx;
-            const before = slides[i - 1];
+            const now = i === last;
             return (
               <div
-                key={i}
-                className={`lc-slide ${focus ? 'focus' : ''}`}
+                key={now ? 'now' : `v${i}`}
+                className={`lc-slide ${focus ? 'focus' : ''} ${now ? 'now' : ''}`}
+                style={{ '--back': last - i } as React.CSSProperties}
                 aria-current={focus || undefined}
                 onClick={(e) => {
+                  // Closed: the card opens its history (or, with none, the tap closes the zoom like any other).
+                  if (!open) {
+                    if (past) {
+                      e.stopPropagation();
+                      onOpen();
+                    }
+                    return;
+                  }
                   e.stopPropagation();
                   if (!focus) go(i);
                 }}
               >
-                {canDraw ? (
-                  <Lenticular
-                    active={focus}
-                    front={face(v)}
-                    back={before && face(before)}
-                    backLabel={before && v.patch ? `Before patch ${v.patch}` : undefined}
-                  />
-                ) : (
-                  face(v)
-                )}
+                {face(v)}
               </div>
             );
           })}
         </div>
-        {idx > 0 && (
+        {open && idx > 0 && (
           <button type="button" className="lc-nav prev" aria-label="Older version" onClick={(e) => (e.stopPropagation(), go(idx - 1))}>
             ‹
           </button>
         )}
-        {idx < last && (
+        {open && idx < last && (
           <button type="button" className="lc-nav next" aria-label="Newer version" onClick={(e) => (e.stopPropagation(), go(idx + 1))}>
             ›
           </button>
         )}
       </div>
 
-      {/* The time rail: one stop per version, oldest first. */}
-      <ol className="lc-rail" onClick={(e) => e.stopPropagation()}>
-        {slides.map((v, i) => (
-          <li key={i} className={`${i === idx ? 'on' : ''} ${v.tags.find((t) => t.tone !== 'other')?.tone ?? ''}`}>
-            <button type="button" onClick={() => go(i)} aria-label={v.patch ? `Patch ${v.patch}` : 'At release'} title={v.patch ? `Patch ${v.patch}` : 'At release'}>
-              <span className="lc-dot" />
-              <span className="lc-year">{v.date ? v.date.slice(0, 4) : i === 0 ? 'Release' : ''}</span>
-            </button>
-          </li>
-        ))}
-      </ol>
-
-      <div onClick={(e) => e.stopPropagation()}>
-        <VersionInfo v={slides[idx]} next={slides[idx + 1]} isNow={idx === last} />
-      </div>
-      {canDraw && idx > 0 && <p className="lc-hint muted small">Move across the card, or press and hold it, to see it before this patch.</p>}
+      {open ? (
+        <>
+          {/* The time rail: one stop per version, oldest first. */}
+          <ol className="lc-rail" onClick={(e) => e.stopPropagation()}>
+            {slides.map((v, i) => (
+              <li key={i} className={`${i === idx ? 'on' : ''} ${v.tags.find((t) => t.tone !== 'other')?.tone ?? ''}`}>
+                <button type="button" onClick={() => go(i)} aria-label={v.patch ? `Patch ${v.patch}` : 'At release'} title={v.patch ? `Patch ${v.patch}` : 'At release'}>
+                  <span className="lc-dot" />
+                  <span className="lc-year">{v.date ? v.date.slice(0, 4) : i === 0 ? 'Release' : ''}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+          <div onClick={(e) => e.stopPropagation()}>
+            <VersionInfo v={slides[idx]} next={slides[idx + 1]} isNow={idx === last} />
+          </div>
+        </>
+      ) : (
+        <span className={`zoom-hint ${past ? 'has-history' : ''}`}>{hint}</span>
+      )}
     </div>
   );
 }
