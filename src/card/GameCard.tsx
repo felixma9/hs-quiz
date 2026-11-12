@@ -224,7 +224,8 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
           disabled={!canEdit('class') && !verdicts.class}
           onClick={() => canEdit('class') && setActive(active === 'class' ? null : 'class')}
         >
-          {shown.class && !shown.class.includes('+') && <img className="chip-class-icon" src={classIcon(shown.class)} alt="" draggable={false} />}
+          {/* One icon per class (multiclass cards have two or three). */}
+          {shown.class?.split(' + ').map((c) => <img key={c} className="chip-class-icon" src={classIcon(c)} alt="" draggable={false} />)}
           Class: {classLabel}
         </button>
         {card.type === 'SPELL' && (

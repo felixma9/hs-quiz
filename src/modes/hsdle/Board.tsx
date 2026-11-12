@@ -108,9 +108,14 @@ function TileCell({ col, tile, delay, selected, onTap }: { col: string; tile: Ti
           <span className="full">{tile.label}</span>
           <span className="short">{RARITY_SHORT[tile.label] ?? tile.label}</span>
         </span>
-      ) : col === 'class' && !tile.label.includes('+') ? (
+      ) : col === 'class' ? (
         <span className="tile-label rarity-label class-label">
-          <img className="class-tile-icon" src={classIcon(tile.label.toUpperCase().replace(/ /g, ''))} alt="" />
+          {/* One icon per class: multiclass labels are "Mage, Priest, Warlock". */}
+          <span className="class-tile-icons">
+            {tile.label.split(', ').map((c) => (
+              <img key={c} className="class-tile-icon" src={classIcon(c.toUpperCase().replace(/ /g, ''))} alt="" />
+            ))}
+          </span>
           <span>{tile.label}</span>
         </span>
       ) : (

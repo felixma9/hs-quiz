@@ -9,10 +9,11 @@ export default defineConfig({
     react(),
     // Installable app with offline play. Everything the site ships (code, card
     // data, frames) is cached on first visit; card art and fonts are cached as
-    // they're seen. A new deploy is picked up on the next launch, never mid-game.
+    // they're seen. A new deploy waits until you're on the menu, then reloads
+    // into it (src/app/updates.ts), so it never lands mid-game.
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'script-defer',
+      injectRegister: false,
       includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
         id: './',
@@ -31,6 +32,10 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // A new version takes over as soon as it's downloaded (the page decides when to
+        // reload into it). The plugin only sets these itself with its own register script.
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,png,webp,json}'],
         // cards.json is about 2 MB, over Workbox's default limit.
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
