@@ -1,0 +1,25 @@
+/* CardDB: fill in a blank card; the matching cards narrow below it. */
+.carddb { display: grid; gap: 14px; }
+.carddb .ask { margin: 0; }
+.carddb-types { justify-self: center; max-width: 100%; overflow-x: auto; }
+.carddb-types button { padding: 0 10px; }
+.carddb-filters { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; font-size: 0.85rem; }
+.carddb-filter { cursor: pointer; }
+.carddb-filter b { font-weight: 600; }
+.carddb-filter span { margin-left: 2px; color: var(--muted); }
+
+.carddb-results { display: grid; gap: 10px; }
+.carddb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px 8px; }
+.carddb-hit {
+  display: grid; justify-items: center; gap: 4px; padding: 6px 2px; border: 0; border-radius: var(--radius);
+  background: none; color: var(--text); font: inherit; cursor: pointer; text-align: center;
+}
+.carddb-hit:hover { background: rgba(255, 255, 255, 0.05); }
+.carddb-art { width: 64px; height: 64px; border: 2px solid var(--line-2); }
+.carddb-name { font-size: 0.8rem; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.carddb-meta { font-size: 0.7rem; }
+/* One left: make it the answer. */
+.carddb-grid.one { grid-template-columns: 1fr; }
+.carddb-grid.one .carddb-art { width: 112px; height: 112px; border-color: var(--gold); }
+.carddb-grid.one .carddb-name { font-size: 1.05rem; }
+.carddb-more { justify-self: center; }

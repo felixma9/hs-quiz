@@ -26,10 +26,17 @@ const MODES = [
     art: 'EX1_298', // Ragnaros the Firelord
     icon: rarityIcon('LEGENDARY'),
   },
+  {
+    href: '#/carddb',
+    name: 'CardDB',
+    blurb: 'Can\'t remember a card? Fill in what you know on a blank card and watch the list narrow down.',
+    art: 'EX1_559', // Archmage Antonidas
+    icon: ICON.mana,
+  },
 ];
 
 /**
- * Main menu: headline, the three modes (each over a slice of classic card
+ * Main menu: headline, the modes (each over a slice of classic card
  * art), then the card-pool settings (children).
  */
 export function Menu({ count, banner, children }: { count: number; banner?: ReactNode; children: ReactNode }) {
