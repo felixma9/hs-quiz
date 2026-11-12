@@ -112,8 +112,8 @@ export function App() {
           {playable && route === 'gauntlet' && <Gauntlet cards={pool} />}
           {playable && route === 'hsdle' && <Hsdle cards={pool} />}
           {cards && route === 'quickdraw' && <Quickdraw everything={everything} cards={cards} pool={pool} />}
-          {/* Every card, not the menu's pool: it's for finding any card. */}
-          {cards && route === 'carddb' && <CardDb cards={cards} />}
+          {/* Every card, not the menu's pool: it's for finding any card (locations too). */}
+          {cards && route === 'carddb' && <CardDb cards={everything} />}
           {cards && route === 'card' && <CardPreview cards={cards} />}
         </main>
         <footer className="muted small">

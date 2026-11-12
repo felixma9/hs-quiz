@@ -197,6 +197,15 @@ export interface Extras {
 }
 
 /**
+ * Sunwell has no location frame (it's older than locations), so a location is
+ * drawn on the hero frame, which has the same two gems: mana and, bottom
+ * right, durability where a hero has armor.
+ */
+export function frameCard(card: Card): Card {
+  return card.type === 'LOCATION' ? { ...card, type: 'HERO', armor: card.health } : card;
+}
+
+/**
  * Draw a card onto the canvas. `shown` says what to draw for each attribute
  * (blank where undefined). Calls onReady once drawn.
  */
@@ -208,6 +217,7 @@ export async function drawCard(
   isLive: () => boolean,
   { art = true, set = true }: Extras = {},
 ) {
+  card = frameCard(card);
   const [loaded] = await Promise.all([art ? loadArt(card) : null, loadFonts(), loadBanner()]);
   if (!isLive()) return;
   const { props, raceText } = sunwellProps(card, shown, loaded);

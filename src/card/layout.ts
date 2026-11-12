@@ -43,7 +43,8 @@ const LAYOUT: Record<string, Partial<Record<AttrKey, Box>>> = {
   },
 };
 
-export const layoutFor = (card: Card) => LAYOUT[card.type] ?? {};
+/** Locations are drawn on the hero frame (see frameCard). */
+export const layoutFor = (card: Card) => LAYOUT[card.type === 'LOCATION' ? 'HERO' : card.type] ?? {};
 
 export const boxStyle = ([x, y, w, h]: Box): React.CSSProperties => ({
   left: `${(x / REF_W) * 100}%`,
