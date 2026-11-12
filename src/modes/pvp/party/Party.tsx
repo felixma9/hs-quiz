@@ -2,6 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../../lib/types';
 import { cardsById } from '../../../lib/cards';
+import { usePill } from '../../../app/usePill';
 import { Art, useArtCrop } from '../../hsdle/Art';
 import { CardGlow, VerdictFlash, type Verdict } from '../../../app/VerdictFlash';
 import { zoomCard } from '../../../app/CardZoom';
@@ -420,13 +421,14 @@ function Setting({
   disabled: boolean;
   onPick(v: number): void;
 }) {
+  const pill = usePill<HTMLDivElement>();
   return (
     <div className="setting">
       <span className="setting-label">
         {icon}
         {label}
       </span>
-      <div className="seg" role="radiogroup" aria-label={label}>
+      <div ref={pill} className="seg" role="radiogroup" aria-label={label}>
         {options.map((o) => (
           <button
             key={o}

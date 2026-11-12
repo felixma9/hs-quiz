@@ -6,6 +6,7 @@ import { normalizeCardName, normalizeName, words } from '../../lib/fuzzy';
 import { GameCard } from '../../card/GameCard';
 import { Art, useArtCrop } from '../hsdle/Art';
 import { zoomCard } from '../../app/CardZoom';
+import { usePill } from '../../app/usePill';
 
 /**
  * CardDB: a blank card to fill in. Every part filled in narrows the list of
@@ -130,6 +131,7 @@ function writeSearch(type: CardType, filled: Partial<Record<AttrKey, string>>) {
 }
 
 export function CardDb({ cards }: { cards: Card[] }) {
+  const typesPill = usePill<HTMLDivElement>();
   const [initial] = useState(readSearch);
   const [type, setType] = useState<CardType>(initial.type);
   const [filled, setFilled] = useState<Partial<Record<AttrKey, string>>>(initial.filled);
@@ -190,7 +192,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
     <div className="mode carddb">
       <p className="ask center">Tap the card to fill in what you remember.</p>
 
-      <div className="seg carddb-types" role="tablist" aria-label="Card type">
+      <div ref={typesPill} className="seg carddb-types" role="tablist" aria-label="Card type">
         {TYPES.map((t) => (
           <button
             key={t.value}
@@ -230,7 +232,8 @@ export function CardDb({ cards }: { cards: Card[] }) {
       <section className="carddb-results" aria-live="polite">
         <div className="lobby-head">
           <span className="section-label">{one ? 'Found it' : 'Matching cards'}</span>
-          <span className="count-pill">{matches.length.toLocaleString()}</span>
+          {/* Keyed by the count, so it bumps when the number changes. */}
+          <span className="count-pill" key={matches.length}>{matches.length.toLocaleString()}</span>
         </div>
         {matches.length === 0 ? (
           <p className="muted small center carddb-none">
@@ -252,7 +255,8 @@ export function CardDb({ cards }: { cards: Card[] }) {
           </p>
         ) : (
           <>
-            <div className={`carddb-grid ${one ? 'one' : ''}`}>
+            {/* Keyed by type, so the results fade in again when the type changes. */}
+            <div key={type} className={`carddb-grid ${one ? 'one' : ''}`}>
               {matches.slice(0, shown).map((c) => (
                 <button key={c.id} type="button" className="carddb-hit" onClick={() => zoomCard(c, undefined, { history: true })} title={c.name}>
                   <Art card={c} crop={crop} className="carddb-art" />

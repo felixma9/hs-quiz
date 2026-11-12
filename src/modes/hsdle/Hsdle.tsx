@@ -1,3 +1,4 @@
+import { usePill } from '../../app/usePill';
 import { useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { randomCard, today } from '../../lib/cards';
@@ -64,10 +65,12 @@ export function Hsdle({ all, pool }: { all: Card[]; pool: Card[] }) {
     setGame(restore(m));
   };
   const daily = mode !== 'unlimited';
+  const tabsPill = usePill<HTMLDivElement>();
+  const kindPill = usePill<HTMLDivElement>();
 
   return (
     <div className={`mode hsdle ${game && game.guesses.includes(game.answerId) ? 'won' : ''}`}>
-      <div className="tabs">
+      <div ref={tabsPill} className="tabs">
         <button className={daily ? 'on' : ''} onClick={() => !daily && switchMode('standard')}>
           Daily
         </button>
@@ -76,7 +79,7 @@ export function Hsdle({ all, pool }: { all: Card[]; pool: Card[] }) {
         </button>
       </div>
       {daily && (
-        <div className="daily-kind" role="radiogroup" aria-label="Which daily">
+        <div ref={kindPill} className="daily-kind" role="radiogroup" aria-label="Which daily">
           <button type="button" role="radio" aria-checked={mode === 'standard'} className={mode === 'standard' ? 'on' : ''} onClick={() => switchMode('standard')}>
             Standard
           </button>

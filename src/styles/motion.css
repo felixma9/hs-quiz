@@ -143,3 +143,27 @@ details[open] > :not(summary) { animation: rise-in var(--med) var(--ease) backwa
 .lc-nav { animation: fade-in 0.3s ease 0.35s backwards; }
 /* The history zoom pops its card in like the plain zoom, once: the stage stays mounted while the timeline opens and closes. */
 .zoom-history .lc-stage { animation: zoom-card-in 0.26s var(--ease) backwards; }
+
+/*
+ * Tabs and segmented controls: the highlight slides to the chosen option
+ * (usePill.ts places it; without it the option keeps its own background).
+ */
+.has-pill { position: relative; }
+.has-pill::before {
+  content: ''; position: absolute; left: 0; top: 0; width: var(--pill-w); height: var(--pill-h);
+  transform: translate(var(--pill-x), var(--pill-y)); border-radius: var(--pill-radius, 8px); background: var(--pill-bg, var(--surface-2));
+  pointer-events: none;
+}
+.has-pill.pill-slides::before { transition: transform 0.28s var(--ease), width 0.28s var(--ease); }
+.has-pill > * { position: relative; z-index: 1; }
+.has-pill > .on { background: transparent !important; }
+.seg { --pill-bg: var(--gold); }
+.daily-kind { --pill-bg: var(--gold-bg); --pill-radius: 999px; }
+
+/* CardDB: filter chips pop in, the result count bumps when it changes, and switching type fades the results in again. */
+.carddb-filter { animation: pop 0.22s var(--ease) backwards; }
+.carddb-results .count-pill { animation: bump 0.25s var(--ease) backwards; }
+.carddb-also, .carddb-none { animation: fade-in var(--med) ease backwards; }
+/* HSdle: the Standard / Classic switch settles in under the tabs. */
+.daily-kind { animation: rise-in var(--med) var(--ease) backwards; }
+
