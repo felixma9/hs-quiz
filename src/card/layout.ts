@@ -34,6 +34,14 @@ const LAYOUT: Record<string, Partial<Record<AttrKey, Box>>> = {
     name: [87, 462, 514, 66],
     text: [150, 628, 380, 168],
   },
+  // Locations: Sunwell's hero card with our location layout (src/card/location.ts).
+  LOCATION: {
+    cost: COST,
+    health: [459, 768, 115, 135],
+    rarity: [288, 565, 70, 70],
+    name: [88, 486, 490, 72],
+    text: [150, 642, 352, 168],
+  },
   HERO: {
     cost: COST,
     health: [498, 752, 115, 135],
@@ -43,8 +51,7 @@ const LAYOUT: Record<string, Partial<Record<AttrKey, Box>>> = {
   },
 };
 
-/** Locations are drawn on the hero frame (see frameCard). */
-export const layoutFor = (card: Card) => LAYOUT[card.type === 'LOCATION' ? 'HERO' : card.type] ?? {};
+export const layoutFor = (card: Card) => LAYOUT[card.type] ?? {};
 
 export const boxStyle = ([x, y, w, h]: Box): React.CSSProperties => ({
   left: `${(x / REF_W) * 100}%`,

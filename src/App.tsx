@@ -114,7 +114,7 @@ export function App() {
           {cards && route === 'quickdraw' && <Quickdraw everything={everything} cards={cards} pool={pool} />}
           {/* Every card, not the menu's pool: it's for finding any card (locations too). */}
           {cards && route === 'carddb' && <CardDb cards={everything} />}
-          {cards && route === 'card' && <CardPreview cards={cards} />}
+          {cards && route === 'card' && <CardPreview cards={everything} />}
         </main>
         <footer className="muted small">
           Card data from <a href="https://hearthstonejson.com">HearthstoneJSON</a>. Hearthstone is © Blizzard Entertainment; this is

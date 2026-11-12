@@ -78,7 +78,7 @@ Class icons are 128px WebP files in `public/class-icons/<CLASS>.webp` (e.g. `DRU
 Cards are drawn on a canvas by HearthSim's [Sunwell](https://github.com/HearthSim/Sunwell) (MIT, archived in 2022). Its frame images are in `public/sunwell/`, converted to WebP (15 MB down to 2 MB).
 
 Sunwell is older than some of the game, so:
-- **Locations** can't be drawn and are left out of the game.
+- **Locations** have no Sunwell card, so we draw them on its hero card (same gems: mana, and durability where a hero has armor) with our own frame and layout (`src/card/location.ts`). The frames (`public/sunwell/frame-location-<class>.webp`) come from the [Hearthstone wiki](https://hearthstone.wiki.gg) via `scripts/make-location-frames.py`; Neutral is the Mage one turned grey. CardDB draws and finds locations; Gauntlet and HSdle still leave them out.
 - **Demon Hunter** has no Sunwell frame, so we made fel-green ones by recoloring the Death Knight frames (and the Warlock hero frame) with `scripts/make-dh-frames.py`. The Death Knight hero frame (also missing) is a recolored Warlock one.
 - **Multiclass cards** use the neutral frame. The class is shown in a chip under the card.
 - **Newer tribes** such as Undead and Naga: we set the tribe banner text ourselves.

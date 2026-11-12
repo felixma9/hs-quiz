@@ -3,6 +3,7 @@ import type { Card } from '../lib/types';
 import { ATTR, pretty, type AttrKey } from '../lib/attributes';
 import { artUrl } from '../lib/cards';
 import { fitText } from './fitText';
+import { applyLocationLayout } from './location';
 
 /**
  * Drawing cards with HearthSim's Sunwell (MIT, archived 2022). Everything that
@@ -84,6 +85,15 @@ function loadArt(card: Card) {
     art.set(card.id, p);
   }
   return p;
+}
+
+/** How much of each side of a card's art is padding (scripts/measure-art.py). Locations need it to hide their white bars. */
+let artCrop: Promise<Record<string, number>> | null = null;
+function loadArtCrop() {
+  artCrop ??= fetch(`${import.meta.env.BASE_URL}art-crop.json`)
+    .then((r) => (r.ok ? r.json() : {}))
+    .catch(() => ({}));
+  return artCrop;
 }
 
 /** Start loading a card's art now (e.g. the next card, during this turn) so it draws without a wait. */
@@ -197,9 +207,10 @@ export interface Extras {
 }
 
 /**
- * Sunwell has no location frame (it's older than locations), so a location is
- * drawn on the hero frame, which has the same two gems: mana and, bottom
- * right, durability where a hero has armor.
+ * Sunwell has no location card (it's older than locations), so a location is
+ * built on its hero card, which has the same two gems: mana and, bottom right,
+ * durability where a hero has armor. applyLocationLayout then swaps in the
+ * location frame and layout.
  */
 export function frameCard(card: Card): Card {
   return card.type === 'LOCATION' ? { ...card, type: 'HERO', armor: card.health } : card;
@@ -217,17 +228,21 @@ export async function drawCard(
   isLive: () => boolean,
   { art = true, set = true }: Extras = {},
 ) {
+  const location = card.type === 'LOCATION';
   card = frameCard(card);
-  const [loaded] = await Promise.all([art ? loadArt(card) : null, loadFonts(), loadBanner()]);
+  const [loaded, crop] = await Promise.all([art ? loadArt(card) : null, location ? loadArtCrop() : null, loadFonts(), loadBanner()]);
   if (!isLive()) return;
   const { props, raceText } = sunwellProps(card, shown, loaded);
   // No set: no watermark (Sunwell draws none for an unknown set).
   if (!set) props.set = '';
+  // Sunwell caches drawn frames by the props; keep a location apart from a hero card with the same values.
+  if (location) props.frame = 'location';
   try {
     // Size the text for this card so long texts aren't clipped.
     Object.assign(getSunwell().options, fitText(String(props.text ?? ''), card.type, BODY_FONT));
     const sw = getSunwell().createCard(props, RENDER_WIDTH, false, canvas, () => isLive() && onReady());
     sw.raceText = raceText;
+    if (location) applyLocationLayout(sw, crop?.[card.id] ?? 0);
     if (props.cardClass === 'DEMONHUNTER') {
       // Sunwell is older than Demon Hunter and would draw the neutral frame.
       // Our DH frames are recolored from other class frames (scripts/make-dh-frames.py).
