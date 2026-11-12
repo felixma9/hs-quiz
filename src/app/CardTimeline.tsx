@@ -72,6 +72,9 @@ const alone = (card: Card): Version => ({ card, diffs: [], tags: [] });
 
 type Phase = 'closed' | 'opening' | 'expanding' | 'open' | 'collapsing';
 
+/** Most a drag or scroll can pull the strip past its first or last version, in px. */
+const OVERSHOOT = 60;
+
 /** How long folding the timeline back up takes. */
 const COLLAPSE_MS = 380;
 
@@ -127,8 +130,19 @@ export function CardTimeline({
     go(idx + step);
     setDrag(0);
   };
-  // Past either end the strip only gives a little.
-  const resist = (dx: number, i: number) => ((i === 0 && dx > 0) || (i === last && dx < 0) ? dx * 0.3 : dx);
+  /**
+   * The strip follows a drag (or a sideways scroll) as far as the oldest and newest versions,
+   * then only gives a little elastic overshoot, at most OVERSHOOT px, wherever the drag started.
+   */
+  const resist = (dx: number, i: number) => {
+    const step = stepPx();
+    const max = i * step; // dragging right shows older versions, up to the oldest
+    const min = -(last - i) * step; // dragging left shows newer ones, up to the current
+    const give = (over: number) => OVERSHOOT * (1 - Math.exp(-over / (OVERSHOOT * 2)));
+    if (dx > max) return max + give(dx - max);
+    if (dx < min) return min - give(min - dx);
+    return dx;
+  };
 
   // Sideways scrolling (two-finger swipe on a trackpad, Shift + wheel) moves the strip like a drag,
   // then snaps once it stops. A native listener, so it can stop the browser's swipe-back gesture.
@@ -148,6 +162,8 @@ export function CardTimeline({
       e.preventDefault();
       const w = wheel.current;
       w.dx -= dx * (e.deltaMode === 1 ? 16 : 1);
+      // The strip shows the scroll held to the ends (a long swipe or trackpad momentum can't pull it
+      // into empty space); the snap uses the whole scroll, and can't land past the ends either.
       setDrag(resistRef.current(w.dx, idxRef.current));
       if (w.timer) clearTimeout(w.timer);
       w.timer = setTimeout(() => {
