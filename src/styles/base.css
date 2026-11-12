@@ -304,6 +304,7 @@ footer a { color: var(--faint); }
   border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); cursor: default;
 }
 .lc-info > .tl-tags { justify-content: center; }
+.lc-none { margin: 0; text-align: center; }
 .lc-info .tl-changes:empty { display: none; }
 
 /* Read out by screen readers, not shown. */

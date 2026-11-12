@@ -17,7 +17,7 @@ export interface HistoryFile {
   /** Release date (YYYY-MM-DD) of each patch that changed or released a listed card. */
   dates: Record<string, string>;
   cards: Record<string, Change[]>;
-  /** The patch each listed card came out in (its timeline starts there). */
+  /** The patch each card came out in (every card, changed or not). */
   released?: Record<string, string>;
 }
 
@@ -73,7 +73,8 @@ export interface Version {
 
 const STAT_LABEL: Partial<Record<keyof Card, string>> = { cost: 'Cost', attack: 'Attack', health: 'Health', armor: 'Armor', durability: 'Durability' };
 
-function setName(code: string | undefined): string {
+/** A set's name as the game files it ("Legacy", "Hall of Fame", or the expansion). */
+export function setName(code: string | undefined): string {
   if (!code) return '—';
   return { HOF: 'Hall of Fame', LEGACY: 'Legacy', CORE: 'Core', EVENT: 'Event' }[code] ?? SETS[code]?.name ?? code;
 }

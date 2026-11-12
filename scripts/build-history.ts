@@ -106,13 +106,13 @@ for (const c of cards) {
   if (!v) continue;
   // The newest version is cards.json itself (it may be a build or two newer than hsdata's tags).
   v.push({ patch: out.latest, card: c });
+  // When it came out, for every card (changed or not). Cards from launch read 1.0.0 (March 2014).
+  out.released![c.id] = v[0].patch;
+  out.dates[v[0].patch] = dates[v[0].patch];
   const changes = historyOf(v);
   if (!changes.length) continue;
   out.cards[c.id] = changes;
   for (const [patch] of changes) out.dates[patch] = dates[patch];
-  // Where its timeline starts. Cards from launch read 1.0.0 (March 2014).
-  out.released![c.id] = v[0].patch;
-  out.dates[v[0].patch] = dates[v[0].patch];
 }
 out.dates = Object.fromEntries(Object.entries(out.dates).sort(([, a], [, b]) => a.localeCompare(b)));
 

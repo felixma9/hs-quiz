@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../lib/types';
 import { drawable } from '../pool/pool';
 import { GameCard } from '../card/GameCard';
-import { monthYear, wordDiff, type Version } from '../lib/history';
+import { monthYear, setName, wordDiff, type Version } from '../lib/history';
 import { Tilt } from './Tilt';
 
 const NONE = new Set<never>();
@@ -43,6 +43,7 @@ function VersionInfo({ v, next, isNow }: { v: Version; next?: Version; isNow: bo
         <span className="tl-when">{v.patch ? `Patch ${v.patch}` : 'At release'}</span>
         {v.date && <span className="tl-date">{monthYear(v.date)}</span>}
         {isNow && <span className="tl-tag now">Current</span>}
+        <span className="tl-tag">{setName(v.card.set)}</span>
         {v.tags.map((t) => (
           <span key={t.label} className={`tl-tag ${t.tone}`}>
             {t.label}
@@ -386,7 +387,20 @@ export function CardTimeline({
           </div>
         </>
       ) : (
-        <span className={`zoom-hint ${past ? 'has-history' : ''}`}>{hint}</span>
+        <>
+          {/* No timeline to open: the card's release and set, the same facts a timeline would start with. */}
+          {versions && !past && (
+            <div className="lc-info" onClick={(e) => e.stopPropagation()}>
+              <div className="tl-tags">
+                <span className="tl-when">Released</span>
+                {versions[0].date && <span className="tl-date">{monthYear(versions[0].date)}</span>}
+                <span className="tl-tag">{setName(card.set)}</span>
+              </div>
+              <p className="muted small lc-none">No changes since release.</p>
+            </div>
+          )}
+          <span className={`zoom-hint ${past ? 'has-history' : ''}`}>{hint}</span>
+        </>
       )}
     </div>
   );
