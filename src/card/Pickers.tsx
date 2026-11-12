@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { ClassIcon } from './ClassIcon';
 
 type Option = { value: string; label: string };
@@ -44,18 +44,101 @@ interface PickerProps {
   onClose(): void;
 }
 
-export function ClassPicker({ options, value, onPick, onClose }: PickerProps) {
+/** The same classes in any order ("MAGE + ROGUE" and "ROGUE + MAGE"). */
+const classKey = (classes: string[]) => [...classes].sort().join('+');
+
+/**
+ * Class picker. Tap a class to pick it; or tick "Multi-class card" and toggle
+ * classes on and off. A combination some card in play has is set as you go
+ * (the picker stays open for a third class); one no card has blanks the
+ * class and says so, with what would work.
+ */
+export function ClassPicker({ options, value, onPick, onChange, onClose }: PickerProps & { onChange(value: string): void }) {
+  const singles = options.filter((o) => !isDual(o));
+  const combos = useMemo(() => options.filter(isDual), [options]);
+  const byKey = useMemo(() => new Map(combos.map((o) => [classKey(o.value.split(' + ')), o])), [combos]);
+  const label = (c: string) => singles.find((o) => o.value === c)?.label ?? c;
+  const names = (cs: string[]) => cs.map(label).join(' + ');
+
+  const [multi, setMulti] = useState(() => !!value?.includes('+'));
+  const [sel, setSel] = useState<string[]>(() => (value?.includes('+') ? value.split(' + ') : []));
+
+  const toggle = (c: string) => {
+    const next = sel.includes(c) ? sel.filter((x) => x !== c) : [...sel, c];
+    setSel(next);
+    const hit = next.length >= 2 ? byKey.get(classKey(next)) : undefined;
+    onChange(hit ? hit.value : '');
+  };
+  const setMultiOn = (on: boolean) => {
+    setMulti(on);
+    setSel(on && value && !value.includes('+') && value !== 'NEUTRAL' ? [value] : []);
+    if (!on && value?.includes('+')) onChange('');
+  };
+
+  // What to say about the current selection.
+  const hit = sel.length >= 2 ? byKey.get(classKey(sel)) : undefined;
+  const supersets = combos.filter((o) => sel.every((c) => o.value.split(' + ').includes(c)));
+  const partners = [...new Set(supersets.flatMap((o) => o.value.split(' + ')))].filter((c) => !sel.includes(c));
+  const [note, bad]: [ReactNode, boolean] = hit
+    ? [
+        <>
+          Set to <b>{names(hit.value.split(' + '))}</b>.{partners.length > 0 && <> You can add {partners.map(label).join(' or ')} too.</>}
+        </>,
+        false,
+      ]
+    : sel.length === 0
+      ? ['Toggle the classes on the card.', false]
+      : sel.length === 1
+        ? partners.length
+          ? [<>Now pick another class. {label(sel[0])} cards are also {partners.map(label).join(', ')}.</>, false]
+          : [<>No multi-class card is {label(sel[0])}.</>, true]
+        : [
+            <>
+              <b>Not a valid combination:</b> no card is {names(sel)}.{' '}
+              {supersets.length > 0 ? <>Add {partners.map(label).join(' or ')}.</> : <>Untick a class.</>}
+            </>,
+            true,
+          ];
+
   return (
     <Picker title="Class" onClose={onClose}>
-      <div className="class-grid">
-        {options.filter((o) => !isDual(o)).map((o) => (
-          <button key={o.value} type="button" className={`class-btn ${value === o.value ? 'on' : ''}`} onClick={() => onPick(o.value)}>
-            <ClassIcon cls={o.value} />
-            <span>{o.label}</span>
-          </button>
-        ))}
+      {combos.length > 0 && (
+        <label className="check multi-toggle">
+          <input type="checkbox" checked={multi} onChange={(e) => setMultiOn(e.target.checked)} />
+          Multi-class card
+        </label>
+      )}
+      <div className={`class-grid ${multi ? 'multi' : ''}`}>
+        {singles.map((o) => {
+          const on = multi ? sel.includes(o.value) : value === o.value;
+          // Neutral can't be one of several classes.
+          const off = multi && o.value === 'NEUTRAL';
+          return (
+            <button
+              key={o.value}
+              type="button"
+              className={`class-btn ${on ? 'on' : ''}`}
+              disabled={off}
+              aria-pressed={multi ? on : undefined}
+              onClick={() => (multi ? toggle(o.value) : onPick(o.value))}
+            >
+              <ClassIcon cls={o.value} />
+              <span>{o.label}</span>
+              {multi && <span className="class-tick" aria-hidden="true">{on ? '✓' : ''}</span>}
+            </button>
+          );
+        })}
       </div>
-      <DualSection label="Dual-class cards" options={options} value={value} onPick={onPick} icons />
+      {multi && (
+        <div className={`multi-note small ${bad ? 'bad' : hit ? 'ok' : ''}`} role="status" aria-live="polite">
+          {note}
+        </div>
+      )}
+      {multi && hit && (
+        <button type="button" className="btn small primary multi-done" onClick={onClose}>
+          Done
+        </button>
+      )}
     </Picker>
   );
 }

@@ -83,6 +83,10 @@ function fits(c: Card, type: CardType, f: Partial<Record<AttrKey, string>>): boo
         const parts = typeof real === 'string' ? real.split(' + ') : [];
         if (k === 'tribe') {
           if (v === 'NONE' ? real !== 'NONE' : !parts.includes(v) && !parts.includes('ALL')) return false;
+        } else if (k === 'class') {
+          // One class: cards that are (or include) it. Several: exactly that combination, in any order.
+          const want = v.split(' + ');
+          if (want.length === 1 ? !parts.includes(v) : want.length !== parts.length || !want.every((x) => parts.includes(x))) return false;
         } else if (!parts.includes(v)) return false;
         break;
       }

@@ -29,6 +29,8 @@ export function gradeEnum(guess: string, truth: string): Grade {
   if (guess === truth) return { verdict: 'correct' };
   const g = guess.split(' + ');
   const t = truth.split(' + ');
+  // The same classes (or tribes) in another order still match.
+  if (g.length === t.length && g.every((x) => t.includes(x))) return { verdict: 'correct' };
   if (g.some((x) => x !== 'NONE' && t.includes(x))) return { verdict: 'close' };
   return { verdict: 'wrong' };
 }

@@ -241,7 +241,7 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
       </div>
 
       {active === 'class' && canEdit('class') && (
-        <ClassPicker options={classOpts} value={draft.class} onPick={(v) => pick('class', v)} onClose={() => setActive(null)} />
+        <ClassPicker options={classOpts} value={draft.class} onPick={(v) => pick('class', v)} onChange={(v) => set('class', v)} onClose={() => setActive(null)} />
       )}
       {active === 'tribe' && canEdit('tribe') && (
         <TribePicker

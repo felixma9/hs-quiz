@@ -32,6 +32,8 @@ describe('enums', () => {
   it('exact and overlap', () => {
     expect(gradeEnum('BEAST', 'BEAST').verdict).toBe('correct');
     expect(gradeEnum('BEAST', 'BEAST + UNDEAD').verdict).toBe('close');
+    expect(gradeEnum('ROGUE + MAGE', 'MAGE + ROGUE').verdict).toBe('correct');
+    expect(gradeEnum('MAGE + PRIEST', 'MAGE + PRIEST + WARLOCK').verdict).toBe('close');
     expect(gradeEnum('NONE', 'BEAST').verdict).toBe('wrong');
   });
   it('class overlap is close for multiclass cards', () => {

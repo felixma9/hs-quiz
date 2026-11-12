@@ -69,6 +69,22 @@
 }
 .option-list button.on { border-color: var(--gold); background: var(--gold-bg); }
 .dual summary { cursor: pointer; color: var(--muted); padding: 4px 0; }
+/* Multi-class: a checkbox, then classes toggle on and off with a tick. */
+.multi-toggle { display: flex; align-items: center; gap: 8px; min-height: 40px; font-size: 0.92rem; cursor: pointer; }
+.multi-toggle input { width: 18px; height: 18px; accent-color: var(--gold); }
+.class-btn { position: relative; }
+.class-btn:disabled { opacity: 0.35; cursor: default; }
+.class-tick {
+  position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center;
+  font-size: 0.75rem; font-weight: 800; border: 1px solid var(--line-2); color: #1d1606;
+}
+.class-btn.on .class-tick { background: var(--gold); border-color: var(--gold); }
+.multi-note { padding: 8px 10px; border-radius: 8px; background: var(--surface-2); color: var(--muted); line-height: 1.4; }
+.multi-note b { color: var(--text); }
+.multi-note.ok { color: var(--ok-text); background: rgba(63, 143, 74, 0.12); }
+.multi-note.bad { color: #fff; background: rgba(176, 48, 45, 0.85); }
+.multi-note.bad b { color: #fff; }
+.multi-done { justify-self: end; }
 
 /* Wide screens: open pickers beside the card instead of under it. */
 @media (min-width: 1000px) {
