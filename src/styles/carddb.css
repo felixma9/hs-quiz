@@ -23,3 +23,6 @@
 .carddb-grid.one .carddb-art { width: 112px; height: 112px; border-color: var(--gold); }
 .carddb-grid.one .carddb-name { font-size: 1.05rem; }
 .carddb-more { justify-self: center; }
+
+/* No results: links to the types that do have some. */
+.carddb-elsewhere { font: inherit; color: var(--gold-2); text-decoration: underline; text-underline-offset: 3px; padding: 0; }

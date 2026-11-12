@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
@@ -90,6 +91,16 @@ function fits(c: Card, type: CardType, f: Partial<Record<AttrKey, string>>): boo
   return true;
 }
 
+/** What's filled in that this type has, ignoring empty fields. */
+function activeFor(type: CardType, filled: Partial<Record<AttrKey, string>>): Partial<Record<AttrKey, string>> {
+  const fields = new Set(fieldsFor(type));
+  return Object.fromEntries(Object.entries(filled).filter(([k, v]) => fields.has(k as AttrKey) && v?.trim())) as Partial<Record<AttrKey, string>>;
+}
+
+/** "a and b", "a, b and c". */
+const listOf = (xs: React.ReactNode[]) =>
+  xs.flatMap((x, i) => (i === 0 ? [x] : [i === xs.length - 1 ? ' and ' : ', ', x]));
+
 export function CardDb({ cards }: { cards: Card[] }) {
   const [type, setType] = useState<CardType>('MINION');
   const [filled, setFilled] = useState<Partial<Record<AttrKey, string>>>({});
@@ -100,16 +111,34 @@ export function CardDb({ cards }: { cards: Card[] }) {
   const fields = useMemo(() => new Set(fieldsFor(type)), [type]);
   const all = useMemo(() => new Set(ATTRS.map((a) => a.key)), []);
   // Only fields this type has count (switching type keeps the rest for switching back).
-  const active = Object.fromEntries(Object.entries(filled).filter(([k, v]) => fields.has(k as AttrKey) && v?.trim())) as Partial<
-    Record<AttrKey, string>
-  >;
+  const active = activeFor(type, filled);
   const activeKey = JSON.stringify(active);
+  const filledKey = JSON.stringify(filled);
 
   const matches = useMemo(
     () => cards.filter((c) => fits(c, type, active)).sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [cards, type, activeKey],
   );
+
+  // Nothing here: how many fit in each other type (with the parts that type has).
+  const elsewhere = useMemo(
+    () =>
+      matches.length
+        ? []
+        : TYPES.filter((t) => t.value !== type)
+            .map((t) => {
+              const f = activeFor(t.value, filled);
+              return { ...t, n: cards.filter((c) => fits(c, t.value, f)).length };
+            })
+            .filter((t) => t.n > 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [matches.length, cards, type, filledKey],
+  );
+  const switchType = (t: CardType) => {
+    setType(t);
+    setShown(PAGE);
+  };
 
   const set = (k: AttrKey, v: string) => {
     setFilled((f) => ({ ...f, [k]: v }));
@@ -138,10 +167,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
             role="tab"
             aria-selected={type === t.value}
             className={type === t.value ? 'on' : ''}
-            onClick={() => {
-              setType(t.value);
-              setShown(PAGE);
-            }}
+            onClick={() => switchType(t.value)}
           >
             {t.label}
           </button>
@@ -177,7 +203,23 @@ export function CardDb({ cards }: { cards: Card[] }) {
           <span className="count-pill">{matches.length.toLocaleString()}</span>
         </div>
         {matches.length === 0 ? (
-          <p className="muted small center">No matches. Remove a filter.</p>
+          <p className="muted small center carddb-none">
+            {elsewhere.length ? (
+              <>
+                No results in {TYPES.find((t) => t.value === type)!.label}, but{' '}
+                {listOf(
+                  elsewhere.map((t, i) => (
+                    <button key={t.value} type="button" className="link carddb-elsewhere" onClick={() => switchType(t.value)}>
+                      {t.n.toLocaleString()} {i === 0 ? 'found ' : ''}in {t.label}
+                    </button>
+                  )),
+                )}
+                .
+              </>
+            ) : (
+              'No matches. Remove a filter.'
+            )}
+          </p>
         ) : (
           <>
             <div className={`carddb-grid ${one ? 'one' : ''}`}>
