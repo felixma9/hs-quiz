@@ -10,6 +10,7 @@ import { GameCard } from '../../card/GameCard';
 import { Art, useArtCrop } from '../hsdle/Art';
 import { zoomCard } from '../../app/CardZoom';
 import { TextDiff } from './TextDiff';
+import { VerdictFlash } from '../../app/VerdictFlash';
 import { loadSettings, saveSettings, type GauntletSettings as Settings } from './settings';
 
 const LIVES = 3;
@@ -124,6 +125,17 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
 
   return (
     <div className="mode">
+      <VerdictFlash
+        verdict={
+          result
+            ? {
+                tone: result.verdict === 'correct' ? 'ok' : 'bad',
+                text: result.verdict === 'correct' ? 'Correct!' : revealed ? 'Revealed' : 'Wrong!',
+                id: history.length,
+              }
+            : null
+        }
+      />
       <div className="hud">
         <span className="lives" aria-label={`${lives} lives`}>
           {Array.from({ length: LIVES }, (_, i) => (
@@ -189,7 +201,7 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
 
       {over && result ? (
         <div className="panel center party-over gauntlet-over">
-          <Feedback result={result} attrKey={round.hidden} card={round.card} truthPretty={pretty(round.hidden, truth)} revealed={revealed} />
+          <Feedback result={result} attrKey={round.hidden} card={round.card} truthPretty={pretty(round.hidden, truth)} answer={revealed ? undefined : answer} revealed={revealed} />
           <div className="over-head">
             <span className="over-kicker">Game over</span>
             <h2>{score > startBest ? 'New best!' : score ? 'Nice run' : 'Out of lives'}</h2>

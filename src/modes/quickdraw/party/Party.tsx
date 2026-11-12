@@ -2,6 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../../lib/types';
 import { Art, useArtCrop } from '../../hsdle/Art';
+import { VerdictFlash, type Verdict } from '../../../app/VerdictFlash';
 import { zoomCard } from '../../../app/CardZoom';
 import { Bold, ClassName } from '../Bold';
 import { ICON, rarityIcon } from '../../../app/icons';
@@ -626,6 +627,7 @@ function Play({
     else if (secs > 3 && secs <= 5) sfx.tick(false);
   }, [secs]);
   const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? 'Someone';
+  const verdict = verdictFor(last, me, nameOf);
   const typed = typing && typing.id === state.turn ? typing.text : '';
   const hitCard = last?.kind === 'hit' ? byId.get(last.cardId) : undefined;
 
@@ -636,6 +638,7 @@ function Play({
 
   return (
     <>
+      <VerdictFlash verdict={verdict} />
       {solo ? (
         <div className="solo-score" role="status">
           <b key={state.players[0]?.hits}>{state.players[0]?.hits ?? 0}</b>
@@ -656,7 +659,8 @@ function Play({
       {myTurn && !solo && <div className="my-turn-glow" aria-hidden="true" />}
       {/* Gauntlet PvP: a big call in the middle of the screen as your turn starts. */}
       {myTurn && vs && (
-        <div className="turn-flash" key={`flash-${state.round}`} aria-hidden="true">
+        // Waits for the right / wrong banner from the turn before to clear.
+        <div className={`turn-flash ${verdict ? 'after-verdict' : ''}`} key={`flash-${state.round}`} aria-hidden="true">
           {state.card?.steal ? 'Your steal!' : 'Your turn!'}
         </div>
       )}
@@ -1072,11 +1076,16 @@ function EventLine({
             {c && <Art card={c} crop={crop} className="qf-thumb event-thumb" zoom />}
             <span>
               {what} {nobody}
-              {last.example && (
-                <>
-                  {c?.name}'s {field} is <b>{last.example}</b>.
-                </>
-              )}
+              {last.example &&
+                (last.attr === 'name' ? (
+                  <>
+                    It was <b>{last.example}</b>.
+                  </>
+                ) : (
+                  <>
+                    {c?.name}'s {field} is <b>{last.example}</b>.
+                  </>
+                ))}
               {out}
             </span>
           </>
@@ -1106,6 +1115,21 @@ function EventLine({
   );
 }
 
+/** The big right / wrong banner for a game event: "Correct!" / "Wrong!" for you, "Sam got it!" for others. */
+function verdictFor(last: PublicState['last'], me: string, nameOf: (id: string) => string): Verdict | null {
+  if (!last || last.kind === 'info') return null;
+  const mine = last.player === me;
+  const who = nameOf(last.player);
+  if (last.kind === 'hit') {
+    const text = mine ? (last.stole ? 'Stolen!' : 'Correct!') : `${who} ${last.stole ? 'stole it' : 'got it'}!`;
+    return { tone: 'ok', text, id: last.n };
+  }
+  // Quickdraw's rejected guesses ('miss') and Gauntlet PvP's wrong answers have a guess; the rest is the rope.
+  const timeUp = last.kind === 'boom' && last.guess === undefined;
+  const text = timeUp ? (mine ? "Time's up!" : `${who}: time's up!`) : mine ? 'Wrong!' : `${who}: wrong!`;
+  return { tone: 'bad', text, id: last.n };
+}
+
 /* ---------------- Results ---------------- */
 
 const PLACE_GEM = ['LEGENDARY', 'EPIC', 'RARE'];
@@ -1123,6 +1147,7 @@ function Over({ state, me, isHost, all, onAgain }: { state: PublicState; me: str
   const place = (id: string) => ranked.findIndex((p) => p.id === id) + 1;
   return (
     <div className="panel party-over">
+      <LastAnswer state={state} me={me} all={all} />
       <div className="over-head">
         <span className="over-kicker">Game over</span>
         <h2>{winner ? (winner.id === me ? 'You win!' : `${winner.name} wins!`) : 'No winner'}</h2>
@@ -1177,6 +1202,24 @@ function Over({ state, me, isHost, all, onAgain }: { state: PublicState; me: str
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The turn that ended the game, with its answer: the game-over screen replaces
+ * the play area, so without this the last card's answer would never be seen.
+ */
+function LastAnswer({ state, me, all }: { state: PublicState; me: string; all: Card[] }) {
+  const crop = useArtCrop();
+  const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
+  const last = state.last;
+  if (!last || (last.kind !== 'boom' && last.kind !== 'hit')) return null;
+  const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? 'Someone';
+  return (
+    <>
+      <VerdictFlash verdict={verdictFor(last, me, nameOf)} />
+      <EventLine last={last} me={me} nameOf={nameOf} byId={byId} crop={crop} />
+    </>
   );
 }
 
@@ -1427,6 +1470,7 @@ function SoloOver({
   const hits = p?.hits ?? 0;
   return (
     <div className="panel party-over solo-over">
+      <LastAnswer state={state} me={p?.id ?? ''} all={all} />
       <div className="over-head">
         <span className="over-kicker">Game over</span>
         <h2>{isNew ? 'New best!' : hits ? 'Nice run' : 'Out of rope'}</h2>

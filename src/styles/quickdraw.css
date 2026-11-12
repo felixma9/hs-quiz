@@ -402,6 +402,7 @@
   font-weight: 700; font-size: 1.8rem; box-shadow: 0 0 0 6px rgba(226, 182, 90, 0.2), 0 10px 40px rgba(0, 0, 0, 0.6);
   transform: translate(-50%, -50%); animation: turn-flash 1.4s ease forwards;
 }
+.turn-flash.after-verdict { animation-delay: 1s; animation-fill-mode: both; }
 @keyframes turn-flash {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
   14% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }

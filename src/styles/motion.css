@@ -119,3 +119,9 @@
   /* The moving turn call is left out; the gold label and box under the rope still mark your turn. */
   .turn-flash { animation: none !important; display: none; }
 }
+
+/* The right / wrong banner pops in; a miss also gives it a shake. */
+@keyframes verdict-pop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } 60% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } 100% { transform: translate(-50%, -50%); } }
+@keyframes verdict-shake { 0%, 100% { transform: translate(-50%, -50%); } 25% { transform: translate(calc(-50% - 8px), -50%); } 50% { transform: translate(calc(-50% + 7px), -50%); } 75% { transform: translate(calc(-50% - 3px), -50%); } }
+.verdict-flash { animation: verdict-pop 0.3s var(--ease) backwards; }
+.verdict-flash.bad { animation: verdict-pop 0.3s var(--ease) backwards, verdict-shake 0.3s ease 0.3s; }
