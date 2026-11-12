@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
 import { normalizeCardName, normalizeName, words } from '../../lib/fuzzy';
@@ -105,9 +105,35 @@ function activeFor(type: CardType, filled: Partial<Record<AttrKey, string>>): Pa
 const listOf = (xs: React.ReactNode[]) =>
   xs.flatMap((x, i) => (i === 0 ? [x] : [i === xs.length - 1 ? ' and ' : ', ', x]));
 
+/**
+ * The search lives in the address (#/carddb?type=SPELL&name=Fireball&cost=4), so a refresh or a
+ * shared link opens the same search. Unknown types and fields are ignored.
+ */
+function readSearch(): { type: CardType; filled: Partial<Record<AttrKey, string>> } {
+  const q = new URLSearchParams(location.hash.split('?')[1] ?? '');
+  const t = q.get('type') as CardType | null;
+  const type = t && TYPES.some((x) => x.value === t) ? t : 'MINION';
+  const keys = new Set(ATTRS.map((a) => a.key));
+  const filled: Partial<Record<AttrKey, string>> = {};
+  for (const [k, v] of q) if (k !== 'type' && keys.has(k as AttrKey) && v.trim()) filled[k as AttrKey] = v;
+  return { type, filled };
+}
+
+function writeSearch(type: CardType, filled: Partial<Record<AttrKey, string>>) {
+  const q = new URLSearchParams();
+  if (type !== 'MINION') q.set('type', type);
+  for (const [k, v] of Object.entries(filled)) if (v?.trim()) q.set(k, v);
+  const qs = q.toString(); // (not q.size: older Safari lacks it)
+  const hash = `#/carddb${qs ? `?${qs}` : ''}`;
+  // Replace, not push: typing a search shouldn't fill the Back button's history.
+  if (location.hash !== hash) history.replaceState(history.state, '', hash);
+}
+
 export function CardDb({ cards }: { cards: Card[] }) {
-  const [type, setType] = useState<CardType>('MINION');
-  const [filled, setFilled] = useState<Partial<Record<AttrKey, string>>>({});
+  const [initial] = useState(readSearch);
+  const [type, setType] = useState<CardType>(initial.type);
+  const [filled, setFilled] = useState<Partial<Record<AttrKey, string>>>(initial.filled);
+  useEffect(() => writeSearch(type, filled), [type, filled]);
   const [shown, setShown] = useState(PAGE);
   const crop = useArtCrop();
 

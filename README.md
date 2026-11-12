@@ -48,7 +48,7 @@ src/
   modes/gauntlet/          Gauntlet mode
   modes/hsdle/             HSdle mode: compare.ts (column logic), Board, Search, Clues, Art
   modes/pvp/               Gauntlet PvP: home screen, party/ (game.ts rules, net.ts rooms, Party.tsx UI)
-  modes/carddb/            CardDB: fill in a blank card to find any card (no results? it says which other types have some)
+  modes/carddb/            CardDB: fill in a blank card to find any card (it says which other types have matches too); the search lives in the address (#/carddb?type=SPELL&name=...), so it survives a refresh and can be shared
   lib/                     shared logic: card types, attributes, grading, fuzzy matching, storage
   data/                    set names/years, class badges
   styles/                  base (tokens, controls), menu, card, gauntlet, hsdle, pvp, carddb, motion

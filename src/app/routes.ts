@@ -16,5 +16,7 @@ export function parseRoute(hash = location.hash): Route {
   if (h === 'hsdle' || h === 'cardle') return 'hsdle'; // old links still work
   // #/pvp?room=CODE. Room links from before (#/quickdraw, #/quickfire) still work.
   if (h.startsWith('pvp') || h.startsWith('quickdraw') || h.startsWith('quickfire')) return 'pvp';
-  return h === 'gauntlet' || h === 'carddb' ? h : 'menu';
+  // CardDB keeps its search in the address (#/carddb?type=SPELL&name=...), so only the part before '?' names the page.
+  const page = h.split('?')[0];
+  return page === 'gauntlet' || page === 'carddb' ? page : 'menu';
 }
