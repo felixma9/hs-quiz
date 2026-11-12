@@ -26,3 +26,5 @@
 
 /* No results: links to the types that do have some. */
 .carddb-elsewhere { font: inherit; color: var(--gold-2); text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+/* Under the results: the same search in the other card types. */
+.carddb-also { margin: 4px 0 0; }

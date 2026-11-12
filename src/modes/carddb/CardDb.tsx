@@ -125,19 +125,19 @@ export function CardDb({ cards }: { cards: Card[] }) {
     [cards, type, activeKey],
   );
 
-  // Nothing here: how many fit in each other type (with the parts that type has).
+  // How many fit in each other type (with the parts that type has): shown when nothing fits here,
+  // and under the results otherwise ("2 more results found in Spell"). A type only counts when at
+  // least one filter applies to it; with none, every card of it would "match".
   const elsewhere = useMemo(
     () =>
-      matches.length
-        ? []
-        : TYPES.filter((t) => t.value !== type)
-            .map((t) => {
-              const f = activeFor(t.value, filled);
-              return { ...t, n: cards.filter((c) => fits(c, t.value, f)).length };
-            })
-            .filter((t) => t.n > 0),
+      TYPES.filter((t) => t.value !== type)
+        .map((t) => {
+          const f = activeFor(t.value, filled);
+          return { ...t, n: Object.keys(f).length ? cards.filter((c) => fits(c, t.value, f)).length : 0 };
+        })
+        .filter((t) => t.n > 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [matches.length, cards, type, filledKey],
+    [cards, type, filledKey],
   );
   const switchType = (t: CardType) => {
     setType(t);
@@ -241,6 +241,19 @@ export function CardDb({ cards }: { cards: Card[] }) {
               <button type="button" className="btn carddb-more" onClick={() => setShown((n) => n + PAGE)}>
                 Show more ({(matches.length - shown).toLocaleString()} left)
               </button>
+            )}
+            {elsewhere.length > 0 && (
+              <p className="muted small center carddb-also">
+                {listOf(
+                  elsewhere.map((t, i) => (
+                    <button key={t.value} type="button" className="link carddb-elsewhere" onClick={() => switchType(t.value)}>
+                      {i === 0
+                        ? `${t.n.toLocaleString()} more result${t.n === 1 ? '' : 's'} found in ${t.label}`
+                        : `${t.n.toLocaleString()} in ${t.label}`}
+                    </button>
+                  )),
+                )}
+              </p>
             )}
           </>
         )}
