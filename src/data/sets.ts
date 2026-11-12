@@ -63,6 +63,9 @@ export const STANDARD_SETS: readonly string[] = [
   'CATACLYSM', 'ESCAPEFROM_VIOLET_HOLD', 'BE',
 ];
 
+/** A set is "classic" when it came out this many years ago or more (HSdle's Classic daily, the card pool's Classic choice). */
+export const CLASSIC_AGE = 10;
+
 /** Year the Core set launched (cards first printed in that first Core, CS3_*). */
 const CORE_YEAR = 2021;
 

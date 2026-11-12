@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Card } from '../lib/types';
-import { SETS, STANDARD_SETS, setName } from '../data/sets';
+import { CLASSIC_AGE, SETS, STANDARD_SETS, setName } from '../data/sets';
 
 interface Props {
   cards: Card[];
@@ -44,6 +44,10 @@ export function SetPicker({ cards, excluded, onChange }: Props) {
   };
   const standard = new Set(STANDARD_SETS);
   const isStandard = all.every((s) => ex.has(s) !== standard.has(s));
+  // Classic: every set at least CLASSIC_AGE years old (it grows by a year each January).
+  const classicUpTo = new Date().getFullYear() - CLASSIC_AGE;
+  const classic = new Set(years.filter((y) => y.year > 0 && y.year <= classicUpTo).flatMap((y) => y.sets.map((s) => s.set)));
+  const isClassic = classic.size > 0 && all.every((s) => ex.has(s) !== classic.has(s));
 
   return (
     <div className="panel set-picker">
@@ -51,7 +55,7 @@ export function SetPicker({ cards, excluded, onChange }: Props) {
         <span>
           <b>Card sets</b>{' '}
           <span className="muted">
-            {selectedSets === all.length ? 'All sets' : isStandard ? 'Standard' : `${selectedSets} of ${all.length} sets`} · {selectedCount.toLocaleString()} cards
+            {selectedSets === all.length ? 'All sets' : isStandard ? 'Standard' : isClassic ? 'Classic' : `${selectedSets} of ${all.length} sets`} · {selectedCount.toLocaleString()} cards
           </span>
         </span>
         <span className={`chev ${open ? 'open' : ''}`}>▾</span>
@@ -64,6 +68,14 @@ export function SetPicker({ cards, excluded, onChange }: Props) {
             </button>
             <button className="btn small" onClick={() => onChange(all.filter((s) => !standard.has(s)))} aria-pressed={isStandard}>
               Standard
+            </button>
+            <button
+              className="btn small"
+              onClick={() => onChange(all.filter((s) => !classic.has(s)))}
+              aria-pressed={isClassic}
+              title={`Sets ${CLASSIC_AGE}+ years old (up to ${classicUpTo})`}
+            >
+              Classic
             </button>
             <button className="btn small" onClick={() => onChange(all)}>
               None

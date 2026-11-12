@@ -1,6 +1,6 @@
 import type { Card } from '../../lib/types';
 import { cardOfTheDay } from '../../lib/cards';
-import { STANDARD_SETS, released } from '../../data/sets';
+import { CLASSIC_AGE, STANDARD_SETS, released } from '../../data/sets';
 
 /**
  * Which cards HSdle plays with. The dailies are the same for everyone: their
@@ -14,8 +14,7 @@ export const HSDLE_TYPES: readonly Card['type'][] = ['MINION', 'SPELL', 'WEAPON'
 /** The two dailies: Standard cards, or Classic ones (sets at least CLASSIC_AGE years old). */
 export type Daily = 'standard' | 'classic';
 
-/** A set is "classic" when it came out this many years ago or more. */
-export const CLASSIC_AGE = 10;
+export { CLASSIC_AGE };
 
 export const playable = (cards: Card[]) => cards.filter((c) => HSDLE_TYPES.includes(c.type));
 
