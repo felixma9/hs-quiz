@@ -46,6 +46,8 @@ h2 { margin: 0.2em 0; font-size: 1.15rem; }
 ::selection { background: var(--gold-dim); }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .gold-text { color: var(--gold); }
+/* Installed as an app: no pull-to-refresh (it would reload mid-game) and no rubber-band past the page. */
+@media (display-mode: standalone) { html, body { overscroll-behavior-y: none; } }
 
 /* ---- Title bar ---- */
 .top {
