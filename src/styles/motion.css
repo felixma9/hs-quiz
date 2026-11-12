@@ -20,12 +20,35 @@
 
 /* Controls: colors fade, presses dip a little. */
 .btn, .tabs button, .chip, .rarity-chip, .class-btn, .option-list button, .clue-btn, .give-up, .mode-card,
-.search-list button, .suggest button, .set-summary, .link, .top-back, .seg button, .in {
+.search-list button, .suggest button, .set-summary, .link, .top-back, .seg button, .in,
+.daily-kind button, .carddb-hit, .sound-toggle, .dual summary, .multi-toggle, .check, .carddb-elsewhere,
+.board-cell.name-cell, .art-crop.zoomable, .qf-thumb {
   transition: background-color var(--fast) ease, border-color var(--fast) ease, color var(--fast) ease,
     opacity var(--fast) ease, transform var(--fast) var(--ease);
 }
 .btn:active:not(:disabled), .chip:active:not(:disabled), .rarity-chip:active, .class-btn:active,
 .option-list button:active, .clue-btn.unlocked:active, .give-up:active, .mode-card:active { transform: scale(0.98); }
+/* Everything else you can tap answers the press too, so a tap on a phone never feels dead. */
+.tabs button:active, .seg button:active:not(:disabled), .daily-kind button:active, .carddb-hit:active,
+.sound-toggle:active, .top-back:active, .set-summary:active, .search-list button:active, .suggest button:active,
+.board-cell.name-cell:active, .qf-thumb:active, .art-crop.zoomable:active { transform: scale(0.96); }
+.class-btn:active:not(:disabled) .class-icon { transform: scale(0.92); }
+.class-icon { transition: transform var(--med) var(--ease), filter var(--fast) ease; }
+/* A class you just ticked gets a small pop. */
+@keyframes tick-pop { 0% { transform: scale(0.4); } 70% { transform: scale(1.15); } 100% { transform: none; } }
+.class-btn.on .class-tick { animation: tick-pop 0.22s var(--ease) backwards; }
+.class-tick { transition: background-color var(--fast) ease, border-color var(--fast) ease; }
+
+/* Folded sections (dual classes / tribes) open with their contents settling in. */
+details[open] > :not(summary) { animation: rise-in var(--med) var(--ease) backwards; }
+
+/* The whole-card zoom: the dim fades in and the card grows into place. */
+@keyframes zoom-card-in { from { opacity: 0; transform: scale(0.9) translateY(8px); } }
+.zoom { animation: fade-in 0.18s ease backwards; }
+.zoom-card { animation: zoom-card-in 0.26s var(--ease) backwards; }
+
+/* CardDB results settle in when the list changes. */
+.carddb-grid { animation: fade-in var(--med) ease backwards; }
 
 /* Popups and results appear. */
 .suggest, .search-list, .picker, .clue-body, .feedback, .board-detail, .settings, .shared-banner,

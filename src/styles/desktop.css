@@ -24,6 +24,15 @@
   .hotspot.editable:hover { outline-color: rgba(255, 255, 255, 0.85); }
   .link { text-underline-offset: 3px; text-decoration-thickness: 1px; }
   .link:hover { text-decoration: underline; }
+  .class-btn:not(:disabled):not(.on):hover { border-color: var(--line-2); background: #2a2b34; }
+  .class-btn.on:hover { border-color: var(--gold-2); }
+  .class-btn:not(:disabled):hover .class-icon { filter: brightness(1.12); }
+  .option-list button:not(.on):hover { border-color: var(--line-2); background: #2a2b34; }
+  .option-list button.on:hover { border-color: var(--gold-2); }
+  .dual summary:hover, .multi-toggle:hover, .check:hover { color: var(--text); }
+  .search-list button:hover { background: rgba(255, 255, 255, 0.06); }
+  .chip.editable:not(:disabled):hover { border-color: rgba(255, 255, 255, 0.85); background: var(--surface-2); }
+  .carddb-elsewhere:hover { color: var(--gold); }
 
   /* ---- Movement ---- */
   @media (prefers-reduced-motion: no-preference) {
@@ -72,6 +81,12 @@
     .rarity-chip:hover, .clue-btn.unlocked:hover { transform: translateY(-1px); }
     .rarity-chip-gem { transition: opacity var(--fast) ease, transform var(--med) var(--ease); }
     .rarity-chip:hover .rarity-chip-gem { transform: scale(1.15); }
+
+    /* Picker options and chips lift a pixel; class icons grow a little. */
+    .class-btn:not(:disabled):hover, .option-list button:hover, .chip:not(:disabled):hover { transform: translateY(-1px); }
+    .class-btn:not(:disabled):hover .class-icon { transform: scale(1.08); }
+    .class-btn:active:not(:disabled), .option-list button:active, .chip:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+    .search-list button .art-crop img { transition: transform 0.35s var(--ease); }
 
     /* The title bar's back arrow nudges back. */
     .top-back:hover { transform: translateX(-2px); }
