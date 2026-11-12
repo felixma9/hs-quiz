@@ -259,6 +259,8 @@ footer a { color: var(--faint); }
 .lc.no-history .lc-slide { cursor: default; }
 .lc-slide .game-card-frame, .lc-slide .zoom-render { width: 100%; }
 .lc-slide .card-chips { display: none; }
+/* An older version waiting for the current card to finish drawing: holds the card's size. */
+.lc-waiting { aspect-ratio: 500 / 746; }
 /* The date title over each version: when it came in. Space is kept while closed so the card doesn't move. */
 .lc-when { height: var(--title); display: grid; align-content: end; justify-items: center; gap: 1px; padding-bottom: 6px; box-sizing: border-box; text-align: center; transition: opacity 0.3s ease; }
 .lc-when b { font-size: 1rem; font-weight: 700; color: var(--text); }

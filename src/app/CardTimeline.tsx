@@ -222,8 +222,18 @@ export function CardTimeline({
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  const face = (v: Version) =>
-    canDraw ? <GameCard card={v.card} hidden={NONE} pool={[]} /> : <img className="zoom-render" src={renderUrl(v.card)} alt={v.card.name} />;
+  // The current card draws first; the older versions wait for it (a same-size blank until then), so
+  // opening a card is never slowed by its history. Sunwell draws one card at a time, in the order asked.
+  const [mainDrawn, setMainDrawn] = useState(!canDraw);
+  useEffect(() => setMainDrawn(!canDraw), [card.id, canDraw]);
+  const face = (v: Version, now: boolean) =>
+    !canDraw ? (
+      <img className="zoom-render" src={renderUrl(v.card)} alt={v.card.name} />
+    ) : now || mainDrawn ? (
+      <GameCard card={v.card} hidden={NONE} pool={[]} onDrawn={now ? () => setMainDrawn(true) : undefined} />
+    ) : (
+      <div className="lc-waiting" aria-hidden="true" />
+    );
 
   return (
     <div className={`lc ${open ? 'is-open' : ''} ${phase === 'collapsing' ? 'collapsing' : ''} ${past ? '' : 'no-history'}`}>
@@ -300,7 +310,7 @@ export function CardTimeline({
                   <span>{v.patch ? `Patch ${v.patch}` : 'Released'}</span>
                 </div>
                 {/* The card in focus tilts toward the pointer; the others stay flat. */}
-                <Tilt active={focus}>{face(v)}</Tilt>
+                <Tilt active={focus}>{face(v, now)}</Tilt>
               </div>
             );
           })}

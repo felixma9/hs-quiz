@@ -29,13 +29,15 @@ interface Props {
   onEnter?(): void;
   /** Leave the art or the set icon off (HSdle's card starts blank). Both are shown by default. */
   extras?: Extras;
+  /** Called once the card has been drawn (each time it redraws). */
+  onDrawn?(): void;
 }
 
 /**
  * The card drawn with in-game frames (HearthSim's Sunwell). Hidden fields are
  * blank, and the player fills them in by tapping that part of the card.
  */
-export function GameCard({ card, hidden, draft = {}, editable = new Set(), onChange, verdicts = {}, pool, onEnter, extras }: Props) {
+export function GameCard({ card, hidden, draft = {}, editable = new Set(), onChange, verdicts = {}, pool, onEnter, extras, onDrawn }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
   const [active, setActive] = useState<AttrKey | null>(null);
@@ -66,7 +68,19 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
     if (fresh) setReady(false);
     let live = true;
     const t = setTimeout(
-      () => canvas.current && drawCard(canvas.current, card, shown, () => setReady(true), () => live, extras),
+      () =>
+        canvas.current &&
+        drawCard(
+          canvas.current,
+          card,
+          shown,
+          () => {
+            setReady(true);
+            onDrawn?.();
+          },
+          () => live,
+          extras,
+        ),
       fresh ? 0 : 120,
     );
     return () => {
