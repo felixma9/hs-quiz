@@ -1,20 +1,31 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ClassIcon } from './ClassIcon';
 
 type Option = { value: string; label: string };
 const isDual = (o: Option) => o.value.includes('+');
 
+/**
+ * A panel that slides out from the right side of the card (from the right edge
+ * of the screen on phones). No close button: tap anywhere outside it, or press
+ * Escape. Picks apply as you make them.
+ */
 function Picker({ title, onClose, children }: { title: string; onClose(): void; children: ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   return (
-    <div className="picker panel">
-      <div className="picker-head">
-        <b>{title}</b>
-        <button type="button" className="link" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
+    <>
+      {/* Catches the tap that closes the panel, so it doesn't also press whatever is underneath. */}
+      <div className="picker-backdrop" onClick={onClose} aria-hidden="true" />
+      <div className="picker panel" role="dialog" aria-label={title}>
+        <div className="picker-head">
+          <b>{title}</b>
+        </div>
+        {children}
       </div>
-      {children}
-    </div>
+    </>
   );
 }
 
@@ -49,9 +60,10 @@ const classKey = (classes: string[]) => [...classes].sort().join('+');
 
 /**
  * Class picker. Tap a class to pick it; or tick "Multi-class card" and toggle
- * classes on and off. A combination some card in play has is set as you go
- * (the picker stays open for a third class); one no card has blanks the
- * class and says so, with what would work.
+ * classes on and off. Classes that no card has together with the ones ticked
+ * are greyed out. A combination some card in play has is set as you go (the
+ * picker stays open for a third class); one no card has (only reachable by
+ * unticking) blanks the class and says so, with what would work.
  */
 export function ClassPicker({ options, value, onPick, onChange, onClose }: PickerProps & { onChange(value: string): void }) {
   const singles = options.filter((o) => !isDual(o));
@@ -63,11 +75,18 @@ export function ClassPicker({ options, value, onPick, onChange, onClose }: Picke
   const [multi, setMulti] = useState(() => !!value?.includes('+'));
   const [sel, setSel] = useState<string[]>(() => (value?.includes('+') ? value.split(' + ') : []));
 
+  // A class can be ticked only if some card has it together with everything already ticked.
+  const canAdd = (c: string) => combos.some((o) => {
+    const parts = o.value.split(' + ');
+    return parts.includes(c) && sel.every((x) => parts.includes(x));
+  });
+
   const toggle = (c: string) => {
     const next = sel.includes(c) ? sel.filter((x) => x !== c) : [...sel, c];
     setSel(next);
+    // One class ticked counts as that class; several, as their combination (if a card has it).
     const hit = next.length >= 2 ? byKey.get(classKey(next)) : undefined;
-    onChange(hit ? hit.value : '');
+    onChange(next.length === 1 ? next[0] : hit ? hit.value : '');
   };
   const setMultiOn = (on: boolean) => {
     setMulti(on);
@@ -111,14 +130,15 @@ export function ClassPicker({ options, value, onPick, onChange, onClose }: Picke
       <div className={`class-grid ${multi ? 'multi' : ''}`}>
         {singles.map((o) => {
           const on = multi ? sel.includes(o.value) : value === o.value;
-          // Neutral can't be one of several classes.
-          const off = multi && o.value === 'NEUTRAL';
+          // Greyed out: Neutral (never one of several classes), and any class no card has with the ones ticked.
+          const off = multi && !on && (o.value === 'NEUTRAL' || !canAdd(o.value));
           return (
             <button
               key={o.value}
               type="button"
               className={`class-btn ${on ? 'on' : ''}`}
               disabled={off}
+              title={off && sel.length ? `No card is ${names([...sel, o.value])}` : undefined}
               aria-pressed={multi ? on : undefined}
               onClick={() => (multi ? toggle(o.value) : onPick(o.value))}
             >
@@ -133,11 +153,6 @@ export function ClassPicker({ options, value, onPick, onChange, onClose }: Picke
         <div className={`multi-note small ${bad ? 'bad' : hit ? 'ok' : ''}`} role="status" aria-live="polite">
           {note}
         </div>
-      )}
-      {multi && hit && (
-        <button type="button" className="btn small primary multi-done" onClick={onClose}>
-          Done
-        </button>
       )}
     </Picker>
   );

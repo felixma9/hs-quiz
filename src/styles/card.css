@@ -84,15 +84,32 @@
 .multi-note.ok { color: var(--ok-text); background: rgba(63, 143, 74, 0.12); }
 .multi-note.bad { color: #fff; background: rgba(176, 48, 45, 0.85); }
 .multi-note.bad b { color: #fff; }
-.multi-done { justify-self: end; }
 
-/* Wide screens: open pickers beside the card instead of under it. */
+
+/*
+ * Pickers slide out from the right side of the card. Phones and tablets: a
+ * drawer from the right edge of the screen. Wide screens: a panel beside the
+ * card. Tapping anywhere else (the backdrop) closes it.
+ */
+.picker-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(6, 7, 10, 0.35); }
+.game-card .picker {
+  position: fixed; z-index: 61; right: 0; top: calc(env(safe-area-inset-top) + 64px);
+  width: min(320px, 86vw); max-height: calc(100dvh - env(safe-area-inset-top) - 80px); overflow-y: auto;
+  padding: 14px 14px 14px 16px; border-radius: 14px 0 0 14px; border: 1px solid var(--line-2); border-right: 0;
+  background: var(--surface); box-shadow: -12px 0 40px rgba(0, 0, 0, 0.5);
+  animation: picker-out 0.24s var(--ease) backwards;
+}
+@keyframes picker-out { from { transform: translateX(100%); } }
 @media (min-width: 1000px) {
+  .picker-backdrop { background: transparent; }
   .game-card .picker {
-    position: absolute; top: 0; width: 300px; max-height: 100%; overflow-y: auto;
-    left: calc(50% + 150px + 28px);
-    border: 1px solid var(--line); padding: 14px;
+    position: absolute; top: 0; right: auto; left: calc(50% + 150px + 20px); width: 300px; max-height: 100%;
+    border-radius: 0 14px 14px 0; border: 1px solid var(--line-2); border-left: 2px solid var(--gold-dim);
+    box-shadow: 12px 12px 36px rgba(0, 0, 0, 0.45);
+    transform-origin: left center; animation: picker-out-wide 0.24s var(--ease) backwards;
   }
+  /* Comes out from behind the card's right edge. */
+  @keyframes picker-out-wide { from { opacity: 0; transform: translateX(-24px) scaleX(0.92); } }
 }
 
 /* Touch screens: suggestions open above the name (the keyboard covers what's below), best match nearest the field. */

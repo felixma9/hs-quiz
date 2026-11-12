@@ -150,10 +150,8 @@ footer a { color: var(--faint); }
 .zoom-card .game-card-frame { width: min(340px, 82vw, calc((100dvh - 120px) * 500 / 746)); }
 .zoom-render { width: min(340px, 82vw); height: auto; max-height: calc(100dvh - 120px); object-fit: contain; }
 .zoom-note { color: var(--muted); font-size: 0.9rem; text-align: center; }
-.zoom-close {
-  position: fixed; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); width: 44px; height: 44px;
-  border-radius: 10px; border: 0; background: var(--surface-2); color: var(--text); font-size: 1rem; cursor: pointer;
-}
+.zoom { cursor: zoom-out; }
+.zoom-hint { color: var(--faint); font-size: 0.78rem; }
 
 /* ---- Game icons (card-frame gems, class icons) ---- */
 .chip-class-icon { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; margin: -2px 2px -2px -4px; }

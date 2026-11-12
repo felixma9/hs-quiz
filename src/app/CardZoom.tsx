@@ -56,17 +56,16 @@ export function CardZoomHost() {
   if (!z) return null;
   return (
     <div className="zoom" role="dialog" aria-modal="true" aria-label={z.card.name} onClick={() => setZ(null)}>
-      <figure className="zoom-card" onClick={(e) => e.stopPropagation()}>
+      {/* Tap anywhere (the card too) or press Escape to close: no close button. */}
+      <figure className="zoom-card">
         {canDraw ? (
           <GameCard card={z.card} hidden={NONE} pool={[]} />
         ) : (
           <img className="zoom-render" src={renderUrl(z.card)} alt={z.card.name} />
         )}
         {z.note && <figcaption className="zoom-note">{z.note}</figcaption>}
+        <span className="zoom-hint">Tap anywhere to close</span>
       </figure>
-      <button type="button" className="zoom-close" aria-label="Close" onClick={() => setZ(null)}>
-        ✕
-      </button>
     </div>
   );
 }

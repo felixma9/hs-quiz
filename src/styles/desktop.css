@@ -20,7 +20,7 @@
   .tile { transition: filter var(--fast) ease; }
   .tile:hover { filter: brightness(1.12); }
   .board-cell.name-cell:hover .name-text { color: var(--gold-2); }
-  .sound-toggle:hover, .zoom-close:hover { background: var(--surface-2); color: var(--text); }
+  .sound-toggle:hover { background: var(--surface-2); color: var(--text); }
   .hotspot.editable:hover { outline-color: rgba(255, 255, 255, 0.85); }
   .link { text-underline-offset: 3px; text-decoration-thickness: 1px; }
   .link:hover { text-decoration: underline; }

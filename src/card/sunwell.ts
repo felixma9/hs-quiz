@@ -109,7 +109,8 @@ export type Shown = Partial<Record<AttrKey, string>>;
 
 function sunwellProps(card: Card, v: Shown, texture: HTMLImageElement | null) {
   const gem = (k: AttrKey) => (v[k] ? v[k] : BLANK);
-  const cls = v.class && !v.class.includes('+') ? v.class : 'NEUTRAL';
+  // A multi-class card is drawn once per class (see drawCard); this is the first.
+  const cls = v.class ? v.class.split(' + ')[0] : 'NEUTRAL';
   const rarity = v.rarity || 'FREE';
   const p: Record<string, unknown> = {
     type: card.type,
@@ -278,16 +279,48 @@ export async function drawCard(
   if (!set) props.set = '';
   // Sunwell caches drawn frames by the props; keep a location apart from a hero card with the same values.
   if (location) props.frame = 'location';
+  // Sunwell has no split frames, so a multi-class card is drawn once per class
+  // and the frames are put side by side: halves for two classes, thirds for three.
+  // Only the frame differs between the copies, so the seams only show there.
+  const classes = shown.class?.includes(' + ') ? shown.class.split(' + ') : [String(props.cardClass)];
   try {
     // Size the text for this card so long texts aren't clipped.
     Object.assign(getSunwell().options, fitText(String(props.text ?? ''), card.type, BODY_FONT));
-    const sw = getSunwell().createCard(props, RENDER_WIDTH, false, canvas, () => isLive() && onReady());
+    const drawn = classes.map(
+      (cls, i) =>
+        new Promise<HTMLCanvasElement>((done) => {
+          const target = i === 0 ? canvas : document.createElement('canvas');
+          const sw = getSunwell().createCard({ ...props, cardClass: cls }, RENDER_WIDTH, false, target, () => done(target));
+          setUp(sw, cls);
+        }),
+    );
+    Promise.all(drawn).then(([main, ...rest]) => {
+      if (!isLive()) return;
+      const ctx = main.getContext('2d');
+      rest.forEach((other, k) => {
+        if (!ctx) return;
+        const w = main.width / classes.length;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(w * (k + 1), 0, k === rest.length - 1 ? main.width : w, main.height);
+        ctx.clip();
+        ctx.drawImage(other, 0, 0);
+        ctx.restore();
+      });
+      onReady();
+    });
+  } catch (e) {
+    console.error('Card render failed', e);
+  }
+
+  /** Everything we change on Sunwell's card before it draws. */
+  function setUp(sw: ReturnType<Sunwell['createCard']>, cls: string) {
     sw.raceText = raceText;
     if (location) applyLocationLayout(sw, crop?.[card.id] ?? 0);
     // Sunwell's hero name curve puts names about 34 units (of 670) left of the middle; centre them.
     // Locations are drawn as hero cards, so this covers them too.
     if (card.type === 'HERO' && sw.nameTextCurve) sw.nameTextCurve.pathMiddle = HERO_NAME_MIDDLE;
-    if (props.cardClass === 'DEMONHUNTER') {
+    if (cls === 'DEMONHUNTER') {
       // Sunwell is older than Demon Hunter and would draw the neutral frame.
       // Our DH frames are recolored from other class frames (scripts/make-dh-frames.py).
       sw.getCardFrameAsset = () => `${sw.baseCardFrameAsset}demonhunter`;
@@ -307,7 +340,5 @@ export async function drawCard(
     // We draw straight onto our canvas. Without this Sunwell also copies it into an image,
     // which fails because the art is cross-origin.
     sw.target = null;
-  } catch (e) {
-    console.error('Card render failed', e);
   }
 }
