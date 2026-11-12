@@ -72,6 +72,9 @@ const alone = (card: Card): Version => ({ card, diffs: [], tags: [] });
 
 type Phase = 'closed' | 'opening' | 'expanding' | 'open' | 'collapsing';
 
+/** How far the strip moves per pixel of sideways scroll: above 1, a short swipe reaches the next version. */
+const WHEEL_GAIN = 1.6;
+
 /** Most a drag or scroll can pull the strip past its first or last version, in px. */
 const OVERSHOOT = 60;
 
@@ -154,8 +157,10 @@ export function CardTimeline({
   // Sideways scrolling (two-finger swipe on a trackpad, Shift + wheel) moves the strip like a drag,
   // then snaps once it stops. A native listener, so it can stop the browser's swipe-back gesture.
   const wheel = useRef({ dx: 0, timer: 0 as ReturnType<typeof setTimeout> | 0 });
-  const settleRef = useRef(settle);
-  settleRef.current = settle;
+  const stepRef = useRef(stepPx);
+  stepRef.current = stepPx;
+  const lastRef = useRef(last);
+  lastRef.current = last;
   const resistRef = useRef(resist);
   resistRef.current = resist;
   const idxRef = useRef(idx);
@@ -167,18 +172,38 @@ export function CardTimeline({
       const dx = e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
       if (Math.abs(dx) <= Math.abs(e.shiftKey ? 0 : e.deltaY)) return; // mostly vertical: let the page scroll
       e.preventDefault();
+      // Scrolling counts as the card still coming into focus (see the tap handler).
+      focusedAt.current = performance.now();
       const w = wheel.current;
-      w.dx -= dx * (e.deltaMode === 1 ? 16 : 1);
-      // The strip shows the scroll held to the ends (a long swipe or trackpad momentum can't pull it
-      // into empty space); the snap uses the whole scroll, and can't land past the ends either.
-      setDrag(resistRef.current(w.dx, idxRef.current));
+      w.dx -= dx * (e.deltaMode === 1 ? 16 : 1) * WHEEL_GAIN;
+      // The focus follows the scroll as it goes: once the strip is more than half a card along, the
+      // next version takes focus straight away (the strip stays where it is: one step of index, one
+      // step less of offset), rather than waiting for the scroll to stop.
+      const step = stepRef.current();
+      const lastIdx = lastRef.current;
+      let i = idxRef.current;
+      while (w.dx > step / 2 && i > 0) {
+        i--;
+        w.dx -= step;
+      }
+      while (w.dx < -step / 2 && i < lastIdx) {
+        i++;
+        w.dx += step;
+      }
+      if (i !== idxRef.current) {
+        idxRef.current = i;
+        setIdx(i);
+      }
+      // Held to the ends: a long swipe or trackpad momentum can't pull the strip into empty space.
+      w.dx = resistRef.current(w.dx, i);
+      setDrag(w.dx);
       if (w.timer) clearTimeout(w.timer);
+      // Once the scroll stops, the focused card eases to the middle.
       w.timer = setTimeout(() => {
-        const moved = w.dx;
         w.dx = 0;
         w.timer = 0;
-        settleRef.current(moved);
-      }, 140);
+        setDrag(0);
+      }, 90);
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => {
