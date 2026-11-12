@@ -1,15 +1,20 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ClassIcon } from './ClassIcon';
 
 type Option = { value: string; label: string };
 const isDual = (o: Option) => o.value.includes('+');
 
 /**
- * A panel that slides out from the right side of the card (from the right edge
- * of the screen on phones). No close button: tap anywhere outside it, or press
+ * A panel that opens below the card on phones, or slides out from the card's
+ * right side on wide screens. No close button: tap anywhere outside it, or press
  * Escape. Picks apply as you make them.
  */
 function Picker({ title, onClose, children }: { title: string; onClose(): void; children: ReactNode }) {
+  const panel = useRef<HTMLDivElement>(null);
+  // On narrow screens the panel opens below the card: bring it into view.
+  useEffect(() => {
+    if (!window.matchMedia('(min-width: 1000px)').matches) panel.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -19,7 +24,7 @@ function Picker({ title, onClose, children }: { title: string; onClose(): void; 
     <>
       {/* Catches the tap that closes the panel, so it doesn't also press whatever is underneath. */}
       <div className="picker-backdrop" onClick={onClose} aria-hidden="true" />
-      <div className="picker panel" role="dialog" aria-label={title}>
+      <div ref={panel} className="picker panel" role="dialog" aria-label={title}>
         <div className="picker-head">
           <b>{title}</b>
         </div>
@@ -101,7 +106,7 @@ export function ClassPicker({ options, value, onPick, onChange, onClose }: Picke
   const [note, bad]: [ReactNode, boolean] = hit
     ? [
         <>
-          Set to <b>{names(hit.value.split(' + '))}</b>.{partners.length > 0 && <> You can add {partners.map(label).join(' or ')} too.</>}
+          Set to <b>{names(hit.value.split(' + '))}</b>.
         </>,
         false,
       ]
