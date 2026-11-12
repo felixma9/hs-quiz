@@ -37,7 +37,8 @@ const LAYOUT: Record<string, Partial<Record<AttrKey, Box>>> = {
   // Locations: Sunwell's hero card with our location layout (src/card/location.ts).
   LOCATION: {
     cost: COST,
-    health: [459, 768, 115, 135],
+    // Where the durability shield is actually drawn (measured from the drawn card: Sunwell's hero card places its armor gem itself).
+    health: [496, 752, 115, 135],
     rarity: [288, 565, 70, 70],
     name: [88, 486, 490, 72],
     text: [150, 642, 352, 168],
