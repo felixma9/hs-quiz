@@ -5,9 +5,9 @@ import { rank } from '../../lib/search';
 import { Art, useArtCrop } from './Art';
 import { useTapPick } from '../../card/tap';
 
-/** Type-ahead search over minion names; Enter or tap picks one. */
+/** Type-ahead search over card names (cards of the answer's type); Enter or tap picks one. */
 
-export function Search({ minions, exclude, onPick }: { minions: Card[]; exclude: string[]; onPick(c: Card): void }) {
+export function Search({ cards, what, exclude, onPick }: { cards: Card[]; what: string; exclude: string[]; onPick(c: Card): void }) {
   const crop = useArtCrop();
   const [q, setQ] = useState('');
   const tap = useTapPick();
@@ -17,9 +17,9 @@ export function Search({ minions, exclude, onPick }: { minions: Card[]; exclude:
     const n = normalizeName(q);
     if (!n) return [];
     const ex = new Set(exclude);
-    const pool = minions.filter((c) => !ex.has(c.id));
+    const pool = cards.filter((c) => !ex.has(c.id));
     return rank(pool, n, (c) => normalizeCardName(c.name), 8);
-  }, [q, minions, exclude]);
+  }, [q, cards, exclude]);
   useEffect(() => setHi(0), [q]);
 
   const pick = (c: Card) => {
@@ -33,7 +33,7 @@ export function Search({ minions, exclude, onPick }: { minions: Card[]; exclude:
       <input
         ref={input}
         className="in"
-        placeholder="Type a minion name…"
+        placeholder={`Type a ${what} name…`}
         value={q}
         autoComplete="off"
         autoCorrect="off"

@@ -1,91 +1,175 @@
 import { useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
-import { cardOfTheDay, randomCard, today } from '../../lib/cards';
+import { randomCard, today } from '../../lib/cards';
 import { load, save } from '../../lib/storage';
 import { GameCard } from '../../card/GameCard';
-import { CLUES, COLUMNS, EMOJI, compare } from './compare';
+import { CLUES, EMOJI, columnsFor, compare } from './compare';
 import { Search } from './Search';
 import { Clue, GiveUp } from './Clues';
 import { Board } from './Board';
 import { RevealCard } from './RevealCard';
+import { CLASSIC_AGE, dailyCard, dailyPool, playable, type Daily } from './pools';
 
-/** HSdle: guess the mystery minion; each guess shows how its stats compare. */
+/**
+ * HSdle: guess the mystery card from how close each guess is. The dailies
+ * (Standard, and Classic for sets 10+ years old) are the same card for
+ * everyone; Unlimited picks at random from the menu's card pool. The card's
+ * type is given, and guesses are cards of that type.
+ */
 
 interface Saved {
-  key: string; // date (daily) or 'unlimited'
+  key: string; // date (dailies) or 'unlimited'
   answerId: string;
   guesses: string[]; // card ids, oldest first
   gaveUp?: boolean;
 }
 
-const KEY = { daily: 'hsq:cardle2:daily', unlimited: 'hsq:cardle2:unlimited' } as const;
-type Mode = keyof typeof KEY;
+type Mode = Daily | 'unlimited';
+const KEY: Record<Mode, string> = { standard: 'hsq:hsdle3:daily', classic: 'hsq:hsdle3:classic', unlimited: 'hsq:hsdle3:unlimited' };
+const TYPE_WORD: Record<string, string> = { MINION: 'minion', SPELL: 'spell', WEAPON: 'weapon', LOCATION: 'location' };
 
-export function Hsdle({ cards }: { cards: Card[] }) {
-  const minions = useMemo(() => cards.filter((c) => c.type === 'MINION'), [cards]);
-  if (!minions.length) {
-    return (
-      <div className="panel center">
-        Your card pool has no minions. <a href="#/">Change it.</a>
-      </div>
-    );
-  }
-  return <HsdleGame cards={cards} minions={minions} />;
-}
-
-function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
-  const byId = useMemo(() => new Map(minions.map((c) => [c.id, c])), [minions]);
+/** `all`: every card (the dailies' pools come from these). `pool`: the menu's card pool, for Unlimited. */
+export function Hsdle({ all, pool }: { all: Card[]; pool: Card[] }) {
   const date = today();
-  const [mode, setMode] = useState<Mode>('daily');
+  const unlimitedPool = useMemo(() => playable(pool), [pool]);
+  const pools = useMemo(
+    () => ({ standard: dailyPool(all, 'standard', date), classic: dailyPool(all, 'classic', date), unlimited: unlimitedPool }),
+    [all, unlimitedPool, date],
+  );
+  const byId = useMemo(() => new Map(playable(all).map((c) => [c.id, c])), [all]);
+  const [mode, setMode] = useState<Mode>('standard');
 
-  const fresh = (m: Mode): Saved => {
-    const answer = m === 'daily' ? cardOfTheDay(minions, date) : randomCard(minions);
-    return { key: m === 'daily' ? date : 'unlimited', answerId: answer.id, guesses: [] };
+  const fresh = (m: Mode): Saved | null => {
+    const answer = m === 'unlimited' ? (pools.unlimited.length ? randomCard(pools.unlimited) : undefined) : dailyCard(all, m, date);
+    return answer ? { key: m === 'unlimited' ? 'unlimited' : date, answerId: answer.id, guesses: [] } : null;
   };
-  const restore = (m: Mode): Saved => {
+  const restore = (m: Mode): Saved | null => {
     const s = load<Saved | null>(KEY[m], null);
     const ok = s && byId.has(s.answerId) && s.guesses.every((g) => byId.has(g));
-    if (m === 'daily') {
-      const answer = cardOfTheDay(minions, date);
-      return ok && s.key === date && s.answerId === answer.id ? s : fresh(m);
+    if (m !== 'unlimited') {
+      // A daily save only counts for today's card.
+      const answer = dailyCard(all, m, date);
+      return ok && s.key === date && s.answerId === answer?.id ? s : fresh(m);
     }
-    return ok ? s : fresh(m);
+    return ok && pools.unlimited.some((c) => c.id === s.answerId) ? s : fresh(m);
   };
 
-  const [game, setGame] = useState<Saved>(() => restore('daily'));
-  const update = (g: Saved, m = mode) => {
+  const [game, setGame] = useState<Saved | null>(() => restore('standard'));
+  const update = (g: Saved | null, m = mode) => {
     setGame(g);
-    save(KEY[m], g);
+    if (g) save(KEY[m], g);
   };
   const switchMode = (m: Mode) => {
     setMode(m);
     setGame(restore(m));
   };
+  const daily = mode !== 'unlimited';
 
-  const answer = byId.get(game.answerId)!;
+  return (
+    <div className={`mode hsdle ${game && game.guesses.includes(game.answerId) ? 'won' : ''}`}>
+      <div className="tabs">
+        <button className={daily ? 'on' : ''} onClick={() => !daily && switchMode('standard')}>
+          Daily
+        </button>
+        <button className={mode === 'unlimited' ? 'on' : ''} onClick={() => switchMode('unlimited')}>
+          Unlimited
+        </button>
+      </div>
+      {daily && (
+        <div className="daily-kind" role="radiogroup" aria-label="Which daily">
+          <button type="button" role="radio" aria-checked={mode === 'standard'} className={mode === 'standard' ? 'on' : ''} onClick={() => switchMode('standard')}>
+            Standard
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={mode === 'classic'}
+            className={mode === 'classic' ? 'on' : ''}
+            onClick={() => switchMode('classic')}
+            title={`Cards from sets ${CLASSIC_AGE}+ years old`}
+          >
+            Classic
+          </button>
+        </div>
+      )}
+      {game ? (
+        <HsdleGame
+          key={`${mode}:${game.answerId}`}
+          mode={mode}
+          date={date}
+          game={game}
+          answer={byId.get(game.answerId)!}
+          // Guesses are cards of the answer's type, from the same pool.
+          candidates={pools[mode]}
+          byId={byId}
+          drawable={all}
+          onUpdate={(g) => update(g)}
+          onNew={() => update(fresh('unlimited'))}
+          onUnlimited={() => switchMode('unlimited')}
+        />
+      ) : (
+        <div className="panel center">
+          {mode === 'unlimited' ? (
+            <>
+              Your card pool has no cards HSdle can use. <a href="#/">Change it.</a>
+            </>
+          ) : (
+            'No cards for this daily.'
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HsdleGame({
+  mode,
+  date,
+  game,
+  answer,
+  candidates,
+  byId,
+  drawable,
+  onUpdate,
+  onNew,
+  onUnlimited,
+}: {
+  mode: Mode;
+  date: string;
+  game: Saved;
+  answer: Card;
+  candidates: Card[];
+  byId: Map<string, Card>;
+  drawable: Card[];
+  onUpdate(g: Saved): void;
+  onNew(): void;
+  onUnlimited(): void;
+}) {
+  const sameType = useMemo(() => candidates.filter((c) => c.type === answer.type), [candidates, answer.type]);
   const guesses = game.guesses.map((id) => byId.get(id)!);
   const won = game.guesses.includes(answer.id);
   const done = won || !!game.gaveUp;
   const wrong = guesses.filter((g) => g.id !== answer.id).length;
+  const what = TYPE_WORD[answer.type] ?? 'card';
 
   const guess = (c: Card) => {
     if (done || game.guesses.includes(c.id)) return;
-    update({ ...game, guesses: [...game.guesses, c.id] });
+    onUpdate({ ...game, guesses: [...game.guesses, c.id] });
   };
 
-  // Clues the player has opened, for this answer only (a new minion starts with them closed).
-  const [opened, setOpened] = useState<{ answerId: string; keys: string[] }>({ answerId: '', keys: [] });
-  const openClues = opened.answerId === game.answerId ? opened.keys : [];
-  const toggleClue = (k: string) =>
-    setOpened({ answerId: game.answerId, keys: openClues.includes(k) ? openClues.filter((x) => x !== k) : [...openClues, k] });
+  // Clues the player has opened (a new card starts with them closed: this component is keyed by it).
+  const [openClues, setOpenClues] = useState<string[]>([]);
+  const toggleClue = (k: string) => setOpenClues((o) => (o.includes(k) ? o.filter((x) => x !== k) : [...o, k]));
 
   const [shared, setShared] = useState(false);
   const share = async () => {
+    const columns = columnsFor(answer.type);
     const rows = guesses.map((g) => {
       const t = compare(g, answer);
-      return COLUMNS.map((col) => EMOJI[t[col.key].verdict]).join('');
+      return columns.map((col) => EMOJI[t[col.key].verdict]).join('');
     });
-    const text = `HSdle ${mode === 'daily' ? date : '(unlimited)'}: ${won ? `${guesses.length} guess${guesses.length === 1 ? '' : 'es'}` : 'gave up'}\n${rows.join('\n')}`;
+    const title = mode === 'unlimited' ? 'HSdle (unlimited)' : `HSdle${mode === 'classic' ? ' Classic' : ''} ${date}`;
+    const text = `${title}: ${won ? `${guesses.length} guess${guesses.length === 1 ? '' : 'es'}` : 'gave up'}\n${rows.join('\n')}`;
     try {
       if (navigator.share) await navigator.share({ text });
       else {
@@ -97,26 +181,28 @@ function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
     }
   };
 
+  const article = /^[aeiou]/.test(what) ? 'an' : 'a';
   return (
-    <div className={`mode hsdle ${won ? 'won' : ''}`}>
-      <div className="tabs">
-        <button className={mode === 'daily' ? 'on' : ''} onClick={() => switchMode('daily')}>
-          Daily
-        </button>
-        <button className={mode === 'unlimited' ? 'on' : ''} onClick={() => switchMode('unlimited')}>
-          Unlimited
-        </button>
-      </div>
-
+    <>
       {!done && (
         <p className="ask">
-          {mode === 'daily' ? "Guess today's minion." : 'Guess the minion.'}
+          {mode === 'unlimited' ? 'Guess the card.' : mode === 'classic' ? "Guess today's classic card." : "Guess today's card."} It's {article}{' '}
+          <b>{what}</b>.
         </p>
       )}
 
-      {!done && <Search minions={minions} exclude={game.guesses} onPick={guess} />}
+      {!done && <Search cards={sameType} what={what} exclude={game.guesses} onPick={guess} />}
 
-      {!done && <RevealCard answer={answer} guesses={guesses} wrong={wrong} artShown={openClues.includes('art')} textShown={openClues.includes('text')} pool={cards} />}
+      {!done && (
+        <RevealCard
+          answer={answer}
+          guesses={guesses}
+          wrong={wrong}
+          artShown={openClues.includes('art')}
+          textShown={openClues.includes('text')}
+          pool={drawable}
+        />
+      )}
 
       {!done && (
         <div className="clues">
@@ -134,7 +220,7 @@ function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
         </div>
       )}
 
-      {!done && guesses.length > 0 && <GiveUp key={game.answerId} onGiveUp={() => update({ ...game, gaveUp: true })} />}
+      {!done && guesses.length > 0 && <GiveUp onGiveUp={() => onUpdate({ ...game, gaveUp: true })} />}
 
       {done && (
         <div className="hsdle-result">
@@ -150,17 +236,17 @@ function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
               )}
             </div>
           </div>
-          <GameCard card={answer} hidden={new Set()} pool={cards} />
+          <GameCard card={answer} hidden={new Set()} pool={drawable} />
           <div className="row">
             <button className="btn" onClick={share}>
               {shared ? 'Copied!' : 'Share'}
             </button>
             {mode === 'unlimited' ? (
-              <button className="btn primary" onClick={() => update(fresh('unlimited'))}>
-                New minion
+              <button className="btn primary" onClick={onNew}>
+                New card
               </button>
             ) : (
-              <button className="btn primary" onClick={() => switchMode('unlimited')}>
+              <button className="btn primary" onClick={onUnlimited}>
                 Play unlimited
               </button>
             )}
@@ -170,12 +256,11 @@ function HsdleGame({ cards, minions }: { cards: Card[]; minions: Card[] }) {
 
       {guesses.length > 0 && <Board guesses={guesses} answer={answer} />}
 
-
       {guesses.length === 0 && !done && (
         <p className="muted small center">
-          🟩 same · 🟨 close (shared keyword, tribe or class; same-year set) · 🟥 different. Arrows point toward the answer.
+          🟩 same · 🟨 close (shared keyword, tribe, school or class; same-year set) · 🟥 different. Arrows point toward the answer.
         </p>
       )}
-    </div>
+    </>
   );
 }

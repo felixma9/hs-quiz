@@ -3,10 +3,10 @@ import type { Card } from '../../lib/types';
 import type { AttrKey } from '../../lib/attributes';
 import type { Verdict } from '../../lib/grade';
 import { GameCard } from '../../card/GameCard';
-import { CLUES, compare, type ColumnKey } from './compare';
+import { CLUES, columnsFor, compare, type ColumnKey } from './compare';
 import { setName } from '../../data/sets';
 
-/** Board columns that are a part of the card. Keywords go in the text box (see below). */
+/** Board columns that are a part of the card (only the ones this type has count). Keywords go in the text box (see below). */
 const PART: Partial<Record<ColumnKey, AttrKey>> = {
   cost: 'cost',
   attack: 'attack',
@@ -32,9 +32,10 @@ function known(guesses: Card[], answer: Card) {
 }
 
 /**
- * The mystery minion as a card that starts blank. Every column a guess gets
- * right fills in its part (mana, attack, health, rarity, tribe, class, set
- * icon), and every keyword a guess shares with it is written in the text box.
+ * The mystery card as a card that starts blank. Every column a guess gets
+ * right fills in its part (mana, attack, health or durability, rarity, tribe
+ * or school, class, set icon), and every keyword a guess shares with it is
+ * written in the text box.
  * The art and the text go on only when the player opens their clues. Parts
  * that just filled in are outlined green until the next guess.
  */
@@ -58,16 +59,18 @@ export function RevealCard({
   const now = useMemo(() => known(guesses, answer), [guesses, answer]);
   const before = useMemo(() => known(guesses.slice(0, -1), answer), [guesses, answer]);
 
+  const cols = useMemo(() => new Set(columnsFor(answer.type).map((c) => c.key)), [answer.type]);
+  const partsOf = (Object.entries(PART) as [ColumnKey, AttrKey][]).filter(([col]) => cols.has(col));
   const hidden = new Set<AttrKey>(['name', 'text']);
   const fresh: Partial<Record<AttrKey, Verdict>> = {};
-  for (const [col, part] of Object.entries(PART) as [ColumnKey, AttrKey][]) {
+  for (const [col, part] of partsOf) {
     if (!now.cols.has(col)) hidden.add(part);
     else if (!before.cols.has(col)) fresh[part] = 'correct';
   }
 
   const art = artShown && wrong >= ART_AFTER;
   const showText = textShown && wrong >= TEXT_AFTER;
-  // Text is drawn as a "guess": the real text with the minion's own name blanked out (as in
+  // Text is drawn as a "guess": the real text with the card's own name blanked out (as in
   // the text clue), or until then the keywords found so far, in the card's order, in bold.
   const found = (answer.keywords ?? []).filter((k) => now.keywords.has(k));
   const text = showText
@@ -81,7 +84,7 @@ export function RevealCard({
   if (setNew && answer.set !== 'LEGACY') fresh.text = 'correct';
 
   const parts = [
-    ...Object.keys(PART).map((k) => now.cols.has(k as ColumnKey)),
+    ...partsOf.map(([col]) => now.cols.has(col)),
     now.cols.has('set'),
     now.cols.has('keywords'),
     art,
@@ -92,7 +95,7 @@ export function RevealCard({
   const addable = [wrong >= ART_AFTER && !art && 'Art', wrong >= TEXT_AFTER && !showText && 'Card text'].filter(Boolean);
 
   return (
-    <section className="reveal-card" aria-label="The mystery minion so far">
+    <section className="reveal-card" aria-label="The mystery card so far">
       <GameCard card={answer} hidden={hidden} draft={text ? { text } : {}} verdicts={fresh} pool={pool} extras={{ art, set: setKnown }} />
       {/* Named here too: the icon is faint, and Basic cards have none. */}
       <div className="card-chips">

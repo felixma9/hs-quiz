@@ -36,7 +36,8 @@
 
 .board-wrap { overflow-x: auto; margin: 0 -16px; padding: 0 16px 8px; -webkit-overflow-scrolling: touch; }
 .board { display: grid; gap: 6px; min-width: max-content; }
-.board-row { display: grid; grid-template-columns: 116px 54px 54px 54px 70px 74px 104px 74px 84px; gap: 5px; }
+/* Columns depend on the card type: Board sets --cols-wide and --cols-phone. */
+.board-row { display: grid; grid-template-columns: var(--cols-wide); gap: 5px; }
 .board-head .board-cell {
   font-size: 0.7rem; font-weight: 600; color: var(--muted);
   border-bottom: 1px solid var(--line); padding-bottom: 4px; text-align: center; align-self: end;
@@ -113,7 +114,7 @@
   .board-wrap { margin: 0; padding: 0; overflow: visible; }
   .board { min-width: 0; gap: 4px; }
   .board-row {
-    grid-template-columns: 38px 0.85fr 0.85fr 0.85fr 1fr 1fr 1.5fr 1fr 1.1fr;
+    grid-template-columns: var(--cols-phone);
     gap: 3px;
   }
   .board-head .board-cell { font-size: 0.5rem; letter-spacing: 0.02em; padding-bottom: 3px; }
@@ -151,3 +152,11 @@
 .reveal-card { display: grid; gap: 6px; justify-items: center; }
 .reveal-card .game-card-frame { width: min(230px, 62vw); }
 .reveal-caption { margin: 0; max-width: 320px; }
+
+/* Which daily: a small Standard / Classic switch under the tabs. */
+.daily-kind { justify-self: center; display: inline-flex; gap: 2px; padding: 2px; margin-top: -6px; border-radius: 999px; background: var(--surface); }
+.daily-kind button {
+  font: inherit; font-size: 0.8rem; font-weight: 600; color: var(--muted); background: none; border: 0; cursor: pointer;
+  min-height: 32px; padding: 0 14px; border-radius: 999px;
+}
+.daily-kind button.on { background: var(--gold-bg); color: var(--gold-2); }

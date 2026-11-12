@@ -2,27 +2,38 @@ import { classIcon } from '../../app/icons';
 import type React from 'react';
 import { useState } from 'react';
 import type { Card } from '../../lib/types';
-import { COLUMNS, compare, type Tile } from './compare';
+import { columnsFor, compare, type ColumnKey, type Tile } from './compare';
 import { Art, useArtCrop } from './Art';
 
-/** Stat columns are drawn on the same gem icons the cards use. */
-const GEM: Partial<Record<string, string>> = {
-  cost: 'cost-mana',
-  attack: 'attack-minion',
-  health: 'health',
-};
-const gemUrl = (key: string) => `${import.meta.env.BASE_URL}sunwell/${GEM[key]}.webp`;
+/** Stat columns are drawn on the same gem icons the cards use (a weapon's sword and shield, a location's shield). */
+function gemFor(col: string, type: Card['type']): string | undefined {
+  if (col === 'cost') return 'cost-mana';
+  if (col === 'attack') return type === 'WEAPON' ? 'attack-weapon' : 'attack-minion';
+  if (col === 'health') return type === 'WEAPON' || type === 'LOCATION' ? 'durability' : 'health';
+  return undefined;
+}
 
 /** Rarity is shown with the card's own rarity gem (Free cards have none in game: a faded Common gem). */
 const RARITY_GEM: Record<string, string> = { Free: 'rarity-common', Common: 'rarity-common', Rare: 'rarity-rare', Epic: 'rarity-epic', Legendary: 'rarity-legendary' };
 const asset = (name: string) => `${import.meta.env.BASE_URL}sunwell/${name}.webp`;
 /** Column headers with an icon instead of (on phones) a text label. */
-const HEAD_ICON: Partial<Record<string, string>> = { ...GEM, rarity: 'rarity-legendary' };
+const headIcon = (col: string, type: Card['type']) => gemFor(col, type) ?? (col === 'rarity' ? 'rarity-legendary' : undefined);
+
+/** Column widths: fixed on wide screens, shares of the row on phones (see .board-row in hsdle.css). */
+const WIDE: Record<ColumnKey, string> = { cost: '54px', attack: '54px', health: '54px', rarity: '70px', tribe: '74px', keywords: '104px', class: '74px', set: '84px' };
+const PHONE: Record<ColumnKey, string> = { cost: '0.85fr', attack: '0.85fr', health: '0.85fr', rarity: '1fr', tribe: '1fr', keywords: '1.5fr', class: '1fr', set: '1.1fr' };
+const TYPE_WORD: Record<string, string> = { MINION: 'Minion', SPELL: 'Spell', WEAPON: 'Weapon', LOCATION: 'Location', HERO: 'Hero' };
 const RARITY_SHORT: Record<string, string> = { Free: 'Free', Common: 'Com.', Rare: 'Rare', Epic: 'Epic', Legendary: 'Leg.' };
 
 
 export function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
   const crop = useArtCrop();
+  const columns = columnsFor(answer.type);
+  const type = answer.type;
+  const grid = {
+    '--cols-wide': ['116px', ...columns.map((c) => WIDE[c.key])].join(' '),
+    '--cols-phone': ['38px', ...columns.map((c) => PHONE[c.key])].join(' '),
+  } as React.CSSProperties;
   // Newest guess first, like the original game.
   const rows = [...guesses].reverse();
   // Tapping a tile shows its full value (tiles are small on phones).
@@ -31,21 +42,22 @@ export function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
   const detailText = (() => {
     if (!detail || !detailCard) return null;
     if (detail.col === 'name') return detailCard.name;
-    const col = COLUMNS.find((c) => c.key === detail.col)!;
+    const col = columns.find((c) => c.key === detail.col);
+    if (!col) return null;
     return `${detailCard.name} · ${col.label}: ${compare(detailCard, answer)[col.key].label}`;
   })();
   const tap = (id: string, col: string) => setDetail((d) => (d && d.id === id && d.col === col ? null : { id, col }));
 
   return (
     <div className="board-wrap">
-      <div className="board" role="table">
+      <div className="board" role="table" style={grid}>
         <div className="board-row board-head" role="row">
           <div className="board-cell name-cell" role="columnheader">
-            <span className="head-label">Minion</span>
+            <span className="head-label">{TYPE_WORD[type] ?? 'Card'}</span>
           </div>
-          {COLUMNS.map((c) => (
-            <div key={c.key} className={`board-cell ${HEAD_ICON[c.key] ? 'gem-head' : ''}`} role="columnheader" title={c.label}>
-              {HEAD_ICON[c.key] && <img className="head-gem" src={asset(HEAD_ICON[c.key]!)} alt={c.label} />}
+          {columns.map((c) => (
+            <div key={c.key} className={`board-cell ${headIcon(c.key, type) ? 'gem-head' : ''}`} role="columnheader" title={c.label}>
+              {headIcon(c.key, type) && <img className="head-gem" src={asset(headIcon(c.key, type)!)} alt={c.label} />}
               <span className="head-label">{c.label}</span>
             </div>
           ))}
@@ -59,10 +71,11 @@ export function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
                 <Art card={g} crop={crop} className="thumb" zoom />
                 <span className="name-text">{g.name}</span>
               </button>
-              {COLUMNS.map((c, i) => (
+              {columns.map((c, i) => (
                 <TileCell
                   key={c.key}
                   col={c.key}
+                  gem={gemFor(c.key, type)}
                   tile={t[c.key]}
                   delay={r === 0 ? i * 120 : 0}
                   selected={on(c.key)}
@@ -78,13 +91,13 @@ export function Board({ guesses, answer }: { guesses: Card[]; answer: Card }) {
   );
 }
 
-function TileCell({ col, tile, delay, selected, onTap }: { col: string; tile: Tile; delay: number; selected: boolean; onTap(): void }) {
+function TileCell({ col, gem, tile, delay, selected, onTap }: { col: string; gem?: string; tile: Tile; delay: number; selected: boolean; onTap(): void }) {
   const arrowLabel = tile.arrow === 'up' ? 'higher' : 'lower';
-  if (GEM[col]) {
+  if (gem) {
     return (
       <div className={`board-cell tile stat-tile t-${tile.verdict} ${selected ? 'selected' : ''}`} style={{ '--d': `${delay}ms` } as React.CSSProperties} role="cell" onClick={onTap}>
-        <span className={`stat-gem gem-${col}`}>
-          <img src={gemUrl(col)} alt="" />
+        <span className={`stat-gem gem-${col} ${gem}`}>
+          <img src={asset(gem)} alt="" />
           <span className="stat-num">{tile.label}</span>
         </span>
         {tile.arrow && (

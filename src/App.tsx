@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { Card } from './lib/types';
 import { loadCards } from './lib/cards';
-import { drawable } from './pool/pool';
+import { drawable, filterPool } from './pool/pool';
 import { usePool } from './pool/usePool';
 import { RarityPicker } from './pool/RarityPicker';
 import { SetPicker } from './pool/SetPicker';
@@ -75,6 +75,8 @@ export function App() {
   }, []);
 
   const playable = cards && pool.length > 0;
+  // HSdle's Unlimited: the menu's sets and rarities, over every card (locations too). Its dailies ignore the menu.
+  const hsdlePool = useMemo(() => filterPool(everything, excludedSets, excludedRarities), [everything, excludedSets, excludedRarities]);
   return (
     <>
       <TitleBar route={route} />
@@ -104,13 +106,13 @@ export function App() {
               <SharePanel excludedSets={excludedSets} excludedRarities={excludedRarities} onApply={applySetup} />
             </Menu>
           )}
-          {cards && (route === 'gauntlet' || route === 'hsdle') && pool.length === 0 && (
+          {cards && route === 'gauntlet' && pool.length === 0 && (
             <div className="panel center">
               No cards match your sets and rarities. <a href="#/">Change them.</a>
             </div>
           )}
           {playable && route === 'gauntlet' && <Gauntlet cards={pool} />}
-          {playable && route === 'hsdle' && <Hsdle cards={pool} />}
+          {cards && route === 'hsdle' && <Hsdle all={everything} pool={hsdlePool} />}
           {cards && route === 'pvp' && <Pvp everything={everything} cards={cards} pool={pool} />}
           {/* Every card, not the menu's pool: it's for finding any card (locations too). */}
           {cards && route === 'carddb' && <CardDb cards={everything} />}

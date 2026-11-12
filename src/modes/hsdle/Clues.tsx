@@ -46,7 +46,7 @@ export function Clue({
       {open && unlocked && (
         <div className="clue-body">
           {kind === 'art' ? (
-            <Art card={answer} crop={crop} className="clue-art" alt="The mystery minion's art" />
+            <Art card={answer} crop={crop} className="clue-art" alt="The mystery card's art" />
           ) : (
             <p>{answer.text ? plainText(answer.text).split(answer.name).join('???') : 'No card text.'}</p>
           )}

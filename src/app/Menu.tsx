@@ -22,7 +22,7 @@ const MODES = [
   {
     href: '#/hsdle',
     name: 'HSdle',
-    blurb: 'Guess the daily minion.',
+    blurb: 'Guess the daily card. Standard or Classic.',
     art: 'EX1_298', // Ragnaros the Firelord
     icon: rarityIcon('LEGENDARY'),
   },
@@ -66,7 +66,7 @@ export function Menu({ count, banner, children }: { count: number; banner?: Reac
         ))}
       </nav>
       <section className="pool-section">
-        <div className="section-label">Card pool · Gauntlet &amp; HSdle</div>
+        <div className="section-label">Card pool · Gauntlet &amp; HSdle Unlimited</div>
         {children}
       </section>
     </div>
