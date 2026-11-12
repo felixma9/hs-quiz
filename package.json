@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "cards": "tsx scripts/build-cards.ts",
+    "history": "tsx scripts/build-history.ts",
     "test": "vitest run",
     "deploy": "npm test && npm run build && touch dist/.nojekyll && gh-pages -d dist -t"
   },

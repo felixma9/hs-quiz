@@ -9,6 +9,8 @@ export interface RawCard {
   set: string;
   rarity?: string;
   cardClass?: string;
+  /** Older builds (before 2016) name the class this. */
+  playerClass?: string;
   classes?: string[];
   cost?: number;
   attack?: number;
@@ -104,7 +106,7 @@ export function cleanText(raw: string | undefined, keepTags = true): string {
     .trim();
 }
 
-function slim(r: RawCard): Card {
+export function slim(r: RawCard): Card {
   const c: Card = {
     id: r.id,
     dbfId: r.dbfId,
