@@ -1,12 +1,13 @@
-"""Measure the light strips at the edges of each card's art.
+"""Measure the padding bars at the edges of each card's art.
 
-Some card art (mostly older cards) is padded with white/light bars. This
+A lot of card art is padded with flat bars: white, grey or black. This
 downloads the small 256px art for every card in public/cards.json, finds how
-far the light edge runs in from each side, and writes the crop each card needs
-to public/art-crop.json as {card id: fraction of the width to cut per side}.
-Cards already measured are skipped, so rerunning after an update is cheap.
+far a flat edge (a column or row that is nearly one colour end to end) runs in
+from each side, and writes the crop each card needs to public/art-crop.json as
+{card id: fraction of the width to cut per side}. Cards already measured are
+skipped, so rerunning after an update is cheap; --all measures every card again.
 
-Run: python3 -I scripts/measure-art.py
+Run: python3 -I scripts/measure-art.py [--all]
 """
 import io
 import json
@@ -21,17 +22,25 @@ ROOT = Path(__file__).resolve().parent.parent
 CARDS = ROOT / 'public' / 'cards.json'
 OUT = ROOT / 'public' / 'art-crop.json'
 URL = 'https://art.hearthstonejson.com/v1/256x/{}.jpg'
-LIGHT = 232  # average brightness of a column/row that counts as padding
+# A line counts as padding when it is nearly one colour: its brightness strays
+# from its mean by under SPREAD on average, and by under RANGE at most.
+SPREAD = 6
+RANGE = 60
+
+
+def flat(line) -> bool:
+    mean = sum(line) / len(line)
+    return sum(abs(v - mean) for v in line) / len(line) < SPREAD and max(line) - min(line) < RANGE
 
 
 def edge(px, w, h, horizontal: bool, from_start: bool) -> int:
-    """How many columns (or rows) in from one side are near-white."""
+    """How many columns (or rows) in from one side are flat padding."""
     n = 0
     limit = (w if horizontal else h) // 3
     while n < limit:
         i = n if from_start else (w if horizontal else h) - 1 - n
         line = [px[i, y] for y in range(h)] if horizontal else [px[x, i] for x in range(w)]
-        if sum(line) / len(line) < LIGHT:
+        if not flat(line):
             break
         n += 1
     return n
@@ -53,7 +62,8 @@ def measure(card_id: str) -> tuple[str, float | None]:
 def main() -> None:
     cards = json.loads(CARDS.read_text())
     ids = [c['id'] for c in cards]
-    known: dict[str, float] = json.loads(OUT.read_text()) if OUT.exists() else {}
+    fresh = '--all' in sys.argv[1:]
+    known: dict[str, float] = {} if fresh or not OUT.exists() else json.loads(OUT.read_text())
     todo = [i for i in ids if i not in known and f'!{i}' not in known]
     print(f'{len(ids)} cards, {len(todo)} to measure', flush=True)
     done = 0

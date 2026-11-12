@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useEffect, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { zoomProps } from '../../app/CardZoom';
@@ -42,7 +43,8 @@ export function Art({
   const scale = cut ? 1.04 / (1 - 2 * cut) : 1.08;
   return (
     <span className={`art-crop ${className} ${zoom ? 'zoomable' : ''}`} {...(zoom ? zoomProps(card) : {})}>
-      <img src={thumb(card)} alt={alt} loading="lazy" style={{ transform: `scale(${scale.toFixed(3)})` }} />
+      {/* The zoom is a variable, so hover effects can scale on top of it (see desktop.css). */}
+      <img src={thumb(card)} alt={alt} loading="lazy" style={{ '--crop': scale.toFixed(3) } as React.CSSProperties} />
     </span>
   );
 }
