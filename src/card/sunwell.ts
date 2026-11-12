@@ -142,7 +142,7 @@ function sunwellProps(card: Card, v: Shown, texture: HTMLImageElement | null) {
  * on some frames: long weapon and hero names ran off the banner (and got cut),
  * and weapon text ran past the sides of the dark plate. Narrow them.
  */
-const NAME_MAX: Record<string, number> = { WEAPON: 350, HERO: 350 };
+const NAME_MAX: Record<string, number> = { WEAPON: 350, HERO: 390 };
 const WEAPON_BODY = { dx: 168, width: 344 };
 function fitBoxes(sw: SunwellCard, type: string) {
   const max = NAME_MAX[type];
@@ -278,9 +278,10 @@ export async function drawCard(
   // and the frames are put side by side: halves for two classes, thirds for three.
   // Only the frame differs between the copies, so the seams only show there.
   const classes = shown.class?.includes(' + ') ? shown.class.split(' + ') : [String(props.cardClass)];
+  // Size the text for this card so long texts aren't clipped. Sunwell reads its options when it
+  // draws, which can be after other cards were queued, so each card gets its own (see setUp).
+  const fit = fitText(String(props.text ?? ''), card.type, BODY_FONT);
   try {
-    // Size the text for this card so long texts aren't clipped.
-    Object.assign(getSunwell().options, fitText(String(props.text ?? ''), card.type, BODY_FONT));
     const drawn = classes.map((cls, i) => {
       const cardProps = { ...props, cardClass: cls };
       // Sunwell drops a request for a card identical to one still in its queue (and never calls
@@ -319,6 +320,13 @@ export async function drawCard(
 
   /** Everything we change on Sunwell's card before it draws. */
   function setUp(sw: ReturnType<Sunwell['createCard']>, cls: string) {
+    // This card's own text size: a view of Sunwell with its own options (everything else is shared).
+    // The card and each of its parts (body text, name banner, gems...) keep their own reference.
+    const shared = getSunwell();
+    const own = Object.create(shared) as typeof shared;
+    own.options = { ...shared.options, ...fit };
+    const parts = [sw, ...Object.values(sw)] as { sunwell?: unknown }[];
+    for (const part of parts) if (part && typeof part === 'object' && part.sunwell === shared) part.sunwell = own;
     sw.raceText = raceText;
     if (location) applyLocationLayout(sw, crop?.[card.id] ?? 0);
     // Sunwell's hero name curve puts names about 34 units (of 670) left of the middle; centre them.
