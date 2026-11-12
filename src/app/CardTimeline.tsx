@@ -112,6 +112,55 @@ export function CardTimeline({
   const dragged = useRef(false);
   const canDraw = drawable([card]).length > 0;
   const go = (i: number) => setIdx(Math.max(0, Math.min(last, i)));
+  const stage = useRef<HTMLDivElement>(null);
+  /** One version's width on screen, card plus gap (what a drag of one step covers). */
+  const stepPx = () => {
+    const slide = stage.current?.querySelector<HTMLElement>('.lc-slide');
+    const gap = parseFloat(getComputedStyle(stage.current!.querySelector('.lc-track')!).columnGap) || 0;
+    return (slide?.offsetWidth ?? 250) + gap;
+  };
+  /** Snap a drag (or a sideways scroll) of dx pixels to the nearest version. */
+  const settle = (dx: number) => {
+    const step = Math.round(-dx / stepPx()) || (Math.abs(dx) > 50 ? -Math.sign(dx) : 0);
+    go(idx + step);
+    setDrag(0);
+  };
+  // Past either end the strip only gives a little.
+  const resist = (dx: number, i: number) => ((i === 0 && dx > 0) || (i === last && dx < 0) ? dx * 0.3 : dx);
+
+  // Sideways scrolling (two-finger swipe on a trackpad, Shift + wheel) moves the strip like a drag,
+  // then snaps once it stops. A native listener, so it can stop the browser's swipe-back gesture.
+  const wheel = useRef({ dx: 0, timer: 0 as ReturnType<typeof setTimeout> | 0 });
+  const settleRef = useRef(settle);
+  settleRef.current = settle;
+  const resistRef = useRef(resist);
+  resistRef.current = resist;
+  const idxRef = useRef(idx);
+  idxRef.current = idx;
+  useEffect(() => {
+    const el = stage.current;
+    if (!el || !open) return;
+    const onWheel = (e: WheelEvent) => {
+      const dx = e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
+      if (Math.abs(dx) <= Math.abs(e.shiftKey ? 0 : e.deltaY)) return; // mostly vertical: let the page scroll
+      e.preventDefault();
+      const w = wheel.current;
+      w.dx -= dx * (e.deltaMode === 1 ? 16 : 1);
+      setDrag(resistRef.current(w.dx, idxRef.current));
+      if (w.timer) clearTimeout(w.timer);
+      w.timer = setTimeout(() => {
+        const moved = w.dx;
+        w.dx = 0;
+        w.timer = 0;
+        settleRef.current(moved);
+      }, 140);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      if (wheel.current.timer) clearTimeout(wheel.current.timer);
+    };
+  }, [open]);
   const collapsing = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(collapsing.current), []);
   /** Fold the older versions back behind the current card, then close. */
@@ -169,6 +218,7 @@ export function CardTimeline({
         </header>
       )}
       <div
+        ref={stage}
         className={`lc-stage ${drag ? 'dragging' : ''}`}
         onPointerDown={(e) => {
           if (!open) return;
@@ -182,16 +232,14 @@ export function CardTimeline({
           if (!st.moved && Math.abs(dx) < 8) return;
           st.moved = true;
           dragged.current = true;
-          setDrag(dx);
+          setDrag(resist(dx, idx));
         }}
         onPointerUp={() => {
           const st = start.current;
           start.current = null;
           if (!st?.moved) return;
-          // About a third of a card moves one version; a long fling moves more.
-          const step = Math.round(-drag / 180) || (Math.abs(drag) > 50 ? -Math.sign(drag) : 0);
-          go(idx + step);
-          setDrag(0);
+          // Half a card's width moves one version (any clear swipe moves at least one); a long fling moves more.
+          settle(drag);
         }}
         onPointerCancel={() => {
           start.current = null;

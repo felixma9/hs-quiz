@@ -272,6 +272,12 @@ footer a { color: var(--faint); }
 }
 .lc-nav.prev { left: max(8px, calc(50% - var(--w) / 2 - 64px)); }
 .lc-nav.next { right: max(8px, calc(50% - var(--w) / 2 - 64px)); }
+/* Phones: the current card with a clear edge of the versions either side; swipe to move (no arrow buttons over the edges). */
+@media (max-width: 600px) {
+  .lc { --w: min(320px, 66vw, calc((100dvh - 120px) * 500 / 746)); --gap: 10px; }
+  .lc-nav { display: none; }
+  .lc-slide:not(.focus) .lc-when { opacity: 0; }
+}
 
 /* The time rail: a stop per version, coloured by what changed. */
 .lc-rail { list-style: none; margin: 0 auto; padding: 0 8px; display: flex; justify-content: center; gap: 0; position: relative; max-width: 100%; overflow-x: auto; }
