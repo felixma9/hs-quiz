@@ -132,6 +132,8 @@ export function Gauntlet({ cards }: { cards: Card[] }) {
                 tone: result.verdict === 'correct' ? 'ok' : 'bad',
                 text: result.verdict === 'correct' ? 'Correct!' : revealed ? 'Revealed' : 'Wrong!',
                 id: history.length,
+                // A right answer is just a tick; misses keep the banner.
+                minimal: result.verdict === 'correct',
               }
             : null
         }

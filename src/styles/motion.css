@@ -101,4 +101,9 @@
 @keyframes verdict-pop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } 60% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } 100% { transform: translate(-50%, -50%); } }
 @keyframes verdict-shake { 0%, 100% { transform: translate(-50%, -50%); } 25% { transform: translate(calc(-50% - 8px), -50%); } 50% { transform: translate(calc(-50% + 7px), -50%); } 75% { transform: translate(calc(-50% - 3px), -50%); } }
 .verdict-flash { animation: verdict-pop 0.3s var(--ease) backwards; }
+/* The tick pops in and draws itself, stroke by stroke. */
+.verdict-check { animation: verdict-pop 0.35s var(--ease) backwards; }
+@keyframes tick-draw { from { stroke-dashoffset: 90; } }
+.verdict-check path { stroke-dasharray: 90; animation: tick-draw 0.32s var(--ease) 0.06s backwards; }
+.verdict-check .vc-shine { stroke-dasharray: 20; animation: none; }
 .verdict-flash.bad { animation: verdict-pop 0.3s var(--ease) backwards, verdict-shake 0.3s ease 0.3s; }

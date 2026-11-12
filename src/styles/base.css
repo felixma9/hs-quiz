@@ -187,3 +187,11 @@ footer a { color: var(--faint); }
 .verdict-flash.leaving { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
 .verdict-flash-mark { font-size: 1.15em; }
 .verdict-flash-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Minimal right answer (Gauntlet): just the tick, with a soft gold glow. */
+.verdict-check {
+  position: fixed; left: 50%; top: 42%; z-index: 1000; pointer-events: none; width: min(34vw, 150px); aspect-ratio: 1;
+  transform: translate(-50%, -50%); transition: opacity 0.25s ease, transform 0.25s ease;
+  filter: drop-shadow(0 0 14px rgba(226, 182, 90, 0.55)) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
+}
+.verdict-check svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.verdict-check.leaving { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
