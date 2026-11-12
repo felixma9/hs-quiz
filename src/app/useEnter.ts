@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 /**
  * Enter anywhere on the page submits, while `active`. Presses inside a field or
  * on a button are left to that control (fields submit themselves; a focused
- * button is pressed by Enter).
+ * button is pressed by Enter), except the card's own tap areas.
  */
 export function useEnter(active: boolean, submit: () => void) {
   const fn = useRef(submit);
@@ -13,7 +13,10 @@ export function useEnter(active: boolean, submit: () => void) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Enter' || e.repeat || e.defaultPrevented) return;
       const t = e.target as HTMLElement | null;
-      if (t && /^(INPUT|TEXTAREA|BUTTON|SELECT|A|SUMMARY)$/.test(t.tagName)) return;
+      // A tap area on the card (rarity gem, frame, tribe banner) keeps focus after a tap: Enter there
+      // submits rather than pressing it again (which would cycle the rarity). Space still presses it.
+      const onCard = !!t?.closest('.hotspot');
+      if (t && !onCard && /^(INPUT|TEXTAREA|BUTTON|SELECT|A|SUMMARY)$/.test(t.tagName)) return;
       e.preventDefault();
       fn.current();
     };

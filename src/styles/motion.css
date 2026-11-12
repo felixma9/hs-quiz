@@ -133,7 +133,6 @@ details[open] > :not(summary) { animation: rise-in var(--med) var(--ease) backwa
 .verdict-check { animation: verdict-pop 0.28s var(--ease) backwards; }
 @keyframes tick-draw { from { stroke-dashoffset: 90; } }
 .verdict-check path { stroke-dasharray: 90; animation: tick-draw 0.26s var(--ease) 0.04s backwards; }
-.verdict-check .vc-shine { stroke-dasharray: 20; animation: none; }
 .verdict-flash.bad { animation: verdict-pop 0.3s var(--ease) backwards, verdict-shake 0.3s ease 0.3s; }
 
 /* The timeline: as the older versions slide out, the title, rail and details fade in; each version's details as it comes into focus. */

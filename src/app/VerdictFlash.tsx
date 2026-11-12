@@ -67,33 +67,11 @@ export function VerdictFlash({ verdict }: { verdict: Verdict | null }) {
   );
 }
 
-/**
- * A chunky green tick with a gold rim and a dark outline, drawn in three
- * strokes of the same path (outline, rim, fill) plus a highlight. Original art
- * in the spirit of the game's quest-complete tick.
- */
+/** A plain green tick: one stroke, in the site's flat style. */
 function CheckMark() {
-  const d = 'M22 55 L42 74 L80 27';
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true">
-      <defs>
-        <linearGradient id="vc-rim" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff1bf" />
-          <stop offset="0.45" stopColor="#e2b65a" />
-          <stop offset="1" stopColor="#8a5a1c" />
-        </linearGradient>
-        <linearGradient id="vc-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#c6f59a" />
-          <stop offset="0.5" stopColor="#4cb544" />
-          <stop offset="1" stopColor="#1f6e25" />
-        </linearGradient>
-      </defs>
-      <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path className="vc-outline" d={d} stroke="#1f1405" strokeWidth="24" />
-        <path className="vc-rim" d={d} stroke="url(#vc-rim)" strokeWidth="18" />
-        <path className="vc-fill" d={d} stroke="url(#vc-fill)" strokeWidth="10" />
-        <path className="vc-shine" d="M27 54 L41 67" stroke="rgba(255, 255, 255, 0.55)" strokeWidth="3" />
-      </g>
+      <path d="M24 54 L43 72 L78 30" fill="none" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

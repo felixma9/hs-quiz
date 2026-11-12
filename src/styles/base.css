@@ -185,12 +185,14 @@ footer a { color: var(--faint); }
 .verdict-flash.leaving { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
 .verdict-flash-mark { font-size: 1.15em; }
 .verdict-flash-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Minimal right answer (Gauntlet): a small tick that pops and goes, with a faint glow. */
+/* Right answer: a small plain tick on a dark badge (so it reads over card art) that pops and goes. */
 .verdict-check {
-  position: fixed; left: 50%; top: 42%; z-index: 1000; pointer-events: none; width: min(16vw, 64px); aspect-ratio: 1;
-  transform: translate(-50%, -50%); transition: opacity 0.22s ease, transform 0.22s ease; opacity: 0.92;
-  filter: drop-shadow(0 0 6px rgba(226, 182, 90, 0.35)) drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
+  position: fixed; left: 50%; top: 42%; z-index: 1000; pointer-events: none; width: 52px; aspect-ratio: 1; box-sizing: border-box;
+  padding: 9px; border-radius: 50%; background: rgba(14, 15, 19, 0.9); border: 1.5px solid rgba(116, 194, 124, 0.55);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -50%); transition: opacity 0.22s ease, transform 0.22s ease;
 }
+.verdict-check path { stroke: var(--ok-text); }
 .verdict-check svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .verdict-check.leaving { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
 
