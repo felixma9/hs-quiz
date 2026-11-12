@@ -100,7 +100,6 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
 
   const typePool = useMemo(() => pool.filter((c) => c.type === card.type), [pool, card.type]);
   const classOpts = useMemo(() => enumOptions('class', pool), [pool]);
-  const singleClasses = classOpts.filter((o) => !o.value.includes('+'));
   const rarityOpts = useMemo(() => enumOptions('rarity', typePool), [typePool]);
   const tribeOpts = useMemo(() => enumOptions('tribe', typePool), [typePool]);
   const singleTribes = tribeOpts.filter((o) => !o.value.includes('+'));
@@ -114,8 +113,8 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
   const tap = (k: AttrKey) => {
     if (!canEdit(k)) return;
     if (k === 'class') {
-      cycle('class', singleClasses);
-      setActive('class');
+      // The frame only opens the class picker (it doesn't change the class by itself).
+      setActive(active === 'class' ? null : 'class');
     } else if (k === 'tribe') {
       cycle('tribe', singleTribes);
       setActive('tribe');
@@ -157,9 +156,9 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
         <canvas ref={canvas} className={ready ? 'ready' : ''} aria-label={show('name') ? card.name : 'Mystery card'} />
         {!ready && <div className="card-loading">Drawing card…</div>}
 
-        {/* The frame itself: tap to cycle the class. */}
+        {/* The frame itself: tap to pick the class. */}
         {canEdit('class') && (
-          <button type="button" className={`hotspot hs-frame ${outline('class')}`} aria-label="Class (tap to cycle)" onClick={() => tap('class')} />
+          <button type="button" className={`hotspot hs-frame ${outline('class')}`} aria-label="Class (tap to pick)" onClick={() => tap('class')} />
         )}
         {hotspot('name', 'Name')}
         {hotspot('text', 'Card text')}
