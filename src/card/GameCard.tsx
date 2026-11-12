@@ -105,7 +105,9 @@ export function GameCard({ card, hidden, draft = {}, editable = new Set(), onCha
   const singleTribes = tribeOpts.filter((o) => !o.value.includes('+'));
 
   const cycle = (k: AttrKey, opts: { value: string }[]) => {
-    const vals = opts.map((o) => o.value);
+    // After the last option comes blank again, so a tap can always clear the field
+    // (heroes only come in Legendary: without this the gem could never be removed).
+    const vals = [...opts.map((o) => o.value), ''];
     const i = vals.indexOf(draft[k] ?? '');
     set(k, vals[(i + 1) % vals.length]);
   };
