@@ -24,7 +24,6 @@
 .clue-btn.unlocked { color: var(--text); border-color: var(--gold-dim); cursor: pointer; }
 .clue-btn.on { background: var(--gold-bg); }
 .clue-body { max-width: 320px; text-align: center; }
-.clue-art { width: 220px; height: 220px; }
 .clue-body p { margin: 0; font-style: italic; color: var(--text); }
 
 .hsdle-result { display: grid; gap: 14px; }
@@ -84,9 +83,9 @@
 }
 .head-gem { display: block; width: 18px; height: 18px; object-fit: contain; margin: 0 auto 2px; }
 
-/* Art: zoomed per card (public/art-crop.json) so the light padding bars at the edges are hidden. */
-.art-crop { display: block; flex: none; border-radius: 50%; overflow: hidden; background: #000; }
-.art-crop img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Art: a squircle, zoomed per card (--crop, from public/art-crop.json) so the padding bars at the edges are hidden. */
+.art-crop { display: block; flex: none; border-radius: 30%; overflow: hidden; background: #000; }
+.art-crop img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(var(--crop, 1.08)); }
 
 /* Tap a tile for its full value */
 .board-cell.name-cell { background: none; border: 0; color: var(--text); font: inherit; font-size: 0.72rem; font-weight: 700; text-align: left; padding: 0; cursor: pointer; }
@@ -153,10 +152,18 @@
 .reveal-card .game-card-frame { width: min(230px, 62vw); }
 .reveal-caption { margin: 0; max-width: 320px; }
 
-/* Which daily: a small Standard / Classic switch under the tabs. */
-.daily-kind { justify-self: center; display: inline-flex; gap: 2px; padding: 2px; margin-top: -6px; border-radius: 999px; background: var(--surface); }
-.daily-kind button {
-  font: inherit; font-size: 0.8rem; font-weight: 600; color: var(--muted); background: none; border: 0; cursor: pointer;
-  min-height: 32px; padding: 0 14px; border-radius: 999px;
+/* Over to the other daily: a small wooden button (planks, a lit top edge, a dark rim). */
+.wood-btn {
+  justify-self: center; display: inline-flex; align-items: baseline; gap: 6px; margin-top: -6px;
+  font: inherit; font-size: 0.85rem; font-weight: 700; color: #fbe9c6; cursor: pointer;
+  min-height: 36px; padding: 7px 16px; border-radius: 8px; border: 1px solid #3a2310;
+  background:
+    repeating-linear-gradient(91deg, rgba(0, 0, 0, 0.1) 0 1px, transparent 1px 6px, rgba(255, 230, 190, 0.05) 6px 7px, transparent 7px 13px),
+    linear-gradient(180deg, #9b6a3b, #6c4322 55%, #57341a);
+  box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
+  transition: filter var(--fast) ease, transform var(--fast) var(--ease);
 }
-.daily-kind button.on { background: var(--gold-bg); color: var(--gold-2); }
+.wood-btn small { font-size: 0.74rem; font-weight: 500; color: #e3c9a0; }
+.wood-btn:active { transform: scale(0.97); }
+@media (hover: hover) { .wood-btn:hover { filter: brightness(1.1); } }

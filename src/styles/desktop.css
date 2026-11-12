@@ -7,7 +7,7 @@
  */
 @media (hover: hover) and (pointer: fine) {
   /* ---- Colour and light (no movement) ---- */
-  .tabs button:not(.on):hover, .seg button:not(.on):not(:disabled):hover, .daily-kind button:not(.on):hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
+  .tabs button:not(.on):hover, .seg button:not(.on):not(:disabled):hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
   .rarity-chip:hover { border-color: var(--line-2); color: var(--text); }
   .rarity-chip.on:hover { border-color: var(--gold); }
   .chip:not(:disabled):hover { border-color: var(--line-2); }
@@ -55,9 +55,10 @@
     .pool-section { animation: rise-in 0.35s var(--ease) 0.2s backwards; }
 
     /* Round card art you can tap (strips, board, event lines, CardDB): a slow zoom. */
-    .art-crop img, .qf-thumb img { transition: transform 0.35s var(--ease); }
+    .art-crop img { transition: transform 0.35s var(--ease); }
+    /* On top of each card's own crop zoom, never instead of it (that would bring the padding bars back). */
     .named-card:hover .art-crop img, .board-cell.name-cell:hover .art-crop img, .qf-thumb:hover img,
-    .carddb-hit:hover .art-crop img, .search-list button:hover .art-crop img { transform: scale(1.1); }
+    .carddb-hit:hover .art-crop img, .search-list button:hover .art-crop img { transform: scale(calc(var(--crop, 1.08) * 1.1)); }
     .named-art { transition: transform 0.2s var(--ease), border-color 0.2s ease; }
     .named-card:hover .named-art { border-color: var(--line-2); transform: translateY(-2px); }
 

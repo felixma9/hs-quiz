@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { plainText } from '../../lib/attributes';
-import { Art, useArtCrop } from './Art';
 
 
 /** Two taps to give up, so it can't happen by accident. */
@@ -19,7 +18,7 @@ export function GiveUp({ onGiveUp }: { onGiveUp(): void }) {
   );
 }
 
-/** A clue button that unlocks after enough wrong guesses. Open or not is up to the caller (the art also goes on the card). */
+/** A clue button that unlocks after enough wrong guesses. Open or not is up to the caller (the art shows on the card). */
 export function Clue({
   label,
   left,
@@ -35,7 +34,6 @@ export function Clue({
   open: boolean;
   onToggle(): void;
 }) {
-  const crop = useArtCrop();
   const unlocked = left <= 0;
   return (
     <div className="clue">
@@ -43,13 +41,10 @@ export function Clue({
         {label}
         <span className="small">{unlocked ? (open ? 'Hide' : 'Show') : `in ${left} ${left === 1 ? 'try' : 'tries'}`}</span>
       </button>
-      {open && unlocked && (
+      {/* The art goes on the card only (RevealCard); the text is also shown here. */}
+      {open && unlocked && kind === 'text' && (
         <div className="clue-body">
-          {kind === 'art' ? (
-            <Art card={answer} crop={crop} className="clue-art" alt="The mystery card's art" />
-          ) : (
-            <p>{answer.text ? plainText(answer.text).split(answer.name).join('???') : 'No card text.'}</p>
-          )}
+          <p>{answer.text ? plainText(answer.text).split(answer.name).join('???') : 'No card text.'}</p>
         </div>
       )}
     </div>

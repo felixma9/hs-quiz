@@ -76,21 +76,21 @@ export function Hsdle({ all, pool }: { all: Card[]; pool: Card[] }) {
         </button>
       </div>
       {daily && (
-        <div className="daily-kind" role="radiogroup" aria-label="Which daily">
-          <button type="button" role="radio" aria-checked={mode === 'standard'} className={mode === 'standard' ? 'on' : ''} onClick={() => switchMode('standard')}>
-            Standard
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={mode === 'classic'}
-            className={mode === 'classic' ? 'on' : ''}
-            onClick={() => switchMode('classic')}
-            title={`Cards from sets ${CLASSIC_AGE}+ years old`}
-          >
-            Classic
-          </button>
-        </div>
+        // A small wooden button over to the other daily.
+        <button
+          type="button"
+          className="wood-btn"
+          onClick={() => switchMode(mode === 'standard' ? 'classic' : 'standard')}
+          title={mode === 'standard' ? `Today's card from sets ${CLASSIC_AGE}+ years old` : "Today's card from Standard sets"}
+        >
+          {mode === 'standard' ? (
+            <>
+              Daily Classic <small>{CLASSIC_AGE}+ year old cards</small> →
+            </>
+          ) : (
+            <>← Daily Standard</>
+          )}
+        </button>
       )}
       {game ? (
         <HsdleGame
@@ -160,6 +160,8 @@ function HsdleGame({
   // Clues the player has opened (a new card starts with them closed: this component is keyed by it).
   const [openClues, setOpenClues] = useState<string[]>([]);
   const toggleClue = (k: string) => setOpenClues((o) => (o.includes(k) ? o.filter((x) => x !== k) : [...o, k]));
+  // Once the mystery art is on the card, suggestions show names only.
+  const artOnCard = openClues.includes('art') && wrong >= CLUES.find((c) => c.key === 'art')!.after;
 
   const [shared, setShared] = useState(false);
   const share = async () => {
@@ -186,12 +188,22 @@ function HsdleGame({
     <>
       {!done && (
         <p className="ask">
-          {mode === 'unlimited' ? 'Guess the card.' : mode === 'classic' ? "Guess today's classic card." : "Guess today's card."} It's {article}{' '}
-          <b>{what}</b>.
+          {mode === 'unlimited' ? (
+            'Guess the card.'
+          ) : mode === 'classic' ? (
+            <>
+              Guess today's <b>Classic</b> card (from sets {CLASSIC_AGE}+ years old).
+            </>
+          ) : (
+            <>
+              Guess today's <b>Standard</b> card.
+            </>
+          )}{' '}
+          It's {article} <b>{what}</b>.
         </p>
       )}
 
-      {!done && <Search cards={sameType} what={what} exclude={game.guesses} onPick={guess} />}
+      {!done && <Search cards={sameType} what={what} exclude={game.guesses} art={!artOnCard} onPick={guess} />}
 
       {!done && (
         <RevealCard

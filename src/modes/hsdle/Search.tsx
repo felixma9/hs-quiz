@@ -5,9 +5,12 @@ import { rank } from '../../lib/search';
 import { Art, useArtCrop } from './Art';
 import { useTapPick } from '../../card/tap';
 
-/** Type-ahead search over card names (cards of the answer's type); Enter or tap picks one. */
-
-export function Search({ cards, what, exclude, onPick }: { cards: Card[]; what: string; exclude: string[]; onPick(c: Card): void }) {
+/**
+ * Type-ahead search over card names (cards of the answer's type); Enter or tap
+ * picks one. `art`: show each suggestion's art (off once the mystery art is on
+ * the card, or you could just match the picture).
+ */
+export function Search({ cards, what, exclude, art = true, onPick }: { cards: Card[]; what: string; exclude: string[]; art?: boolean; onPick(c: Card): void }) {
   const crop = useArtCrop();
   const [q, setQ] = useState('');
   const tap = useTapPick();
@@ -62,7 +65,7 @@ export function Search({ cards, what, exclude, onPick }: { cards: Card[]; what: 
                 onMouseEnter={() => setHi(i)}
                 {...tap.option(() => pick(c))}
               >
-                <Art card={c} crop={crop} className="thumb" />
+                {art && <Art card={c} crop={crop} className="thumb" />}
                 <span>{c.name}</span>
               </button>
             </li>
