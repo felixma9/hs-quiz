@@ -60,6 +60,8 @@ RADIUS = 0.3
 # glows and snow in the art are tinted, so they don't count.
 WHITE = 232
 NEUTRAL = 10
+# How close a pixel must be to the art's own padding colour (see padding_colour) to count as padding.
+PAD_NEAR = 8
 WHITE_SHARE = 0.01
 STEP = 0.005
 MAX_CUT = 0.18
@@ -91,12 +93,24 @@ def outline(n: int = 240) -> list[tuple[float, float]]:
 OUTLINE = outline()
 
 
-def white_share(rgb, w: int, h: int, cut: float) -> float:
+def padding_colour(rgb, w: int, h: int):
+    """The art's own padding colour, if it has one: all four corner pixels the same flat neutral shade
+    (some art is cross-shaped, with grey blocks in the corners rather than white bars)."""
+    corners = [rgb[1, 1], rgb[w - 2, 1], rgb[1, h - 2], rgb[w - 2, h - 2]]
+    first = corners[0]
+    if max(first) - min(first) >= NEUTRAL or min(first) < 120:
+        return None
+    if any(max(abs(c[i] - first[i]) for i in range(3)) > PAD_NEAR for c in corners):
+        return None
+    return first
+
+
+def white_share(rgb, w: int, h: int, cut: float, pad=None) -> float:
     s = zoom(cut)
     white = 0
     for x, y in OUTLINE:
         px = rgb[min(w - 1, int((0.5 + (x - 0.5) / s) * w)), min(h - 1, int((0.5 + (y - 0.5) / s) * h))]
-        white += min(px) > WHITE and max(px) - min(px) < NEUTRAL
+        white += (min(px) > WHITE and max(px) - min(px) < NEUTRAL) or (pad is not None and max(abs(px[i] - pad[i]) for i in range(3)) <= PAD_NEAR)
     return white / len(OUTLINE)
 
 
@@ -112,7 +126,8 @@ def measure(card_id: str) -> tuple[str, float | None]:
     sides = [edge(grey, w, h, True, True), edge(grey, w, h, True, False), edge(grey, w, h, False, True), edge(grey, w, h, False, False)]
     cut = max(sides) / w
     rgb = im.load()
-    while cut < MAX_CUT and white_share(rgb, w, h, cut) > WHITE_SHARE:
+    pad = padding_colour(rgb, w, h)
+    while cut < MAX_CUT and white_share(rgb, w, h, cut, pad) > WHITE_SHARE:
         cut = max(cut, 0.03) + STEP if cut else 0.03
     return card_id, round(min(cut, MAX_CUT), 3)
 
