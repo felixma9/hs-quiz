@@ -85,7 +85,7 @@ Drawing speed: a card takes about 10 ms. Two things in Sunwell made it 5–15× 
 - **Character splitting:** Sunwell splits text with the `chars` package, which looks up each character's Unicode category by rebuilding a list of every code point, about 70% of the drawing time. `vite.config.ts` swaps in `src/card/chars.ts`, a one-line regular expression that does the same job for card text.
 - **Frame waits:** Sunwell waited for the next screen frame before drawing each card. It draws off screen, so `src/card/sunwell.ts` starts the next card straight away.
 
-CardDB's hover miniatures (`src/modes/carddb/MiniCard.tsx`) are drawn exactly like the full card (from the small art the icons already loaded) and then shrunk, cached, and drawn ahead for the shown results in idle time.
+CardDB's hover miniatures (`src/modes/carddb/MiniCard.tsx`) replace the icon in place and tilt like the big card. They're drawn exactly like the full card (from the small art the icons already loaded) and then shrunk, cached, and drawn ahead for the shown results in idle time. Clicking one grows the full card out of it: the miniature's picture stands in until the full card has drawn.
 
 Sunwell is older than some of the game, so:
 - **Locations** have no Sunwell card, so we draw them on its hero card (same gems: mana, and durability where a hero has armor) with our own frame and layout (`src/card/location.ts`). The frames (`public/sunwell/frame-location-<class>.webp`) come from the [Hearthstone wiki](https://hearthstone.wiki.gg) via `scripts/make-location-frames.py`; Neutral is the Mage one turned grey. CardDB draws and finds locations; Gauntlet and HSdle still leave them out.

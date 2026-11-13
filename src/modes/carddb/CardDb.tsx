@@ -8,7 +8,7 @@ import { Art, useArtCrop } from '../hsdle/Art';
 import { zoomCard } from '../../app/CardZoom';
 import { usePill } from '../../app/usePill';
 import { ICON } from '../../app/icons';
-import { drawMini } from '../../card/sunwell';
+import { drawMini, preloadArt } from '../../card/sunwell';
 import { MiniCard } from './MiniCard';
 
 /**
@@ -197,14 +197,8 @@ export function CardDb({ cards }: { cards: Card[] }) {
     }
     return out;
   }, [matches, shown]);
-  // The result under the mouse: a small version of its card follows the pointer.
-  const [peek, setPeek] = useState<{ card: Card; anchor: HTMLElement; at: { x: number; y: number } } | null>(null);
-  useEffect(() => {
-    // Scrolling moves the results out from under the pointer without telling us.
-    const hide = () => setPeek(null);
-    window.addEventListener('scroll', hide, { passive: true });
-    return () => window.removeEventListener('scroll', hide);
-  }, []);
+  // The result under the mouse (its id): its icon is shown as a small card.
+  const [peek, setPeek] = useState<string | null>(null);
   // Draw the results' small cards ahead, one at a time while the browser is idle, so hovering one
   // shows it at once. Only where there is a mouse to hover with.
   useEffect(() => {
@@ -315,15 +309,25 @@ export function CardDb({ cards }: { cards: Card[] }) {
                         type="button"
                         className="carddb-hit"
                         aria-label={c.name}
-                        onClick={() => {
+                        onClick={(e) => {
+                          // The full card grows out of the miniature (or the icon, on touch).
+                          const from = (e.currentTarget.querySelector('.mini.ready canvas') ?? e.currentTarget.querySelector('.carddb-art'))?.getBoundingClientRect();
                           setPeek(null);
-                          zoomCard(c, undefined, { history: true });
+                          zoomCard(c, undefined, { history: true, from });
                         }}
-                        // Mouse only: a small version of the card follows the pointer while it is on the result.
-                        onPointerEnter={(e) => e.pointerType === 'mouse' && setPeek({ card: c, anchor: e.currentTarget, at: { x: e.clientX, y: e.clientY } })}
+                        // Mouse only: the icon turns into a small version of the card while the pointer is on it.
+                        onPointerEnter={(e) => {
+                          if (e.pointerType !== 'mouse') return;
+                          setPeek(c.id);
+                          // The full card's art, so it's ready if this one is clicked.
+                          preloadArt(c);
+                        }}
                         onPointerLeave={() => setPeek(null)}
                       >
-                        <Art card={c} crop={crop} className="carddb-art" />
+                        <span className="carddb-icon">
+                          <Art card={c} crop={crop} className="carddb-art" />
+                          {peek === c.id && <MiniCard card={c} />}
+                        </span>
                         <span className="carddb-name">{c.name}</span>
                         <span className="carddb-meta muted">{pretty('class', ATTR.class.value(c) as string)}</span>
                       </button>
@@ -332,7 +336,6 @@ export function CardDb({ cards }: { cards: Card[] }) {
                 </section>
               ))}
             </div>
-            {peek && <MiniCard key={peek.card.id} card={peek.card} anchor={peek.anchor} at={peek.at} />}
             {matches.length > shown && (
               <button type="button" className="btn carddb-more" onClick={() => setShown((n) => n + PAGE)}>
                 Show more ({(matches.length - shown).toLocaleString()} left)

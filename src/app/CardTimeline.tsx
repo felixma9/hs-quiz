@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../lib/types';
 import { drawable } from '../pool/pool';
 import { GameCard } from '../card/GameCard';
+import { drawMini } from '../card/sunwell';
 import { monthYear, setName, wordDiff, type Version } from '../lib/history';
 import { Tilt } from './Tilt';
 
@@ -68,6 +69,25 @@ function VersionInfo({ v, next, isNow }: { v: Version; next?: Version; isNow: bo
   );
 }
 
+/** The card's cached miniature, drawn over the space the full card will fill. */
+function MiniStandIn({ card }: { card: Card }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useLayoutEffect(() => {
+    let live = true;
+    void drawMini(card).then((src) => {
+      const c = canvas.current;
+      if (!live || !c) return;
+      c.width = src.width;
+      c.height = src.height;
+      c.getContext('2d')?.drawImage(src, 0, 0);
+    });
+    return () => {
+      live = false;
+    };
+  }, [card]);
+  return <canvas ref={canvas} className="mini-stand-in" aria-hidden="true" />;
+}
+
 /** Before the timeline opens, the current card alone: what the zoom shows. */
 const alone = (card: Card): Version => ({ card, diffs: [], tags: [] });
 
@@ -93,6 +113,7 @@ const COLLAPSE_MS = 380;
  */
 export function CardTimeline({
   card,
+  from,
   versions,
   open,
   onOpen,
@@ -100,6 +121,8 @@ export function CardTimeline({
   hint,
 }: {
   card: Card;
+  /** Where the card was on screen before it was opened: it grows out of there into place. */
+  from?: DOMRect;
   /** Newest first (from timeline()); null while the history is loading. */
   versions: Version[] | null;
   open: boolean;
@@ -121,6 +144,28 @@ export function CardTimeline({
   const dragged = useRef(false);
   const canDraw = drawable([card]).length > 0;
   const go = (i: number) => setIdx(Math.max(0, Math.min(last, i)));
+  // Opening from a miniature: the card starts where the miniature was and grows into place.
+  const nowSlide = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = nowSlide.current?.querySelector<HTMLElement>('.tilt');
+    if (!from || !el) return;
+    // Measure where it ends up, without any transform left from an earlier run.
+    el.style.transition = 'none';
+    el.style.transform = '';
+    const to = el.getBoundingClientRect();
+    if (!to.width) return;
+    const s = from.width / to.width;
+    const dx = from.left + from.width / 2 - (to.left + to.width / 2);
+    const dy = from.top + from.height / 2 - (to.top + to.height / 2);
+    el.style.transition = 'none';
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
+    void el.offsetWidth;
+    el.style.transition = 'transform 0.32s cubic-bezier(0.2, 0.7, 0.2, 1)';
+    el.style.transform = '';
+    const t = setTimeout(() => (el.style.transition = ''), 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // When the focused card last changed: a tap on it only folds the timeline once it has been in focus
   // (and still) for a moment, so a tap right after scrolling to a card focuses it instead of closing.
   const focusedAt = useRef(0);
@@ -272,7 +317,7 @@ export function CardTimeline({
     );
 
   return (
-    <div className={`lc ${open ? 'is-open' : ''} ${phase === 'collapsing' ? 'collapsing' : ''}`}>
+    <div className={`lc ${open ? 'is-open' : ''} ${phase === 'collapsing' ? 'collapsing' : ''} ${from ? 'from-mini' : ''}`}>
       {open && versions && (
         <header className="tl-head" onClick={(e) => e.stopPropagation()}>
           <h2>{card.name}</h2>
@@ -324,6 +369,7 @@ export function CardTimeline({
             return (
               <div
                 key={now ? 'now' : `v${i}`}
+                ref={now ? nowSlide : undefined}
                 className={`lc-slide ${focus ? 'focus' : ''} ${now ? 'now' : ''}`}
                 style={{ '--back': last - i } as React.CSSProperties}
                 aria-current={focus || undefined}
@@ -357,7 +403,11 @@ export function CardTimeline({
                   <span>{v.patch ? `Patch ${v.patch}` : 'Released'}</span>
                 </div>
                 {/* The card in focus tilts toward the pointer; the others stay flat. */}
-                <Tilt active={focus}>{face(v, now)}</Tilt>
+                <Tilt active={focus}>
+                  {face(v, now)}
+                  {/* Opened from a miniature: its picture stands in until the full card has drawn. */}
+                  {now && from && !mainDrawn && <MiniStandIn card={card} />}
+                </Tilt>
               </div>
             );
           })}

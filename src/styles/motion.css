@@ -142,6 +142,11 @@ details[open] > :not(summary) { animation: rise-in var(--med) var(--ease) backwa
 .lc-nav { animation: fade-in 0.3s ease 0.35s backwards; }
 /* The history zoom pops its card in like the plain zoom, once: the stage stays mounted while the timeline opens and closes. */
 .zoom-history .lc-stage { animation: zoom-card-in 0.26s var(--ease) backwards; }
+/* Opened from a miniature: the card grows out of it instead (CardTimeline.tsx), solid from the start;
+   only the dim behind it fades in. */
+.zoom-history .lc.from-mini .lc-stage { animation: none; }
+@keyframes dim-in { from { background-color: rgba(6, 7, 10, 0); } }
+.zoom.from-mini { animation: dim-in 0.22s ease backwards; }
 
 /*
  * Tabs and segmented controls: the highlight slides to the chosen option

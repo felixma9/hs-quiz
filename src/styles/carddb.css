@@ -42,14 +42,14 @@
 }
 .carddb-cost .carddb-grid { padding-top: 10px; animation: none; }
 
-/* A small version of the card follows the mouse over a result (MiniCard.tsx sets its position and lean). */
+/* Hovering a result turns its icon into a small version of the whole card (MiniCard.tsx), over the icon. */
+.carddb-icon { position: relative; display: block; }
+.carddb-hit:has(.mini) { position: relative; z-index: 6; }
 .mini {
-  position: fixed; left: 0; top: 0; z-index: 90; pointer-events: none; opacity: 0; will-change: transform;
-  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.75));
+  position: absolute; left: 50%; top: 50%; width: 128px; transform: translate(-50%, -50%); z-index: 1;
+  opacity: 0; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.75));
 }
-.mini.ready { opacity: 1; transition: opacity 0.1s ease; }
-.mini canvas {
-  display: block; width: 100%; height: auto;
-  transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.12s ease-out;
-}
+.mini.ready { opacity: 1; animation: mini-in 0.14s var(--ease) backwards; }
+@keyframes mini-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } }
+.mini canvas { display: block; width: 100%; height: auto; }
 

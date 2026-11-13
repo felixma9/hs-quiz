@@ -11,11 +11,12 @@ import { Tilt } from './Tilt';
  * zoomCard(); the one CardZoomHost in App shows it. With `history` (CardDB),
  * tapping the card again opens every version of it on a timeline.
  */
-type Zoom = { card: Card; note?: ReactNode; history?: boolean } | null;
+type Zoom = { card: Card; note?: ReactNode; history?: boolean; from?: DOMRect } | null;
 let show: ((z: Zoom) => void) | null = null;
 
-export function zoomCard(card: Card, note?: ReactNode, opts: { history?: boolean } = {}) {
-  show?.({ card, note, history: opts.history });
+/** `from`: where the card was on screen (a miniature or icon): the zoomed card grows out of it. */
+export function zoomCard(card: Card, note?: ReactNode, opts: { history?: boolean; from?: DOMRect } = {}) {
+  show?.({ card, note, history: opts.history, from: opts.from });
 }
 
 /** Props for an art icon that opens the whole card (for icons that aren't already inside a button). */
@@ -88,14 +89,14 @@ export function CardZoomHost() {
   if (z.history)
     return (
       <div
-        className={`zoom zoom-history ${open ? 'open' : ''}`}
+        className={`zoom zoom-history ${open ? 'open' : ''} ${z.from ? 'from-mini' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={open ? `${z.card.name}: every version` : z.card.name}
         onClick={close}
       >
         {/* Taps on the cards, rail and details stay there; anywhere else (or Escape) closes. */}
-        <CardTimeline card={z.card} versions={versions} open={open && !!versions} onOpen={() => setOpen(true)} onClose={() => setOpen(false)} hint={hint} />
+        <CardTimeline card={z.card} from={z.from} versions={versions} open={open && !!versions} onOpen={() => setOpen(true)} onClose={() => setOpen(false)} hint={hint} />
       </div>
     );
   return (
