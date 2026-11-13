@@ -8,7 +8,8 @@ import { Art, useArtCrop } from '../hsdle/Art';
 import { zoomCard } from '../../app/CardZoom';
 import { usePill } from '../../app/usePill';
 import { ICON } from '../../app/icons';
-import { drawMini, preloadArt } from '../../card/sunwell';
+import { preloadArt } from '../../card/sunwell';
+import { warmMinis } from '../../card/mini';
 import { MiniCard } from './MiniCard';
 
 /**
@@ -27,6 +28,8 @@ const TYPES: { value: CardType; label: string }[] = [
 
 /** Shown per page of results; "Show more" adds another page. */
 const PAGE = 60;
+/** How many matching cards get their hover miniature drawn ahead (and saved), shown or not yet. */
+const WARM_AHEAD = 600;
 
 /** A stand-in card of this type, for the frame. Nothing of it is shown: every field is blank or filled in by the player. */
 const blankCard = (type: CardType): Card => ({
@@ -197,29 +200,12 @@ export function CardDb({ cards }: { cards: Card[] }) {
     }
     return out;
   }, [matches, shown]);
-  // Draw the results' small cards ahead, one at a time while the browser is idle, so hovering one
-  // shows it at once. Only where there is a mouse to hover with.
+  // Get the results' small cards ready ahead (mini.ts), so hovering one shows it at once:
+  // the ones shown ready to paint, the next ones drawn and saved. Only where there is a mouse to hover with.
   useEffect(() => {
     if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
-    // Idle time, but never more than a moment's wait: a card takes about 10ms to draw.
-    const idle = (f: (d?: IdleDeadline) => void) => (window.requestIdleCallback ? window.requestIdleCallback(f, { timeout: 120 }) : setTimeout(f, 30));
-    const todo = sections.flatMap((s) => s.cards).slice(0, 150);
-    let live = true;
-    let i = 0;
-    // Draw one after another while the idle period lasts (a card takes a few ms), then wait for the next.
-    const step = (deadline?: IdleDeadline) => {
-      if (!live || i >= todo.length) return;
-      void drawMini(todo[i++]).then(() => {
-        if (!live) return;
-        if (deadline && !deadline.didTimeout && deadline.timeRemaining() > 8) step(deadline);
-        else idle(step);
-      });
-    };
-    idle(step);
-    return () => {
-      live = false;
-    };
-  }, [sections]);
+    return warmMinis(matches.slice(0, WARM_AHEAD), shown);
+  }, [matches, shown]);
 
   const chips = Object.entries(active) as [AttrKey, string][];
   const one = matches.length === 1 ? matches[0] : null;

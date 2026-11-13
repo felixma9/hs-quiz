@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../lib/types';
 import { drawable } from '../pool/pool';
 import { GameCard } from '../card/GameCard';
-import { drawMini, miniNow } from '../card/sunwell';
+import { paintMini, prepareMini } from '../card/mini';
 import { monthYear, setName, wordDiff, type Version } from '../lib/history';
 import { Tilt } from './Tilt';
 
@@ -73,17 +73,9 @@ function VersionInfo({ v, next, isNow }: { v: Version; next?: Version; isNow: bo
 function MiniStandIn({ card }: { card: Card }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useLayoutEffect(() => {
-    const copy = (src: HTMLCanvasElement) => {
-      const c = canvas.current;
-      if (!c) return;
-      c.width = src.width;
-      c.height = src.height;
-      c.getContext('2d')?.drawImage(src, 0, 0);
-    };
-    const now = miniNow(card);
-    if (now) return copy(now);
+    if (canvas.current && paintMini(canvas.current, card)) return;
     let live = true;
-    void drawMini(card).then((src) => live && copy(src));
+    void prepareMini(card).then(() => live && canvas.current && paintMini(canvas.current, card));
     return () => {
       live = false;
     };

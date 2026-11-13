@@ -117,6 +117,19 @@ function loadArt(card: Card, small = false) {
   return p;
 }
 
+/** The small (256px) art the round icons show, which miniatures are drawn with. */
+export const loadSmallArt = (card: Card) => loadArt(card, true);
+
+/** Whether the card fonts really loaded (a card drawn before then would be kept with the wrong font). */
+export const fontsLoaded = () =>
+  ['900 40px Merriweather', '400 40px "Libre Franklin"'].every((f) => {
+    try {
+      return document.fonts.check(f);
+    } catch {
+      return false;
+    }
+  });
+
 /** Start loading a card's art now (e.g. the next card, during this turn) so it draws without a wait. */
 export function preloadArt(card: Card) {
   void loadArt(card);
@@ -230,6 +243,21 @@ export interface Extras {
   smallArt?: boolean;
   /** Draw this many pixels wide (default RENDER_WIDTH). Sunwell lays out in its own units and scales, so a smaller card is the same card. */
   width?: number;
+  /**
+   * Leave the art window empty and report where the art goes instead, in
+   * pixels. Without the cross-origin art the canvas stays readable, so it can be
+   * saved; the art is drawn under it when shown (see mini.ts).
+   */
+  artWindow?: (at: ArtWindow) => void;
+}
+
+/** Where a card's art goes: clipped to `clip`, filled grey, then the art drawn over `x, y, w, h`. */
+export interface ArtWindow {
+  clip: [number, number][];
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 /**
@@ -293,11 +321,11 @@ export async function drawCard(
   shown: Shown,
   onReady: () => void,
   isLive: () => boolean,
-  { art = true, set = true, smallArt = false, width = RENDER_WIDTH }: Extras = {},
+  { art = true, set = true, smallArt = false, width = RENDER_WIDTH, artWindow }: Extras = {},
 ) {
   const location = card.type === 'LOCATION';
   card = frameCard(card);
-  const [loaded, crop] = await Promise.all([art ? loadArt(card, smallArt) : null, location ? loadArtCrop() : null, loadFonts(), loadBanner()]);
+  const [loaded, crop] = await Promise.all([art && !artWindow ? loadArt(card, smallArt) : null, location ? loadArtCrop() : null, loadFonts(), loadBanner()]);
   if (!isLive()) return;
   const { props, raceText } = sunwellProps(card, shown, loaded);
   // No set: no watermark (Sunwell draws none for an unknown set).
@@ -322,7 +350,7 @@ export async function drawCard(
           new Promise<HTMLCanvasElement>((done) => {
             const target = i === 0 ? canvas : document.createElement('canvas');
             const sw = getSunwell().createCard(cardProps, width, false, target, () => done(target));
-            setUp(sw, cls);
+            setUp(sw, cls, i);
           }),
       );
       inFlight.set(key, draw);
@@ -349,7 +377,7 @@ export async function drawCard(
   }
 
   /** Everything we change on Sunwell's card before it draws. */
-  function setUp(sw: ReturnType<Sunwell['createCard']>, cls: string) {
+  function setUp(sw: ReturnType<Sunwell['createCard']>, cls: string, i0: number) {
     // This card's own text size: a view of Sunwell with its own options (everything else is shared).
     // The card and each of its parts (body text, name banner, gems...) keep their own reference.
     const shared = getSunwell();
@@ -382,6 +410,25 @@ export async function drawCard(
     // We draw straight onto our canvas. Without this Sunwell also copies it into an image,
     // which fails because the art is cross-origin.
     sw.target = null;
+    if (artWindow) {
+      // Instead of the art: note where it goes, and clear the window (the art would have covered
+      // whatever was drawn there first, such as a hero's backing), so the art can go underneath.
+      const part = (sw as unknown as { cardArt: { render(ctx: CanvasRenderingContext2D, ratio: number): void } }).cardArt;
+      part.render = (ctx, ratio) => {
+        const a = (sw as unknown as { artCoords: { dx: number; dy: number; dWidth: number; dHeight: number } }).artCoords;
+        const clip = (sw as unknown as { artClipPolygon: { x: number; y: number }[] }).artClipPolygon.map(
+          (pt) => [pt.x * ratio, pt.y * ratio] as [number, number],
+        );
+        if (i0 === 0) artWindow({ clip, x: a.dx * ratio, y: a.dy * ratio, w: a.dWidth * ratio, h: a.dHeight * ratio });
+        ctx.save();
+        ctx.beginPath();
+        clip.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.closePath();
+        ctx.clip();
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.restore();
+      };
+    }
     if (width < RENDER_WIDTH) {
       // Smaller than its artwork: shrink the art and frames smoothly. (The canvas is resized
       // when the card is created, which resets its settings, so this is set as it draws.)
@@ -392,54 +439,4 @@ export async function drawCard(
       };
     }
   }
-}
-
-/** Miniature cards are drawn this wide: sharp at the size they're shown on a high-density screen. */
-const MINI_WIDTH = 300;
-const MINI_KEEP = 200;
-const minis = new Map<string, Promise<HTMLCanvasElement>>();
-/** The finished ones, for showing at once without waiting on a promise. */
-const miniDone = new Map<string, HTMLCanvasElement>();
-
-/** A card's miniature if it's already drawn (see drawMini), else null. */
-export const miniNow = (card: Card) => miniDone.get(card.id) ?? null;
-
-/**
- * A small picture of the whole card, kept so showing it again is instant (the
- * last MINI_KEEP cards). Drawn exactly as the big card is, just at a smaller
- * width (Sunwell lays a card out in its own units), so every number and line
- * of text sits where it does on the big card. Copy it onto your own canvas
- * with drawImage.
- */
-export function drawMini(card: Card): Promise<HTMLCanvasElement> {
-  let p = minis.get(card.id);
-  if (p) {
-    // Most recently used last.
-    minis.delete(card.id);
-    minis.set(card.id, p);
-    return p;
-  }
-  const shown: Shown = {};
-  for (const k of Object.keys(ATTR) as AttrKey[]) shown[k] = truth(card, k);
-  const mini = document.createElement('canvas');
-  p = new Promise<HTMLCanvasElement>((done) => {
-    void drawCard(
-      mini,
-      card,
-      shown,
-      () => {
-        if (minis.has(card.id)) miniDone.set(card.id, mini);
-        done(mini);
-      },
-      () => true,
-      { smallArt: true, width: MINI_WIDTH },
-    );
-  });
-  minis.set(card.id, p);
-  if (minis.size > MINI_KEEP) {
-    const oldest = minis.keys().next().value!;
-    minis.delete(oldest);
-    miniDone.delete(oldest);
-  }
-  return p;
 }
