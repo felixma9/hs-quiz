@@ -81,6 +81,12 @@ Class icons are 128px WebP files in `public/class-icons/<CLASS>.webp` (e.g. `DRU
 
 Cards are drawn on a canvas by HearthSim's [Sunwell](https://github.com/HearthSim/Sunwell) (MIT, archived in 2022). Its frame images are in `public/sunwell/`, converted to WebP (15 MB down to 2 MB).
 
+Drawing speed: a card takes about 10 ms. Two things in Sunwell made it 5–15× slower:
+- **Character splitting:** Sunwell splits text with the `chars` package, which looks up each character's Unicode category by rebuilding a list of every code point, about 70% of the drawing time. `vite.config.ts` swaps in `src/card/chars.ts`, a one-line regular expression that does the same job for card text.
+- **Frame waits:** Sunwell waited for the next screen frame before drawing each card. It draws off screen, so `src/card/sunwell.ts` starts the next card straight away.
+
+CardDB's hover miniatures (`src/modes/carddb/MiniCard.tsx`) are drawn exactly like the full card (from the small art the icons already loaded) and then shrunk, cached, and drawn ahead for the shown results in idle time.
+
 Sunwell is older than some of the game, so:
 - **Locations** have no Sunwell card, so we draw them on its hero card (same gems: mana, and durability where a hero has armor) with our own frame and layout (`src/card/location.ts`). The frames (`public/sunwell/frame-location-<class>.webp`) come from the [Hearthstone wiki](https://hearthstone.wiki.gg) via `scripts/make-location-frames.py`; Neutral is the Mage one turned grey. CardDB draws and finds locations; Gauntlet and HSdle still leave them out.
 - **Demon Hunter** has no Sunwell frame, so we made fel-green ones by recoloring the Death Knight frames (and the Warlock hero frame) with `scripts/make-dh-frames.py`. The Death Knight hero frame (also missing) is a recolored Warlock one.

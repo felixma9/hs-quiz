@@ -197,14 +197,21 @@ export function CardDb({ cards }: { cards: Card[] }) {
     }
     return out;
   }, [matches, shown]);
-  // The result under the mouse (its id): its icon is shown as a small card.
-  const [peek, setPeek] = useState<string | null>(null);
+  // The result under the mouse: a small version of its card follows the pointer.
+  const [peek, setPeek] = useState<{ card: Card; anchor: HTMLElement; at: { x: number; y: number } } | null>(null);
+  useEffect(() => {
+    // Scrolling moves the results out from under the pointer without telling us.
+    const hide = () => setPeek(null);
+    window.addEventListener('scroll', hide, { passive: true });
+    return () => window.removeEventListener('scroll', hide);
+  }, []);
   // Draw the results' small cards ahead, one at a time while the browser is idle, so hovering one
   // shows it at once. Only where there is a mouse to hover with.
   useEffect(() => {
     if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
-    const idle = window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 60));
-    const todo = sections.flatMap((s) => s.cards).slice(0, 100);
+    // Idle time, but never more than a moment's wait: a card takes about 10ms to draw.
+    const idle = (f: () => void) => (window.requestIdleCallback ? window.requestIdleCallback(f, { timeout: 120 }) : setTimeout(f, 30));
+    const todo = sections.flatMap((s) => s.cards).slice(0, 150);
     let live = true;
     let i = 0;
     const step = () => {
@@ -312,14 +319,11 @@ export function CardDb({ cards }: { cards: Card[] }) {
                           setPeek(null);
                           zoomCard(c, undefined, { history: true });
                         }}
-                        // Mouse only: the icon turns into a small version of the card while the pointer is on it.
-                        onPointerEnter={(e) => e.pointerType === 'mouse' && setPeek(c.id)}
+                        // Mouse only: a small version of the card follows the pointer while it is on the result.
+                        onPointerEnter={(e) => e.pointerType === 'mouse' && setPeek({ card: c, anchor: e.currentTarget, at: { x: e.clientX, y: e.clientY } })}
                         onPointerLeave={() => setPeek(null)}
                       >
-                        <span className="carddb-icon">
-                          <Art card={c} crop={crop} className="carddb-art" />
-                          {peek === c.id && <MiniCard card={c} />}
-                        </span>
+                        <Art card={c} crop={crop} className="carddb-art" />
                         <span className="carddb-name">{c.name}</span>
                         <span className="carddb-meta muted">{pretty('class', ATTR.class.value(c) as string)}</span>
                       </button>
@@ -328,6 +332,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
                 </section>
               ))}
             </div>
+            {peek && <MiniCard key={peek.card.id} card={peek.card} anchor={peek.anchor} at={peek.at} />}
             {matches.length > shown && (
               <button type="button" className="btn carddb-more" onClick={() => setShown((n) => n + PAGE)}>
                 Show more ({(matches.length - shown).toLocaleString()} left)

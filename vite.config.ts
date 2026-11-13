@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -70,5 +71,9 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    // Sunwell's character splitter is very slow; ours does the same job for card text (src/card/chars.ts).
+    alias: { chars: fileURLToPath(new URL('./src/card/chars.ts', import.meta.url)) },
+  },
   base: './',
 });
