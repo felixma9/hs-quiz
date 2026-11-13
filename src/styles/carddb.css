@@ -42,17 +42,14 @@
 }
 .carddb-cost .carddb-grid { padding-top: 10px; animation: none; }
 
-/* The miniature card beside the result under the mouse (CardPeek.tsx). */
-.peek {
-  position: fixed; z-index: 90; pointer-events: none; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.7));
-  animation: rise-in 0.16s var(--ease) backwards;
+/* Hovering a result turns its icon into a small version of the whole card (MiniCard.tsx), over the icon. */
+.carddb-icon { position: relative; display: block; }
+.carddb-hit:has(.mini) { position: relative; z-index: 6; }
+.mini {
+  position: absolute; left: 50%; top: 50%; width: 128px; transform: translate(-50%, -50%); z-index: 1;
+  opacity: 0; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.75));
 }
-.peek .game-card-frame, .peek-render { width: 100%; display: block; }
-.peek .card-chips { display: none; }
-/* Mana, attack and health again, large, centred over the card's own gems. */
-.peek-card { position: relative; }
-.peek-stat {
-  position: absolute; width: 60px; height: 64px; transform: translate(-50%, -50%); display: grid; place-items: center;
-  background: center / contain no-repeat; font-weight: 800; font-size: 1.7rem; line-height: 1; color: #fff;
-  text-shadow: -2px 0 #000, 2px 0 #000, 0 -2px #000, 0 2px #000, 0 3px 4px rgba(0, 0, 0, 0.8);
-}
+.mini.ready { opacity: 1; animation: mini-in 0.14s var(--ease) backwards; }
+@keyframes mini-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } }
+.mini canvas { display: block; width: 100%; height: auto; }
+

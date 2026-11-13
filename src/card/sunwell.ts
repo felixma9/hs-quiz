@@ -77,16 +77,18 @@ function loadFonts() {
 
 /** Card art cache. Loaded without CORS (the art host sends no CORS headers); Sunwell only draws it. */
 const art = new Map<string, Promise<HTMLImageElement | null>>();
-function loadArt(card: Card) {
-  let p = art.get(card.id);
+/** `small`: the 256px art the round icons already show (so it's in the browser's cache), enough for a miniature. */
+function loadArt(card: Card, small = false) {
+  const key = small ? `${card.id}:256` : card.id;
+  let p = art.get(key);
   if (!p) {
     p = new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
-      img.src = artUrl(card);
+      img.src = small ? `https://art.hearthstonejson.com/v1/256x/${card.id}.jpg` : artUrl(card);
     });
-    art.set(card.id, p);
+    art.set(key, p);
   }
   return p;
 }
@@ -200,6 +202,8 @@ export function truth(card: Card, k: AttrKey): string {
 export interface Extras {
   art?: boolean;
   set?: boolean;
+  /** Draw a miniature: this many pixels wide (default 500), from the small art. */
+  width?: number;
 }
 
 /**
@@ -263,11 +267,11 @@ export async function drawCard(
   shown: Shown,
   onReady: () => void,
   isLive: () => boolean,
-  { art = true, set = true }: Extras = {},
+  { art = true, set = true, width = RENDER_WIDTH }: Extras = {},
 ) {
   const location = card.type === 'LOCATION';
   card = frameCard(card);
-  const [loaded, crop] = await Promise.all([art ? loadArt(card) : null, location ? loadArtCrop() : null, loadFonts(), loadBanner()]);
+  const [loaded, crop] = await Promise.all([art ? loadArt(card, width < RENDER_WIDTH) : null, location ? loadArtCrop() : null, loadFonts(), loadBanner()]);
   if (!isLive()) return;
   const { props, raceText } = sunwellProps(card, shown, loaded);
   // No set: no watermark (Sunwell draws none for an unknown set).
@@ -291,7 +295,7 @@ export async function drawCard(
         () =>
           new Promise<HTMLCanvasElement>((done) => {
             const target = i === 0 ? canvas : document.createElement('canvas');
-            const sw = getSunwell().createCard(cardProps, RENDER_WIDTH, false, target, () => done(target));
+            const sw = getSunwell().createCard(cardProps, width, false, target, () => done(target));
             setUp(sw, cls);
           }),
       );
@@ -354,3 +358,30 @@ export async function drawCard(
     sw.target = null;
   }
 }
+
+/** Miniature cards are drawn this wide: sharp at the size they're shown, a fifth of the pixels of a full card. */
+const MINI_WIDTH = 224;
+const MINI_KEEP = 120;
+const minis = new Map<string, Promise<HTMLCanvasElement>>();
+
+/**
+ * A small drawing of the whole card, kept so showing it again is instant
+ * (the last MINI_KEEP cards). Copy it onto your own canvas with drawImage.
+ */
+export function drawMini(card: Card): Promise<HTMLCanvasElement> {
+  let p = minis.get(card.id);
+  if (p) {
+    // Most recently used last.
+    minis.delete(card.id);
+    minis.set(card.id, p);
+    return p;
+  }
+  const shown: Shown = {};
+  for (const k of Object.keys(ATTR) as AttrKey[]) shown[k] = truth(card, k);
+  const canvas = document.createElement('canvas');
+  p = new Promise<HTMLCanvasElement>((done) => void drawCard(canvas, card, shown, () => done(canvas), () => true, { width: MINI_WIDTH }));
+  minis.set(card.id, p);
+  if (minis.size > MINI_KEEP) minis.delete(minis.keys().next().value!);
+  return p;
+}
+

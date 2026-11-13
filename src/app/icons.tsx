@@ -9,8 +9,6 @@ export const ICON = {
   attack: `${BASE}sunwell/attack-minion.webp`,
   health: `${BASE}sunwell/health.webp`,
   armor: `${BASE}sunwell/armor.webp`,
-  durability: `${BASE}sunwell/durability.webp`,
-  weaponAttack: `${BASE}sunwell/attack-weapon.webp`,
 };
 
 const RARITY_FILE: Record<string, string> = {

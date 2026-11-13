@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
 import { normalizeCardName, normalizeName, words } from '../../lib/fuzzy';
@@ -8,7 +8,8 @@ import { Art, useArtCrop } from '../hsdle/Art';
 import { zoomCard } from '../../app/CardZoom';
 import { usePill } from '../../app/usePill';
 import { ICON } from '../../app/icons';
-import { CardPeek } from './CardPeek';
+import { drawMini } from '../../card/sunwell';
+import { MiniCard } from './MiniCard';
 
 /**
  * CardDB: a blank card to fill in. Every part filled in narrows the list of
@@ -196,18 +197,25 @@ export function CardDb({ cards }: { cards: Card[] }) {
     }
     return out;
   }, [matches, shown]);
-  // The result under the mouse, shown as a miniature card beside it.
-  const [peek, setPeek] = useState<{ card: Card; anchor: DOMRect } | null>(null);
-  const peekTimer = useRef<ReturnType<typeof setTimeout>>();
+  // The result under the mouse (its id): its icon is shown as a small card.
+  const [peek, setPeek] = useState<string | null>(null);
+  // Draw the results' small cards ahead, one at a time while the browser is idle, so hovering one
+  // shows it at once. Only where there is a mouse to hover with.
   useEffect(() => {
-    // Scrolling moves the results out from under the miniature.
-    const hide = () => setPeek(null);
-    window.addEventListener('scroll', hide, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', hide);
-      clearTimeout(peekTimer.current);
+    if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
+    const idle = window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 60));
+    const todo = sections.flatMap((s) => s.cards).slice(0, 100);
+    let live = true;
+    let i = 0;
+    const step = () => {
+      if (!live || i >= todo.length) return;
+      void drawMini(todo[i++]).then(() => live && idle(step));
     };
-  }, []);
+    idle(step);
+    return () => {
+      live = false;
+    };
+  }, [sections]);
 
   const chips = Object.entries(active) as [AttrKey, string][];
   const one = matches.length === 1 ? matches[0] : null;
@@ -304,19 +312,14 @@ export function CardDb({ cards }: { cards: Card[] }) {
                           setPeek(null);
                           zoomCard(c, undefined, { history: true });
                         }}
-                        // Mouse only: a miniature of the whole card after a short pause on a result.
-                        onPointerEnter={(e) => {
-                          if (e.pointerType !== 'mouse') return;
-                          const el = e.currentTarget;
-                          clearTimeout(peekTimer.current);
-                          peekTimer.current = setTimeout(() => setPeek({ card: c, anchor: el.getBoundingClientRect() }), 140);
-                        }}
-                        onPointerLeave={() => {
-                          clearTimeout(peekTimer.current);
-                          setPeek(null);
-                        }}
+                        // Mouse only: the icon turns into a small version of the card while the pointer is on it.
+                        onPointerEnter={(e) => e.pointerType === 'mouse' && setPeek(c.id)}
+                        onPointerLeave={() => setPeek(null)}
                       >
-                        <Art card={c} crop={crop} className="carddb-art" />
+                        <span className="carddb-icon">
+                          <Art card={c} crop={crop} className="carddb-art" />
+                          {peek === c.id && <MiniCard card={c} />}
+                        </span>
                         <span className="carddb-name">{c.name}</span>
                         <span className="carddb-meta muted">{pretty('class', ATTR.class.value(c) as string)}</span>
                       </button>
@@ -325,7 +328,6 @@ export function CardDb({ cards }: { cards: Card[] }) {
                 </section>
               ))}
             </div>
-            {peek && <CardPeek card={peek.card} anchor={peek.anchor} />}
             {matches.length > shown && (
               <button type="button" className="btn carddb-more" onClick={() => setShown((n) => n + PAGE)}>
                 Show more ({(matches.length - shown).toLocaleString()} left)
