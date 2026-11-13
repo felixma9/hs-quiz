@@ -28,3 +28,31 @@
 .carddb-elsewhere { font: inherit; color: var(--gold-2); text-decoration: underline; text-underline-offset: 3px; padding: 0; }
 /* Under the results: the same search in the other card types. */
 .carddb-also { margin: 4px 0 0; }
+
+/* Results in sections by mana cost; each heading sticks under the title bar while its cards scroll past. */
+.carddb-sections { display: grid; gap: 6px; animation: fade-in var(--med) ease backwards; }
+.carddb-cost-head {
+  position: sticky; top: calc(52px + env(safe-area-inset-top)); z-index: 5; margin: 0 -8px; padding: 6px 8px;
+  display: flex; align-items: center; gap: 10px; font: inherit;
+  background: rgba(14, 15, 19, 0.94); border-bottom: 1px solid var(--line);
+}
+.carddb-cost-gem {
+  width: 30px; height: 32px; flex: none; display: grid; place-items: center; background: center / contain no-repeat;
+  font-weight: 800; font-size: 1rem; color: #fff; text-shadow: 0 0 3px #000, 0 1px 2px #000;
+}
+.carddb-cost .carddb-grid { padding-top: 10px; animation: none; }
+
+/* The miniature card beside the result under the mouse (CardPeek.tsx). */
+.peek {
+  position: fixed; z-index: 90; pointer-events: none; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.7));
+  animation: rise-in 0.16s var(--ease) backwards;
+}
+.peek .game-card-frame, .peek-render { width: 100%; display: block; }
+.peek .card-chips { display: none; }
+/* Mana, attack and health again, large, centred over the card's own gems. */
+.peek-card { position: relative; }
+.peek-stat {
+  position: absolute; width: 60px; height: 64px; transform: translate(-50%, -50%); display: grid; place-items: center;
+  background: center / contain no-repeat; font-weight: 800; font-size: 1.7rem; line-height: 1; color: #fff;
+  text-shadow: -2px 0 #000, 2px 0 #000, 0 -2px #000, 0 2px #000, 0 3px 4px rgba(0, 0, 0, 0.8);
+}

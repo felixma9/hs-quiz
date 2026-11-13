@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
 import { normalizeCardName, normalizeName, words } from '../../lib/fuzzy';
@@ -7,6 +7,8 @@ import { GameCard } from '../../card/GameCard';
 import { Art, useArtCrop } from '../hsdle/Art';
 import { zoomCard } from '../../app/CardZoom';
 import { usePill } from '../../app/usePill';
+import { ICON } from '../../app/icons';
+import { CardPeek } from './CardPeek';
 
 /**
  * CardDB: a blank card to fill in. Every part filled in narrows the list of
@@ -185,6 +187,28 @@ export function CardDb({ cards }: { cards: Card[] }) {
     setShown(PAGE);
   };
 
+  // The results shown so far, in sections by mana cost (matches are already sorted by cost).
+  const sections = useMemo(() => {
+    const out: { cost: number; cards: Card[] }[] = [];
+    for (const c of matches.slice(0, shown)) {
+      if (out.at(-1)?.cost === c.cost) out.at(-1)!.cards.push(c);
+      else out.push({ cost: c.cost, cards: [c] });
+    }
+    return out;
+  }, [matches, shown]);
+  // The result under the mouse, shown as a miniature card beside it.
+  const [peek, setPeek] = useState<{ card: Card; anchor: DOMRect } | null>(null);
+  const peekTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    // Scrolling moves the results out from under the miniature.
+    const hide = () => setPeek(null);
+    window.addEventListener('scroll', hide, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', hide);
+      clearTimeout(peekTimer.current);
+    };
+  }, []);
+
   const chips = Object.entries(active) as [AttrKey, string][];
   const one = matches.length === 1 ? matches[0] : null;
 
@@ -255,18 +279,53 @@ export function CardDb({ cards }: { cards: Card[] }) {
           </p>
         ) : (
           <>
-            {/* Keyed by type, so the results fade in again when the type changes. */}
-            <div key={type} className={`carddb-grid ${one ? 'one' : ''}`}>
-              {matches.slice(0, shown).map((c) => (
-                <button key={c.id} type="button" className="carddb-hit" onClick={() => zoomCard(c, undefined, { history: true })} title={c.name}>
-                  <Art card={c} crop={crop} className="carddb-art" />
-                  <span className="carddb-name">{c.name}</span>
-                  <span className="carddb-meta muted">
-                    {c.cost} mana · {pretty('class', ATTR.class.value(c) as string)}
-                  </span>
-                </button>
+            {/* Keyed by type, so the results fade in again when the type changes. One section per mana cost; its heading sticks under the title bar while its cards scroll. */}
+            <div key={type} className="carddb-sections">
+              {sections.map(({ cost, cards: group }) => (
+                <section key={cost} className="carddb-cost" aria-label={`${cost} mana`}>
+                  {!one && (
+                    <h3 className="carddb-cost-head">
+                      <span className="carddb-cost-gem" style={{ backgroundImage: `url(${ICON.mana})` }}>
+                        {cost}
+                      </span>
+                      <span className="muted small">
+                        {group.length.toLocaleString()} card{group.length === 1 ? '' : 's'}
+                      </span>
+                    </h3>
+                  )}
+                  <div className={`carddb-grid ${one ? 'one' : ''}`}>
+                    {group.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="carddb-hit"
+                        aria-label={c.name}
+                        onClick={() => {
+                          setPeek(null);
+                          zoomCard(c, undefined, { history: true });
+                        }}
+                        // Mouse only: a miniature of the whole card after a short pause on a result.
+                        onPointerEnter={(e) => {
+                          if (e.pointerType !== 'mouse') return;
+                          const el = e.currentTarget;
+                          clearTimeout(peekTimer.current);
+                          peekTimer.current = setTimeout(() => setPeek({ card: c, anchor: el.getBoundingClientRect() }), 140);
+                        }}
+                        onPointerLeave={() => {
+                          clearTimeout(peekTimer.current);
+                          setPeek(null);
+                        }}
+                      >
+                        <Art card={c} crop={crop} className="carddb-art" />
+                        <span className="carddb-name">{c.name}</span>
+                        <span className="carddb-meta muted">{pretty('class', ATTR.class.value(c) as string)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
+            {peek && <CardPeek card={peek.card} anchor={peek.anchor} />}
             {matches.length > shown && (
               <button type="button" className="btn carddb-more" onClick={() => setShown((n) => n + PAGE)}>
                 Show more ({(matches.length - shown).toLocaleString()} left)
