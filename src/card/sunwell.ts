@@ -117,9 +117,6 @@ function loadArt(card: Card, small = false) {
   return p;
 }
 
-/** The small (256px) art the round icons show, which miniatures are drawn with. */
-export const loadSmallArt = (card: Card) => loadArt(card, true);
-
 /** Whether the card fonts really loaded (a card drawn before then would be kept with the wrong font). */
 export const fontsLoaded = () =>
   ['900 40px Merriweather', '400 40px "Libre Franklin"'].every((f) => {
