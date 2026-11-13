@@ -115,8 +115,9 @@ def white_share(rgb, w: int, h: int, cut: float, pad=None) -> float:
 
 
 def measure(card_id: str) -> tuple[str, float | None]:
+    # A Legacy reprint (LEG_) has no art of its own; the original's is the same.
     try:
-        req = urllib.request.Request(URL.format(card_id), headers={'User-Agent': 'hs-quiz art measure'})
+        req = urllib.request.Request(URL.format(card_id.removeprefix('LEG_')), headers={'User-Agent': 'hs-quiz art measure'})
         data = urllib.request.urlopen(req, timeout=20).read()
         im = Image.open(io.BytesIO(data)).convert('RGB')
     except Exception:

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { zoomProps } from '../../app/CardZoom';
 import { loadArtCrop } from '../../lib/artCrop';
+import { artUrl } from '../../lib/cards';
 
 
 /**
@@ -42,9 +43,8 @@ export function Art({
   return (
     <span className={`art-crop ${className} ${zoom ? 'zoomable' : ''}`} {...(zoom ? zoomProps(card) : {})}>
       {/* The zoom is a variable, so hover effects can scale on top of it (see desktop.css). */}
-      <img src={thumb(card)} alt={alt} loading="lazy" style={{ '--crop': scale.toFixed(3) } as React.CSSProperties} />
+      <img src={artUrl(card, 256)} alt={alt} loading="lazy" style={{ '--crop': scale.toFixed(3) } as React.CSSProperties} />
     </span>
   );
 }
 
-const thumb = (c: Card) => `https://art.hearthstonejson.com/v1/256x/${c.id}.jpg`;

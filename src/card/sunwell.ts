@@ -90,7 +90,7 @@ function loadArt(card: Card, small = false) {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
-      img.src = small ? `https://art.hearthstonejson.com/v1/256x/${card.id}.jpg` : artUrl(card);
+      img.src = artUrl(card, small ? 256 : 512);
     });
     art.set(key, p);
   }

@@ -15,7 +15,10 @@ export function cardsById(cards: Card[]): Map<string, Card> {
   return m;
 }
 
-export const artUrl = (c: Card) => `https://art.hearthstonejson.com/v1/512x/${c.id}.jpg`;
+/** The id the art host files a card's art under. A few Legacy reprints (LEG_) have none of their own; the original's art is the same. */
+const artId = (c: Card) => (c.id.startsWith('LEG_') ? c.id.slice(4) : c.id);
+/** A card's art: 512px for drawing the card, 256px for icons and miniatures. */
+export const artUrl = (c: Card, size: 256 | 512 = 512) => `https://art.hearthstonejson.com/v1/${size}x/${artId(c)}.jpg`;
 
 /** Small seeded PRNG. */
 function mulberry32(seed: number): () => number {
