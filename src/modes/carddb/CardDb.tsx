@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
 import { normalizeCardName, normalizeName, words } from '../../lib/fuzzy';
@@ -197,20 +197,23 @@ export function CardDb({ cards }: { cards: Card[] }) {
     }
     return out;
   }, [matches, shown]);
-  // The result under the mouse (its id): its icon is shown as a small card.
-  const [peek, setPeek] = useState<string | null>(null);
   // Draw the results' small cards ahead, one at a time while the browser is idle, so hovering one
   // shows it at once. Only where there is a mouse to hover with.
   useEffect(() => {
     if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
     // Idle time, but never more than a moment's wait: a card takes about 10ms to draw.
-    const idle = (f: () => void) => (window.requestIdleCallback ? window.requestIdleCallback(f, { timeout: 120 }) : setTimeout(f, 30));
+    const idle = (f: (d?: IdleDeadline) => void) => (window.requestIdleCallback ? window.requestIdleCallback(f, { timeout: 120 }) : setTimeout(f, 30));
     const todo = sections.flatMap((s) => s.cards).slice(0, 150);
     let live = true;
     let i = 0;
-    const step = () => {
+    // Draw one after another while the idle period lasts (a card takes a few ms), then wait for the next.
+    const step = (deadline?: IdleDeadline) => {
       if (!live || i >= todo.length) return;
-      void drawMini(todo[i++]).then(() => live && idle(step));
+      void drawMini(todo[i++]).then(() => {
+        if (!live) return;
+        if (deadline && !deadline.didTimeout && deadline.timeRemaining() > 8) step(deadline);
+        else idle(step);
+      });
     };
     idle(step);
     return () => {
@@ -304,33 +307,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
                   )}
                   <div className={`carddb-grid ${one ? 'one' : ''}`}>
                     {group.map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className="carddb-hit"
-                        aria-label={c.name}
-                        onClick={(e) => {
-                          // The full card grows out of the miniature (or the icon, on touch).
-                          const from = (e.currentTarget.querySelector('.mini.ready canvas') ?? e.currentTarget.querySelector('.carddb-art'))?.getBoundingClientRect();
-                          setPeek(null);
-                          zoomCard(c, undefined, { history: true, from });
-                        }}
-                        // Mouse only: the icon turns into a small version of the card while the pointer is on it.
-                        onPointerEnter={(e) => {
-                          if (e.pointerType !== 'mouse') return;
-                          setPeek(c.id);
-                          // The full card's art, so it's ready if this one is clicked.
-                          preloadArt(c);
-                        }}
-                        onPointerLeave={() => setPeek(null)}
-                      >
-                        <span className="carddb-icon">
-                          <Art card={c} crop={crop} className="carddb-art" />
-                          {peek === c.id && <MiniCard card={c} />}
-                        </span>
-                        <span className="carddb-name">{c.name}</span>
-                        <span className="carddb-meta muted">{pretty('class', ATTR.class.value(c) as string)}</span>
-                      </button>
+                      <Hit key={c.id} card={c} crop={crop} />
                     ))}
                   </div>
                 </section>
@@ -360,3 +337,40 @@ export function CardDb({ cards }: { cards: Card[] }) {
     </div>
   );
 }
+
+/**
+ * One result. Its hover state is its own, so moving the mouse across the grid
+ * re-renders just the two results it leaves and enters, not the page.
+ */
+const Hit = memo(function Hit({ card: c, crop }: { card: Card; crop: ReturnType<typeof useArtCrop> }) {
+  // Under the mouse: the icon is shown as a small card.
+  const [peek, setPeek] = useState(false);
+  return (
+    <button
+      type="button"
+      className="carddb-hit"
+      aria-label={c.name}
+      onClick={(e) => {
+        // The full card grows out of the miniature (or the icon, on touch).
+        const from = (e.currentTarget.querySelector('.mini.ready canvas') ?? e.currentTarget.querySelector('.carddb-art'))?.getBoundingClientRect();
+        setPeek(false);
+        zoomCard(c, undefined, { history: true, from });
+      }}
+      // Mouse only: the icon turns into a small version of the card while the pointer is on it.
+      onPointerEnter={(e) => {
+        if (e.pointerType !== 'mouse') return;
+        setPeek(true);
+        // The full card's art, so it's ready if this one is clicked.
+        preloadArt(c);
+      }}
+      onPointerLeave={() => setPeek(false)}
+    >
+      <span className="carddb-icon">
+        <Art card={c} crop={crop} className="carddb-art" />
+        {peek && <MiniCard card={c} />}
+      </span>
+      <span className="carddb-name">{c.name}</span>
+      <span className="carddb-meta muted">{pretty('class', ATTR.class.value(c) as string)}</span>
+    </button>
+  );
+});

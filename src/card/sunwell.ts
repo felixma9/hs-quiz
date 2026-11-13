@@ -22,6 +22,10 @@ const GEM_TEXT_SIZE = 80;
 
 const ASSETS = `${import.meta.env.BASE_URL}sunwell/`;
 const BODY_FONT = 'Libre Franklin';
+interface SunwellPlatform {
+  requestAnimationFrame(cb: () => void): void;
+  getBuffer(width?: number, height?: number, clear?: boolean): HTMLCanvasElement;
+}
 let sunwell: Sunwell | null = null;
 function getSunwell(): Sunwell {
   if (!sunwell) {
@@ -39,8 +43,24 @@ function getSunwell(): Sunwell {
     });
     // Sunwell waits for the next screen frame before drawing each card (up to 16ms of doing nothing).
     // It draws off screen, so start as soon as the current task ends instead.
-    (sunwell as unknown as { platform: { requestAnimationFrame(cb: () => void): void } }).platform.requestAnimationFrame = (cb) =>
-      void setTimeout(cb, 0);
+    // (A message, not setTimeout: the browser holds chained timeouts back to 4ms each.)
+    const platform = (sunwell as unknown as { platform: SunwellPlatform }).platform;
+    const next: (() => void)[] = [];
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => next.shift()?.();
+    platform.requestAnimationFrame = (cb) => {
+      next.push(cb);
+      channel.port2.postMessage(null);
+    };
+    // Sunwell reads back the pixels of its scratch canvases (to crop text to its ink) several
+    // times per card. Telling the browser up front keeps them in memory instead of on the GPU,
+    // where every read back stalls until the GPU catches up.
+    const getBuffer = platform.getBuffer.bind(platform);
+    platform.getBuffer = (w, h, clear) => {
+      const c = getBuffer(w, h, clear);
+      c.getContext('2d', { willReadFrequently: true });
+      return c;
+    };
     // Assets were converted to WebP to keep the download small.
     sunwell.getAssetPath = (key: string) => `${ASSETS}${key}.webp`;
   }
@@ -208,6 +228,8 @@ export interface Extras {
   set?: boolean;
   /** Use the small (256px) art the round icons already loaded: enough for a miniature, and no download. */
   smallArt?: boolean;
+  /** Draw this many pixels wide (default RENDER_WIDTH). Sunwell lays out in its own units and scales, so a smaller card is the same card. */
+  width?: number;
 }
 
 /**
@@ -271,7 +293,7 @@ export async function drawCard(
   shown: Shown,
   onReady: () => void,
   isLive: () => boolean,
-  { art = true, set = true, smallArt = false }: Extras = {},
+  { art = true, set = true, smallArt = false, width = RENDER_WIDTH }: Extras = {},
 ) {
   const location = card.type === 'LOCATION';
   card = frameCard(card);
@@ -299,7 +321,7 @@ export async function drawCard(
         () =>
           new Promise<HTMLCanvasElement>((done) => {
             const target = i === 0 ? canvas : document.createElement('canvas');
-            const sw = getSunwell().createCard(cardProps, RENDER_WIDTH, false, target, () => done(target));
+            const sw = getSunwell().createCard(cardProps, width, false, target, () => done(target));
             setUp(sw, cls);
           }),
       );
@@ -360,19 +382,34 @@ export async function drawCard(
     // We draw straight onto our canvas. Without this Sunwell also copies it into an image,
     // which fails because the art is cross-origin.
     sw.target = null;
+    if (width < RENDER_WIDTH) {
+      // Smaller than its artwork: shrink the art and frames smoothly. (The canvas is resized
+      // when the card is created, which resets its settings, so this is set as it draws.)
+      const draw = sw.draw;
+      sw.draw = (c: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
+        ctx.imageSmoothingQuality = 'high';
+        draw.call(sw, c, ctx);
+      };
+    }
   }
 }
 
-/** Miniature cards are kept this wide: sharp at the size they're shown on a high-density screen. */
+/** Miniature cards are drawn this wide: sharp at the size they're shown on a high-density screen. */
 const MINI_WIDTH = 300;
-const MINI_KEEP = 150;
+const MINI_KEEP = 200;
 const minis = new Map<string, Promise<HTMLCanvasElement>>();
+/** The finished ones, for showing at once without waiting on a promise. */
+const miniDone = new Map<string, HTMLCanvasElement>();
+
+/** A card's miniature if it's already drawn (see drawMini), else null. */
+export const miniNow = (card: Card) => miniDone.get(card.id) ?? null;
 
 /**
  * A small picture of the whole card, kept so showing it again is instant (the
- * last MINI_KEEP cards). The card is drawn at full size, exactly as the big
- * card is, and then shrunk, so every number and line of text sits where it
- * does on the big card. Copy it onto your own canvas with drawImage.
+ * last MINI_KEEP cards). Drawn exactly as the big card is, just at a smaller
+ * width (Sunwell lays a card out in its own units), so every number and line
+ * of text sits where it does on the big card. Copy it onto your own canvas
+ * with drawImage.
  */
 export function drawMini(card: Card): Promise<HTMLCanvasElement> {
   let p = minis.get(card.id);
@@ -384,30 +421,25 @@ export function drawMini(card: Card): Promise<HTMLCanvasElement> {
   }
   const shown: Shown = {};
   for (const k of Object.keys(ATTR) as AttrKey[]) shown[k] = truth(card, k);
-  const full = document.createElement('canvas');
+  const mini = document.createElement('canvas');
   p = new Promise<HTMLCanvasElement>((done) => {
     void drawCard(
-      full,
+      mini,
       card,
       shown,
       () => {
-        const mini = document.createElement('canvas');
-        mini.width = MINI_WIDTH;
-        mini.height = Math.round((MINI_WIDTH * full.height) / full.width);
-        const ctx = mini.getContext('2d');
-        if (ctx) {
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(full, 0, 0, mini.width, mini.height);
-        }
-        // Let go of the full-size drawing.
-        full.width = full.height = 0;
+        if (minis.has(card.id)) miniDone.set(card.id, mini);
         done(mini);
       },
       () => true,
-      { smallArt: true },
+      { smallArt: true, width: MINI_WIDTH },
     );
   });
   minis.set(card.id, p);
-  if (minis.size > MINI_KEEP) minis.delete(minis.keys().next().value!);
+  if (minis.size > MINI_KEEP) {
+    const oldest = minis.keys().next().value!;
+    minis.delete(oldest);
+    miniDone.delete(oldest);
+  }
   return p;
 }

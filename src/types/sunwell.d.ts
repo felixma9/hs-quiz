@@ -18,6 +18,7 @@ declare module 'sunwell/dist/sunwell.web.js' {
     baseCardFrameAsset: string;
     getCardFrameAsset(): string;
     getWatermarkAsset(): string;
+    draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void;
     costGem?: Gem;
     attackGem?: Gem;
     healthGem?: Gem;
