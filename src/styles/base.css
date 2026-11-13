@@ -257,8 +257,6 @@ footer a { color: var(--faint); }
 }
 .lc.collapsing .tl-head, .lc.collapsing .lc-rail, .lc.collapsing .lc-info, .lc.collapsing .lc-nav { opacity: 0; transition: opacity 0.2s ease; }
 .lc.is-open .lc-slide.focus { cursor: pointer; }
-/* No history: the card doesn't react to taps. */
-.lc.no-history .lc-slide { cursor: default; }
 .lc-slide .game-card-frame, .lc-slide .zoom-render { width: 100%; }
 .lc-slide .card-chips { display: none; }
 /* An older version waiting for the current card to finish drawing: holds the card's size. */

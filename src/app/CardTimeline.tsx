@@ -257,6 +257,9 @@ export function CardTimeline({
 
   // The current card draws first; the older versions wait for it (a same-size blank until then), so
   // opening a card is never slowed by its history. Sunwell draws one card at a time, in the order asked.
+  // A card with no history: its release and set, shown once the card is tapped.
+  const [meta, setMeta] = useState(false);
+  useEffect(() => setMeta(false), [card.id]);
   const [mainDrawn, setMainDrawn] = useState(!canDraw);
   useEffect(() => setMainDrawn(!canDraw), [card.id, canDraw]);
   const face = (v: Version, now: boolean) =>
@@ -269,7 +272,7 @@ export function CardTimeline({
     );
 
   return (
-    <div className={`lc ${open ? 'is-open' : ''} ${phase === 'collapsing' ? 'collapsing' : ''} ${past ? '' : 'no-history'}`}>
+    <div className={`lc ${open ? 'is-open' : ''} ${phase === 'collapsing' ? 'collapsing' : ''}`}>
       {open && versions && (
         <header className="tl-head" onClick={(e) => e.stopPropagation()}>
           <h2>{card.name}</h2>
@@ -328,7 +331,9 @@ export function CardTimeline({
                   // Closed: the card opens its history; with none, a tap on it does nothing.
                   if (!open) {
                     e.stopPropagation();
+                    // With no history to open, the tap shows (or hides) the card's release and set.
                     if (past) onOpen();
+                    else setMeta((m) => !m);
                     return;
                   }
                   e.stopPropagation();
@@ -389,7 +394,7 @@ export function CardTimeline({
       ) : (
         <>
           {/* No timeline to open: the card's release and set, the same facts a timeline would start with. */}
-          {versions && !past && (
+          {versions && !past && meta && (
             <div className="lc-info" onClick={(e) => e.stopPropagation()}>
               <div className="tl-tags">
                 <span className="tl-when">Released</span>

@@ -83,7 +83,7 @@ export function CardZoomHost() {
         ? `Tap the card for its history (${past} change${past === 1 ? '' : 's'}) · tap outside to close`
         : hist === null
           ? "Couldn't load this card's history · tap outside to close"
-          : 'Tap outside to close';
+          : 'Tap the card for its release and set · tap outside to close';
   // CardDB: the card opens into its timeline in place, over the page.
   if (z.history)
     return (
