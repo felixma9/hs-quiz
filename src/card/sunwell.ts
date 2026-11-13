@@ -188,6 +188,73 @@ function fitBoxes(sw: SunwellCard, type: string) {
   }
 }
 
+/** Horizontal extent [left, right) of what's drawn on a canvas, or null if it's blank. */
+function inkSpan(c: HTMLCanvasElement): [number, number] | null {
+  const { width: w, height: h } = c;
+  if (!w || !h) return null;
+  const data = c.getContext('2d')!.getImageData(0, 0, w, h).data;
+  let left = w;
+  let right = -1;
+  for (let y = 0; y < h; y++) {
+    const row = y * w * 4;
+    for (let x = 0; x < left; x++) if (data[row + x * 4 + 3]) { left = x; break; }
+    for (let x = w - 1; x > right; x--) if (data[row + x * 4 + 3]) { right = x; break; }
+  }
+  return right < 0 ? null : [left, right + 1];
+}
+
+/**
+ * Centre each body text line on its ink. Sunwell centres a line by where its pen
+ * stopped, which counts the trailing space twice (the space itself and its own
+ * word gap), starts the first line 5px further left than the rest, and pins a
+ * line that's a hair too wide to the left edge. So lines sat a little left of
+ * centre, the first more than the others. Sunwell lays each line out on a row
+ * buffer and copies it onto the text buffer; while it draws the text, those
+ * copies are moved so the line's ink is centred.
+ */
+function centreBodyLines(sw: SunwellCard) {
+  const part = (sw as unknown as { bodyText?: { sunwell: Pick<SunwellPlatform, 'getBuffer'>; render(ctx: CanvasRenderingContext2D, ratio: number): void } }).bodyText;
+  if (!part) return;
+  const render = part.render.bind(part);
+  part.render = (context, ratio) => {
+    const view = part.sunwell;
+    const getBuffer = view.getBuffer;
+    const ownGetBuffer = Object.prototype.hasOwnProperty.call(view, 'getBuffer');
+    const buffers = new Set<HTMLCanvasElement>();
+    const patched: CanvasRenderingContext2D[] = [];
+    view.getBuffer = (w, h, clear) => {
+      const c = getBuffer.call(view, w, h, clear);
+      buffers.add(c);
+      const ctx = c.getContext('2d')!;
+      if (!Object.prototype.hasOwnProperty.call(ctx, 'drawImage')) {
+        const drawImage = ctx.drawImage;
+        // A line being copied onto the text buffer: (row, sx, sy, sw, sh, dx, dy, dw, dh).
+        ctx.drawImage = function (this: CanvasRenderingContext2D, ...a: unknown[]) {
+          const row = a[0];
+          if (a.length === 9 && row instanceof HTMLCanvasElement && row !== c && buffers.has(row)) {
+            const ink = inkSpan(row);
+            if (ink) {
+              const x = (c.width - (ink[1] - ink[0])) / 2 - ink[0];
+              return drawImage.call(this, row, 0, 0, row.width, row.height, x, a[6] as number, row.width, row.height);
+            }
+          }
+          return (drawImage as (...b: unknown[]) => void).apply(this, a);
+        } as CanvasRenderingContext2D['drawImage'];
+        patched.push(ctx);
+      }
+      return c;
+    };
+    try {
+      render(context, ratio);
+    } finally {
+      // The buffers are pooled and shared: put everything back.
+      for (const ctx of patched) delete (ctx as unknown as Record<string, unknown>).drawImage;
+      if (ownGetBuffer) view.getBuffer = getBuffer;
+      else delete (view as unknown as Record<string, unknown>).getBuffer;
+    }
+  };
+}
+
 /** Widest tribe text (in card units) that stays on the banner's plaque. */
 const RACE_TEXT_MAX = 230;
 const RACE_TEXT_SIZE = 40;
@@ -402,6 +469,7 @@ export async function drawCard(
     }
     fitRaceText(sw);
     fitBoxes(sw, card.type);
+    centreBodyLines(sw);
     for (const g of [sw.costGem, sw.attackGem, sw.healthGem]) if (g) g.textSize = GEM_TEXT_SIZE;
     roomForTallGemText(sw.costGem);
     // We draw straight onto our canvas. Without this Sunwell also copies it into an image,
