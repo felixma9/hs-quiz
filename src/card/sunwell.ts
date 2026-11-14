@@ -420,7 +420,9 @@ export async function drawCard(
       const draw = (inFlight.get(key) ?? Promise.resolve()).then(
         () =>
           new Promise<HTMLCanvasElement>((done) => {
-            const target = i === 0 ? canvas : document.createElement('canvas');
+            // Always off screen: Sunwell clears its canvas when the card is created and draws a
+            // moment later, so drawing on the visible one blanked the card on every redraw.
+            const target = document.createElement('canvas');
             const sw = getSunwell().createCard(cardProps, width, false, target, () => done(target));
             setUp(sw, cls, i);
           }),
@@ -431,17 +433,26 @@ export async function drawCard(
     });
     Promise.all(drawn).then(([main, ...rest]) => {
       if (!isLive()) return;
-      const ctx = main.getContext('2d');
+      // Swap the finished card in at once (sizing a canvas clears it, so only when it changes).
+      if (canvas.width !== main.width || canvas.height !== main.height) {
+        canvas.width = main.width;
+        canvas.height = main.height;
+      }
+      const ctx = canvas.getContext('2d');
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+      ctx?.drawImage(main, 0, 0);
       rest.forEach((other, k) => {
         if (!ctx) return;
-        const w = main.width / classes.length;
+        const w = canvas.width / classes.length;
         ctx.save();
         ctx.beginPath();
-        ctx.rect(w * (k + 1), 0, k === rest.length - 1 ? main.width : w, main.height);
+        ctx.rect(w * (k + 1), 0, k === rest.length - 1 ? canvas.width : w, canvas.height);
         ctx.clip();
         ctx.drawImage(other, 0, 0);
         ctx.restore();
       });
+      // The scratch canvases are done with: free their memory now (phones have little for canvases).
+      for (const c of [main, ...rest]) c.width = c.height = 0;
       onReady();
     });
   } catch (e) {
