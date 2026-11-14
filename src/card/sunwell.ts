@@ -135,6 +135,14 @@ export function preloadArt(card: Card) {
 /** What to draw for each attribute: the truth, the player's guess, or undefined (blank). */
 export type Shown = Partial<Record<AttrKey, string>>;
 
+/**
+ * Sunwell may break a line after a slash or hyphen ("+2/+2", "left-most"), and
+ * it adds a word gap at every place it may break, so these were drawn as
+ * "+2/ +2" and "left- most". A word joiner (U+2060, invisible, dropped again in
+ * chars.ts) after them keeps the two halves one word.
+ */
+const joinUnspaced = (text: string) => text.replace(/((?<!<)\/|-)(?=[^\s/-])/g, '$1\u2060');
+
 function sunwellProps(card: Card, v: Shown, texture: HTMLImageElement | null) {
   const gem = (k: AttrKey) => (v[k] ? v[k] : BLANK);
   // A multi-class card is drawn once per class (see drawCard); this is the first.
@@ -143,7 +151,7 @@ function sunwellProps(card: Card, v: Shown, texture: HTMLImageElement | null) {
   const p: Record<string, unknown> = {
     type: card.type,
     name: v.name ?? '',
-    text: v.text ?? '',
+    text: joinUnspaced(v.text ?? ''),
     cost: gem('cost'),
     cardClass: cls,
     rarity,
