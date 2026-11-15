@@ -15,8 +15,8 @@ import { TOUCH } from '../../card/mini';
  * opacity. React only re-renders when a result enters or leaves the band.
  */
 
-/** How far from the middle line (px) a result still shows part-way: about a row and a half. */
-const REACH = 190;
+/** How far from the middle line (px) a result still shows part-way: about two and a half rows. */
+const REACH = 320;
 /** A result must stay in the band this long (ms) before its miniature is made, so a fast flick doesn't draw every row it passes. */
 const SETTLE = 60;
 
