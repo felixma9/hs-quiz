@@ -54,4 +54,8 @@
 @keyframes mini-in { from { opacity: 0.3; transform: translate(-50%, -50%) scale(0.5); } }
 @media (prefers-reduced-motion: reduce) { .mini.ready { animation: none; } }
 .mini canvas { display: block; width: 100%; height: auto; }
-
+/* Touch: the row at the middle of the screen shows as small cards while scrolling (centreRow.ts); a little
+   smaller, so three side by side fit a phone. */
+@media (hover: none), (pointer: coarse) {
+  .mini { width: 108px; }
+}

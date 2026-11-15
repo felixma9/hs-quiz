@@ -4,7 +4,7 @@ import { ATTR, type AttrKey } from '../lib/attributes';
 import { drawCard, fontsLoaded, truth, type ArtWindow, type Shown } from './sunwell';
 
 /**
- * Miniature cards (CardDB's hover cards), drawn once and then kept, so showing
+ * Miniature cards (CardDB's hover cards; on touch, the row at the middle of the screen), drawn once and then kept, so showing
  * one is almost always instant, without holding many pictures in memory:
  *
  * 1. Ready to paint: the finished picture (art and card together) for the last
@@ -33,6 +33,17 @@ const AROUND = 8;
 /** How many of the first results to have ready before any hover. */
 const READY_FIRST = 12;
 
+/** No mouse to hover with (a phone or tablet): CardDB shows the row at the middle of the screen as miniatures instead. */
+export const TOUCH = typeof matchMedia === 'function' && !matchMedia('(hover: hover) and (pointer: fine)').matches;
+/**
+ * The most the saved drawings may take on disk, in bytes. Phones have less to
+ * spare (and Safari saves PNG, several times the size of WebP), so there the
+ * oldest drawings are deleted past this; they're drawn again if needed.
+ */
+const DISK_BUDGET = TOUCH ? 12e6 : Infinity;
+/** Assumed size of a drawing saved before sizes were recorded. */
+const UNKNOWN_SIZE = 30e3;
+
 /** What was drawn, without the picture itself. */
 interface Meta {
   /** The card's values, the drawing code's version and the width. */
@@ -40,6 +51,9 @@ interface Meta {
   w: number;
   h: number;
   art: ArtWindow;
+  /** When it was drawn, and the saved picture's size in bytes. */
+  t?: number;
+  n?: number;
 }
 
 /** Cards with a saved (or soon saved) drawing that is up to date. */
@@ -124,7 +138,47 @@ function db(): Promise<IDBDatabase | null> {
       resolve(null);
     }
   });
+  void opening.then((d) => d && prune());
   return opening;
+}
+
+/** Bytes saved on disk, as far as known (prune counts it exactly). */
+let onDisk = 0;
+let pruning = false;
+/** Keep the disk within DISK_BUDGET: delete the oldest drawings until there's a quarter of it to spare. */
+async function prune() {
+  if (DISK_BUDGET === Infinity || pruning) return;
+  const d = await db();
+  if (!d) return;
+  pruning = true;
+  try {
+    const tx = d.transaction([META, PICS], 'readwrite');
+    const meta = tx.objectStore(META);
+    const pics = tx.objectStore(PICS);
+    // Both in key order, so they line up.
+    const keys = meta.getAllKeys();
+    const vals = meta.getAll();
+    vals.onsuccess = () => {
+      const rows = (keys.result as string[])
+        .map((id, i) => ({ id, m: vals.result[i] as Meta }))
+        .filter((r) => r.id !== VERSION_KEY);
+      let total = rows.reduce((s, r) => s + (r.m.n ?? UNKNOWN_SIZE), 0);
+      if (total > DISK_BUDGET) {
+        rows.sort((a, b) => (a.m.t ?? 0) - (b.m.t ?? 0));
+        for (const r of rows) {
+          if (total <= DISK_BUDGET * 0.75) break;
+          meta.delete(r.id);
+          pics.delete(r.id);
+          if (!unsaved.has(r.id)) metas.delete(r.id);
+          total -= r.m.n ?? UNKNOWN_SIZE;
+        }
+      }
+      onDisk = total;
+    };
+    tx.oncomplete = tx.onerror = tx.onabort = () => (pruning = false);
+  } catch {
+    pruning = false;
+  }
 }
 
 /** Read one value per key from a store, in one transaction. */
@@ -180,7 +234,13 @@ function save() {
         tx.objectStore(PICS).put(blob, id);
       }
       // Written: let go of them (unless drawn again meanwhile).
-      tx.oncomplete = () => batch.forEach(([id, blob]) => unsaved.get(id) === blob && unsaved.delete(id));
+      tx.oncomplete = () => {
+        for (const [id, blob] of batch) {
+          if (unsaved.get(id) === blob) unsaved.delete(id);
+          onDisk += blob.size;
+        }
+        if (onDisk > DISK_BUDGET) void prune();
+      };
     } catch {
       // Full or unavailable: kept in memory, and drawn again next visit.
     }
@@ -216,6 +276,8 @@ function draw(card: Card, keep: boolean): Promise<Drawn | null> {
             canvas.toBlob(
               (blob) => {
                 if (blob) {
+                  meta.t = Date.now();
+                  meta.n = blob.size;
                   metas.set(card.id, meta);
                   unsaved.set(card.id, blob);
                   save();

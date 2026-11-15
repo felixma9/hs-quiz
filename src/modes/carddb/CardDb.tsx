@@ -9,8 +9,9 @@ import { zoomCard } from '../../app/CardZoom';
 import { usePill } from '../../app/usePill';
 import { ICON } from '../../app/icons';
 import { preloadArt } from '../../card/sunwell';
-import { warmMinis } from '../../card/mini';
+import { TOUCH, warmMinis } from '../../card/mini';
 import { MiniCard } from './MiniCard';
+import { centreArea, useCentred } from './centreRow';
 
 /**
  * CardDB: a blank card to fill in. Every part filled in narrows the list of
@@ -201,11 +202,9 @@ export function CardDb({ cards }: { cards: Card[] }) {
     return out;
   }, [matches, shown]);
   // Get the results' small cards ready ahead (mini.ts), so hovering one shows it at once:
-  // the ones shown ready to paint, the next ones drawn and saved. Only where there is a mouse to hover with.
-  useEffect(() => {
-    if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
-    return warmMinis(matches.slice(0, WARM_AHEAD), shown);
-  }, [matches, shown]);
+  // the ones shown ready to paint, the next ones drawn and saved. On touch screens (where the row at
+  // the middle of the screen shows as small cards) only the ones shown, to save the phone's storage.
+  useEffect(() => warmMinis(matches.slice(0, TOUCH ? shown : WARM_AHEAD), shown), [matches, shown]);
 
   const chips = Object.entries(active) as [AttrKey, string][];
   const one = matches.length === 1 ? matches[0] : null;
@@ -278,7 +277,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
         ) : (
           <>
             {/* Keyed by type, so the results fade in again when the type changes. One section per mana cost; its heading sticks under the title bar while its cards scroll. */}
-            <div key={type} className="carddb-sections">
+            <div key={type} ref={centreArea} className="carddb-sections">
               {sections.map(({ cost, cards: group }) => (
                 <section key={cost} className="carddb-cost" aria-label={`${cost} mana`}>
                   {!one && (
@@ -326,13 +325,17 @@ export function CardDb({ cards }: { cards: Card[] }) {
 
 /**
  * One result. Its hover state is its own, so moving the mouse across the grid
- * re-renders just the two results it leaves and enters, not the page.
+ * (or scrolling a new row to the middle, on touch) re-renders just the results
+ * left and entered, not the page.
  */
 const Hit = memo(function Hit({ card: c, crop }: { card: Card; crop: ReturnType<typeof useArtCrop> }) {
   // Under the mouse: the icon is shown as a small card.
   const [peek, setPeek] = useState(false);
+  // On touch screens: in the row at the middle of the screen, which shows as small cards too.
+  const [ref, centred] = useCentred(c.id);
   return (
     <button
+      ref={ref}
       type="button"
       className="carddb-hit"
       aria-label={c.name}
@@ -353,7 +356,7 @@ const Hit = memo(function Hit({ card: c, crop }: { card: Card; crop: ReturnType<
     >
       <span className="carddb-icon">
         <Art card={c} crop={crop} className="carddb-art" />
-        {peek && <MiniCard card={c} />}
+        {(peek || centred) && <MiniCard card={c} />}
       </span>
       <span className="carddb-name">{c.name}</span>
       <span className="carddb-meta muted">{pretty('class', ATTR.class.value(c) as string)}</span>
