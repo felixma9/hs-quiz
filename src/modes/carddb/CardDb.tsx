@@ -11,7 +11,7 @@ import { ICON } from '../../app/icons';
 import { preloadArt } from '../../card/sunwell';
 import { TOUCH, warmMinis } from '../../card/mini';
 import { MiniCard } from './MiniCard';
-import { centreArea, useCentred } from './centreRow';
+import { useCentred } from './centreRow';
 
 /**
  * CardDB: a blank card to fill in. Every part filled in narrows the list of
@@ -277,7 +277,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
         ) : (
           <>
             {/* Keyed by type, so the results fade in again when the type changes. One section per mana cost; its heading sticks under the title bar while its cards scroll. */}
-            <div key={type} ref={centreArea} className="carddb-sections">
+            <div key={type} className="carddb-sections">
               {sections.map(({ cost, cards: group }) => (
                 <section key={cost} className="carddb-cost" aria-label={`${cost} mana`}>
                   {!one && (
@@ -331,7 +331,7 @@ export function CardDb({ cards }: { cards: Card[] }) {
 const Hit = memo(function Hit({ card: c, crop }: { card: Card; crop: ReturnType<typeof useArtCrop> }) {
   // Under the mouse: the icon is shown as a small card.
   const [peek, setPeek] = useState(false);
-  // On touch screens: in the row at the middle of the screen, which shows as small cards too.
+  // On touch screens: near the middle of the screen, where results show as small cards too.
   const [ref, centred] = useCentred(c.id);
   return (
     <button
