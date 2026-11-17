@@ -91,7 +91,10 @@
 .board-cell.name-cell { background: none; border: 0; color: var(--text); font: inherit; font-size: 0.72rem; font-weight: 700; text-align: left; padding: 0; cursor: pointer; }
 .tile { cursor: pointer; }
 .tile.selected { outline: 2px solid #fff; outline-offset: -2px; }
-.name-cell.selected .thumb { outline: 2px solid #fff; }
+/* A ring on each guess's art: red if it isn't the card (even when every tile is green), green if it is. */
+.name-cell .thumb.miss { box-shadow: 0 0 0 2px var(--bad-text); }
+.name-cell .thumb.hit { box-shadow: 0 0 0 2px #4fb35a; }
+.name-cell.selected .thumb { outline: 2px solid #fff; outline-offset: 2px; }
 .board-detail {
   margin-top: 8px; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;
   text-align: center; background: var(--surface);

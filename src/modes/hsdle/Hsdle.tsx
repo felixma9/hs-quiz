@@ -186,6 +186,10 @@ function HsdleGame({
     }
   };
 
+  // The newest guess matches the answer in every column but is another card.
+  const last = guesses[guesses.length - 1];
+  const lookalike = !done && !!last && last.id !== answer.id && Object.values(compare(last, answer)).every((t) => t.verdict === 'correct');
+
   const article = /^[aeiou]/.test(what) ? 'an' : 'a';
   return (
     <>
@@ -207,6 +211,13 @@ function HsdleGame({
       )}
 
       {!done && <Search cards={sameType} what={what} exclude={game.guesses} art={!artOnCard} onPick={guess} />}
+
+      {lookalike && (
+        <div key={last.id} className="feedback bad" role="status">
+          <div className="feedback-head">So close!</div>
+          <b>{last.name}</b> matches every column, but it isn't {mode === 'unlimited' ? 'the card' : "today's card"}. Keep guessing.
+        </div>
+      )}
 
       {!done && (
         <RevealCard
