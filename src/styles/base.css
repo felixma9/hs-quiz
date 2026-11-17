@@ -154,7 +154,8 @@ footer a { color: var(--faint); }
 .zoom-hint { color: var(--faint); font-size: 0.78rem; }
 /* A card opened from Related: the card it came from, at the top, to go back to. */
 .zoom-back {
-  position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 6; max-width: calc(100vw - 32px);
+  /* Below the notch / Dynamic Island when the page runs under it (viewport-fit=cover). */
+  position: fixed; top: calc(12px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 6; max-width: calc(100vw - 32px);
   display: flex; align-items: center; gap: 8px; padding: 5px 14px 5px 8px; border-radius: 999px;
   background: var(--surface-2); border: 1px solid var(--line-2); color: var(--text); font: inherit; font-size: 0.85rem; font-weight: 600;
   cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
@@ -164,7 +165,9 @@ footer a { color: var(--faint); }
 .zoom-back-arrow { font-size: 1.3rem; line-height: 1; color: var(--muted); padding-bottom: 2px; }
 .zoom-back-art { width: 32px; height: 32px; }
 .zoom-back-label { color: var(--muted); font-weight: 400; }
-.zoom.has-back:not(.zoom-history) { padding-top: 64px; }
+.zoom.has-back:not(.zoom-history) { padding-top: calc(64px + env(safe-area-inset-top)); }
+/* The card starts below the back button too. */
+.zoom-history.has-back .lc { padding-top: max(var(--top), calc(64px + env(safe-area-inset-top))); }
 /* Under a CardDB card: the cards the game shows with it (tokens, rewards, hero powers). */
 .related { display: grid; gap: 6px; justify-items: center; cursor: default; max-width: min(440px, 100%); }
 .related-label { color: var(--faint); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; }
