@@ -108,6 +108,7 @@ const COLLAPSE_MS = 380;
  * cards or the rail move between versions.
  */
 export function CardTimeline({
+  trail,
   card,
   from,
   versions,
@@ -116,6 +117,8 @@ export function CardTimeline({
   onClose,
   hint,
 }: {
+  /** The cards opened before this one through Related, oldest first. */
+  trail: Card[];
   card: Card;
   /** Where the card was on screen before it was opened: it grows out of there into place. */
   from?: DOMRect;
@@ -450,7 +453,7 @@ export function CardTimeline({
               <p className="muted small lc-none">No changes since release.</p>
             </div>
           )}
-          <RelatedCards card={card} />
+          <RelatedCards card={card} trail={trail} />
           <span className={`zoom-hint ${past ? 'has-history' : ''}`}>{hint}</span>
         </>
       )}

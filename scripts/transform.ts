@@ -173,26 +173,93 @@ export function relatedFromDefs(xml: string): Map<number, number[]> {
 /** Types a related card can be (enchantments, the odd quest reward, aren't cards to show). */
 const TOKEN_TYPES = new Set([...TYPES, 'HERO_POWER']);
 
+/** Sets whose cards are never what a constructed card makes (Battlegrounds, Mercenaries, adventure bosses...). */
+const NOT_TOKEN_SETS = new Set(['BATTLEGROUNDS', 'LETTUCE', 'TB', 'HERO_SKINS', 'BOSS', 'CREDITS', 'MISSIONS', 'TAVERNS_OF_TIME', 'PLACEHOLDER_202204']);
+const statsOf = (r: RawCard) => (r.type === 'MINION' ? r.health : r.type === 'WEAPON' ? r.durability : undefined);
+
 /**
- * Give each card its related cards (from relatedFromDefs) and return the ones that aren't
- * collectible as tokens. `all` is HearthstoneJSON's full card list (tokens included);
+ * Cards the text makes with a stat line: "Summon a 1/1 Whelp", "Equip a 5/3 Ashbringer",
+ * "Summon two 3/6 Water Elementals". The name after the stats is looked up among minions and
+ * weapons with those stats (the longest name that fits; plurals allowed). When the text uses a
+ * short name ("Summon a 2/2 Satyr" for Illidari Satyr), the card's own token with those stats
+ * (its id plus t: BT_352 -> BT_352t) is used instead. Copies ("a 1/1 copy of it") and lines that
+ * fit neither are skipped. Returns, per card id, the raw cards found, in text order.
+ */
+export function statLineRelated(cards: Card[], all: RawCard[]): Map<string, RawCard[]> {
+  const pool = all.filter(
+    (r) =>
+      (r.type === 'MINION' || r.type === 'WEAPON') &&
+      r.attack != null &&
+      statsOf(r) != null &&
+      !NOT_TOKEN_SETS.has(r.set) &&
+      !Object.keys(r).some((k) => /^(battlegrounds|isBattlegrounds|mercenaries)/.test(k)),
+  );
+  const byStats = new Map<string, Map<string, RawCard[]>>();
+  const family = new Map<string, RawCard[]>();
+  for (const r of pool) {
+    const key = `${r.attack}/${statsOf(r)}`;
+    const names = byStats.get(key) ?? byStats.set(key, new Map()).get(key)!;
+    const name = r.name.toLowerCase();
+    names.set(name, [...(names.get(name) ?? []), r]);
+    const base = !r.collectible && /^(.+?)t\d*[a-z]?$/.exec(r.id)?.[1];
+    if (base) family.set(base, [...(family.get(base) ?? []), r]);
+  }
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const out = new Map<string, RawCard[]>();
+  for (const c of cards) {
+    const text = (c.text ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ');
+    const found: RawCard[] = [];
+    for (const m of text.matchAll(/(\d+)\/(\d+) /g)) {
+      const key = `${m[1]}/${m[2]}`;
+      const rest = text.slice(m.index! + m[0].length).toLowerCase();
+      const names = [...(byStats.get(key)?.keys() ?? [])].sort((a, b) => b.length - a.length);
+      const name = names.find((n) => new RegExp(`^${esc(n)}(e?s)?\\b`).test(rest));
+      let hits: RawCard[];
+      if (name && name !== c.name.toLowerCase()) {
+        // The copy from the card's own set, then a token over a collectible card.
+        hits = [...byStats.get(key)!.get(name)!].sort(
+          (a, b) => Number(a.set !== c.set) - Number(b.set !== c.set) || Number(!!a.collectible) - Number(!!b.collectible),
+        );
+      } else {
+        hits = (family.get(c.id.replace(/^CORE_/, '')) ?? []).filter((r) => `${r.attack}/${statsOf(r)}` === key);
+        if (hits.length !== 1) continue;
+      }
+      if (hits[0].name !== c.name && !found.includes(hits[0])) found.push(hits[0]);
+    }
+    if (found.length) out.set(c.id, found);
+  }
+  return out;
+}
+
+/**
+ * Give each card its related cards (from relatedFromDefs, then statLineRelated) and return the
+ * ones that aren't collectible as tokens. `all` is HearthstoneJSON's full card list (tokens included);
  * `copies` lists, for each card, the dbfIds of every copy of it (reprints share the tag).
  */
 export function attachRelated(cards: Card[], all: RawCard[], related: Map<number, number[]>, copies: Map<string, number[]>): Card[] {
   const rawByDbf = new Map(all.map((r) => [r.dbfId, r]));
   const byName = new Map(cards.map((c) => [`${c.type}|${c.name.toLowerCase()}`, c]));
   const tokens = new Map<string, Card>();
+  const fromText = statLineRelated(cards, all);
   for (const c of cards) {
     const dbfs = (copies.get(c.id) ?? [c.dbfId]).map((d) => related.get(d)).find((r) => r?.length) ?? [];
     const ids: string[] = [];
-    for (const d of dbfs) {
-      const r = rawByDbf.get(d);
+    const names = new Set<string>();
+    const fromGame = dbfs.map((d) => rawByDbf.get(d)).filter((r): r is RawCard => !!r);
+    // A stat line the game data already covers (a card with the same stats) keeps the game's choice:
+    // Living Mana's "2/2 Treants" are its Mana Treants, not the plain Treant.
+    const gameStats = new Set(fromGame.map((r) => `${r.attack}/${statsOf(r)}`));
+    const raws = [...fromGame, ...(fromText.get(c.id) ?? []).filter((r) => !gameStats.has(`${r.attack}/${statsOf(r)}`))];
+    for (const r of raws) {
       if (!r || !TOKEN_TYPES.has(r.type)) continue;
       // A collectible card links to our copy of it (a reprint's link may name another copy).
       const same = byName.get(`${r.type}|${r.name.toLowerCase()}`);
       const id = r.collectible && same ? same.id : r.id;
-      if (id === c.id || ids.includes(id)) continue;
-      if (id === r.id && !same) tokens.set(r.id, slim({ ...r, rarity: r.rarity ?? 'FREE' }));
+      // Once per name: the game data and the text can name different copies of the same token.
+      if (id === c.id || ids.includes(id) || names.has(r.name)) continue;
+      names.add(r.name);
+      // Not collectible: a token (even one named like a collectible card, as Druid of the Fang's 7/7 form is).
+      if (id === r.id && !r.collectible) tokens.set(r.id, slim({ ...r, rarity: r.rarity ?? 'FREE' }));
       ids.push(id);
     }
     if (ids.length) c.related = ids;

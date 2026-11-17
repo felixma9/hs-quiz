@@ -5,18 +5,43 @@ import { GameCard } from '../card/GameCard';
 import { loadHistory, timeline, type HistoryFile } from '../lib/history';
 import { CardTimeline } from './CardTimeline';
 import { Tilt } from './Tilt';
+import { Art, useArtCrop } from '../modes/hsdle/Art';
 
 /**
  * Tap a card's round art icon to see the whole card. Any screen calls
  * zoomCard(); the one CardZoomHost in App shows it. With `history` (CardDB),
  * tapping the card again opens every version of it on a timeline.
  */
-type Zoom = { card: Card; note?: ReactNode; history?: boolean; from?: DOMRect } | null;
+/** `back`: the cards opened before this one through Related (CardDB), oldest first. */
+type Zoom = { card: Card; note?: ReactNode; history?: boolean; from?: DOMRect; back?: Card[] } | null;
 let show: ((z: Zoom) => void) | null = null;
 
 /** `from`: where the card was on screen (a miniature or icon): the zoomed card grows out of it. */
-export function zoomCard(card: Card, note?: ReactNode, opts: { history?: boolean; from?: DOMRect } = {}) {
-  show?.({ card, note, history: opts.history, from: opts.from });
+export function zoomCard(card: Card, note?: ReactNode, opts: { history?: boolean; from?: DOMRect; back?: Card[] } = {}) {
+  show?.({ card, note, history: opts.history, from: opts.from, back: opts.back });
+}
+
+/** At the top of a card opened from Related: the card it was opened from, to go back to. */
+function BackTo({ trail }: { trail: Card[] }) {
+  const crop = useArtCrop();
+  const prev = trail[trail.length - 1];
+  return (
+    <button
+      type="button"
+      className="zoom-back"
+      onClick={(e) => {
+        e.stopPropagation();
+        // Back to it as it was opened: with its history, and its own way back.
+        zoomCard(prev, undefined, { history: true, back: trail.slice(0, -1) });
+      }}
+    >
+      <span className="zoom-back-arrow" aria-hidden="true">‹</span>
+      <Art card={prev} crop={crop} className="zoom-back-art" />
+      <span>
+        <span className="zoom-back-label">Back to</span> {prev.name}
+      </span>
+    </button>
+  );
 }
 
 /** Props for an art icon that opens the whole card (for icons that aren't already inside a button). */
@@ -85,22 +110,25 @@ export function CardZoomHost() {
         : hist === null
           ? "Couldn't load this card's history · tap outside to close"
           : 'Tap the card for its release and set · tap outside to close';
+  const back = z.back?.length && !open ? <BackTo trail={z.back} /> : null;
   // CardDB: the card opens into its timeline in place, over the page.
   if (z.history)
     return (
       <div
-        className={`zoom zoom-history ${open ? 'open' : ''} ${z.from ? 'from-mini' : ''}`}
+        className={`zoom zoom-history ${open ? 'open' : ''} ${z.from ? 'from-mini' : ''} ${back ? 'has-back' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={open ? `${z.card.name}: every version` : z.card.name}
         onClick={close}
       >
         {/* Taps on the cards, rail and details stay there; anywhere else (or Escape) closes. */}
-        <CardTimeline key={z.card.id} card={z.card} from={z.from} versions={versions} open={open && !!versions} onOpen={() => setOpen(true)} onClose={() => setOpen(false)} hint={hint} />
+        {back}
+        <CardTimeline key={z.card.id} trail={z.back ?? []} card={z.card} from={z.from} versions={versions} open={open && !!versions} onOpen={() => setOpen(true)} onClose={() => setOpen(false)} hint={hint} />
       </div>
     );
   return (
-    <div className="zoom" role="dialog" aria-modal="true" aria-label={z.card.name} onClick={close}>
+    <div className={`zoom ${back ? 'has-back' : ''}`} role="dialog" aria-modal="true" aria-label={z.card.name} onClick={close}>
+      {back}
       {/* Tap anywhere (the card too) or press Escape to close: no close button. */}
       <figure className="zoom-card">
         <Tilt>

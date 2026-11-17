@@ -4,7 +4,7 @@ import { ATTR, type AttrKey } from '../lib/attributes';
 import { drawCard, fontsLoaded, truth, type ArtWindow, type Shown } from './sunwell';
 
 /**
- * Miniature cards (CardDB's hover cards; on touch, the row at the middle of the screen), drawn once and then kept, so showing
+ * Miniature cards (CardDB's hover cards; on touch, the one pressed and held), drawn once and then kept, so showing
  * one is almost always instant, without holding many pictures in memory:
  *
  * 1. Ready to paint: the finished picture (art and card together) for the last
@@ -33,7 +33,7 @@ const AROUND = 8;
 /** How many of the first results to have ready before any hover. */
 const READY_FIRST = 12;
 
-/** No mouse to hover with (a phone or tablet): CardDB shows the row at the middle of the screen as miniatures instead. */
+/** No mouse to hover with (a phone or tablet): CardDB shows a miniature while a result is pressed and held instead. */
 export const TOUCH = typeof matchMedia === 'function' && !matchMedia('(hover: hover) and (pointer: fine)').matches;
 /**
  * The most the saved drawings may take on disk, in bytes. Phones have less to

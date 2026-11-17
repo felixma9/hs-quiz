@@ -7,9 +7,9 @@ import { zoomCard } from './CardZoom';
 /**
  * The cards the game shows with this one (a token it summons, a quest's reward, a hero's power),
  * as art icons under the zoomed card. Tapping one opens it in its place: a collectible card with
- * its history, a token on its own.
+ * its history, a token on its own, with this card at the top to go back to.
  */
-export function RelatedCards({ card }: { card: Card }) {
+export function RelatedCards({ card, trail }: { card: Card; trail: Card[] }) {
   const crop = useArtCrop();
   const [list, setList] = useState<Card[]>([]);
   useEffect(() => {
@@ -31,7 +31,9 @@ export function RelatedCards({ card }: { card: Card }) {
               type="button"
               onClick={(e) => {
                 const from = e.currentTarget.querySelector('.art-crop')?.getBoundingClientRect();
-                zoomCard(r, isCollectible(r) ? undefined : `Related to ${card.name}`, isCollectible(r) ? { history: true, from } : {});
+                // The card it came from goes on the trail, so the related card has a way back to it.
+                const back = [...trail, card];
+                zoomCard(r, undefined, isCollectible(r) ? { history: true, from, back } : { back });
               }}
             >
               <Art card={r} crop={crop} className="related-art" />

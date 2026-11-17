@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { attachRelated, buildCards, cleanText, copiesOf, keywordsOf, relatedFromDefs, type RawCard } from '../scripts/transform';
+import { attachRelated, buildCards, cleanText, copiesOf, keywordsOf, relatedFromDefs, statLineRelated, type RawCard } from '../scripts/transform';
 
 const base = { collectible: true, rarity: 'FREE', cardClass: 'MAGE', cost: 4 };
 
@@ -96,5 +96,30 @@ describe('related cards', () => {
     expect(cards.find((c) => c.name === 'Tirion Fordring')!.related).toEqual(['EX1_383t']);
     expect(cards.find((c) => c.name === 'Deathwing')!.related).toBeUndefined();
     expect(tokens.map((t) => [t.name, t.rarity])).toEqual([['Whelp', 'FREE'], ['Ashbringer', 'LEGENDARY']]);
+  });
+});
+
+describe('stat line related cards', () => {
+  const raw = (r: Partial<RawCard>): RawCard => ({ set: 'EXPERT1', rarity: 'COMMON', type: 'MINION', cost: 3, collectible: true, ...r }) as RawCard;
+  const all = [
+    raw({ id: 'CS2_033', dbfId: 1, name: 'Water Elemental', attack: 3, health: 6 }),
+    raw({ id: 'BT_352t', dbfId: 2, name: 'Illidari Satyr', attack: 2, health: 2, collectible: undefined, set: 'BLACK_TEMPLE' }),
+    raw({ id: 'X_tre1', dbfId: 3, name: 'Treant', attack: 2, health: 2, collectible: undefined, set: 'UNGORO' }),
+    raw({ id: 'X_tre2', dbfId: 4, name: 'Treant', attack: 2, health: 2, collectible: undefined, set: 'EXPERT1' }),
+  ];
+  const card = (id: string, name: string, text: string, set = 'EXPERT1') =>
+    buildCards([raw({ id, dbfId: 100 + id.length, name, text, set, type: 'SPELL' })])[0];
+  const find = (c: ReturnType<typeof card>) => statLineRelated([c], all).get(c.id)?.map((r) => r.id);
+  it('finds the card named after the stats, plural too', () => {
+    expect(find(card('DF', 'Deep Freeze', '<b>Freeze</b> an enemy. Summon two 3/6 Water Elementals.'))).toEqual(['CS2_033']);
+  });
+  it("prefers the copy from the card's own set", () => {
+    expect(find(card('LM', 'Living Mana', 'Summon two 2/2 Treants.', 'UNGORO'))).toEqual(['X_tre1']);
+  });
+  it("uses the card's own token when the text gives a short name", () => {
+    expect(find(card('BT_352', 'Satyr Overseer', 'After your hero attacks, summon a 2/2 Satyr.', 'BLACK_TEMPLE'))).toEqual(['BT_352t']);
+  });
+  it('skips copies and unknown names', () => {
+    expect(find(card('SH', 'Shadowcaster', 'Add a 1/1 copy of it to your hand.'))).toBeUndefined();
   });
 });

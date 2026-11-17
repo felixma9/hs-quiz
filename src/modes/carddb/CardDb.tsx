@@ -1,5 +1,5 @@
 import type React from 'react';
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '../../lib/types';
 import { ATTR, ATTRS, labelFor, plainText, pretty, type AttrKey } from '../../lib/attributes';
 import { normalizeCardName, normalizeName, words } from '../../lib/fuzzy';
@@ -11,7 +11,6 @@ import { ICON } from '../../app/icons';
 import { preloadArt } from '../../card/sunwell';
 import { TOUCH, warmMinis } from '../../card/mini';
 import { MiniCard } from './MiniCard';
-import { useCentred } from './centreRow';
 
 /**
  * CardDB: a blank card to fill in. Every part filled in narrows the list of
@@ -202,8 +201,8 @@ export function CardDb({ cards }: { cards: Card[] }) {
     return out;
   }, [matches, shown]);
   // Get the results' small cards ready ahead (mini.ts), so hovering one shows it at once:
-  // the ones shown ready to paint, the next ones drawn and saved. On touch screens (where the row at
-  // the middle of the screen shows as small cards) only the ones shown, to save the phone's storage.
+  // the ones shown ready to paint, the next ones drawn and saved. On touch screens (press and hold to
+  // see one) only the ones shown, to save the phone's storage.
   useEffect(() => warmMinis(matches.slice(0, TOUCH ? shown : WARM_AHEAD), shown), [matches, shown]);
 
   const chips = Object.entries(active) as [AttrKey, string][];
@@ -323,23 +322,52 @@ export function CardDb({ cards }: { cards: Card[] }) {
   );
 }
 
+/** Touch: how long a press is held (ms) before the result shows as a small card. */
+const HOLD_MS = 300;
+/** Touch: moving the finger this far (px) before then is a scroll, not a hold. */
+const HOLD_SLOP = 10;
+
 /**
  * One result. Its hover state is its own, so moving the mouse across the grid
- * (or scrolling a new row to the middle, on touch) re-renders just the results
- * left and entered, not the page.
+ * re-renders just the results left and entered, not the page.
  */
 const Hit = memo(function Hit({ card: c, crop }: { card: Card; crop: ReturnType<typeof useArtCrop> }) {
-  // Under the mouse: the icon is shown as a small card.
+  // Under the mouse, or pressed and held on a touch screen: the icon is shown as a small card.
   const [peek, setPeek] = useState(false);
-  // On touch screens: near the middle of the screen, where results show as small cards too.
-  const [ref, centred] = useCentred(c.id);
+  const hold = useRef<{ x: number; y: number; timer: ReturnType<typeof setTimeout>; fired: boolean } | null>(null);
+  const endHold = () => {
+    if (hold.current) clearTimeout(hold.current.timer);
+    setPeek(false);
+  };
   return (
     <button
-      ref={ref}
       type="button"
       className="carddb-hit"
       aria-label={c.name}
+      // Touch: press and hold to see the small card, let go to hide it. A tap still opens the full card.
+      onPointerDown={(e) => {
+        if (e.pointerType === 'mouse') return (hold.current = null);
+        const h = { x: e.clientX, y: e.clientY, fired: false, timer: setTimeout(() => {
+          h.fired = true;
+          setPeek(true);
+          navigator.vibrate?.(8);
+        }, HOLD_MS) };
+        hold.current = h;
+      }}
+      onPointerMove={(e) => {
+        const h = hold.current;
+        if (h && !h.fired && Math.hypot(e.clientX - h.x, e.clientY - h.y) > HOLD_SLOP) clearTimeout(h.timer);
+      }}
+      onPointerUp={(e) => e.pointerType !== 'mouse' && endHold()}
+      onPointerCancel={endHold}
+      // No long-press menu or text selection over the held card.
+      onContextMenu={(e) => hold.current && e.preventDefault()}
       onClick={(e) => {
+        // Letting go of a hold isn't a tap.
+        if (hold.current?.fired) {
+          hold.current = null;
+          return;
+        }
         // The full card grows out of the miniature (or the icon, on touch).
         const from = (e.currentTarget.querySelector('.mini.ready canvas') ?? e.currentTarget.querySelector('.carddb-art'))?.getBoundingClientRect();
         setPeek(false);
@@ -356,7 +384,7 @@ const Hit = memo(function Hit({ card: c, crop }: { card: Card; crop: ReturnType<
     >
       <span className="carddb-icon">
         <Art card={c} crop={crop} className="carddb-art" />
-        {(peek || centred) && <MiniCard card={c} />}
+        {peek && <MiniCard card={c} />}
       </span>
       <span className="carddb-name">{c.name}</span>
       <span className="carddb-meta muted">{pretty('class', ATTR.class.value(c) as string)}</span>

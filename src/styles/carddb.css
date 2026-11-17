@@ -54,13 +54,8 @@
 @keyframes mini-in { from { opacity: 0.3; transform: translate(-50%, -50%) scale(0.5); } }
 @media (prefers-reduced-motion: reduce) { .mini.ready { animation: none; } }
 .mini canvas { display: block; width: 100%; height: auto; }
-/* Touch: results near the middle of the screen show as small cards while scrolling (centreRow.ts). --p is how
-   close to the middle line a result is, 0 to 1, set as the page scrolls: at 0 the card is the icon's size, at 1
-   full size (140px: 64px icon / 140px = 0.46), so rows grow out of their icons as they near the middle and
-   shrink back as they pass. Neighbours in the middle row overlap a little; the hovered-size art is drawn 150px wide,
-   so this stays sharp. */
+/* Touch: pressing and holding a result shows its small card (a little bigger than on desktop), until let go. */
 @media (hover: none), (pointer: coarse) {
-  .mini { width: 140px; animation: none !important; transform: translate(-50%, -50%) scale(calc(0.46 + 0.54 * var(--p, 0))); }
-  .mini.ready { opacity: min(1, calc(var(--p, 0) * 2.5)); }
-  .carddb-hit:has(.mini.ready) .carddb-art { opacity: calc(1 - var(--p, 0)); }
+  .mini { width: 140px; }
+  .carddb-hit { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 }
