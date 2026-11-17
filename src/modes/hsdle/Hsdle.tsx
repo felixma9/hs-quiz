@@ -171,9 +171,7 @@ function HsdleGame({
     const columns = columnsFor(answer.type);
     const rows = guesses.map((g) => {
       const t = compare(g, answer);
-      const row = columns.map((col) => EMOJI[t[col.key].verdict]).join('');
-      // Every row ends in ✅ (the card) or ❌, so a wrong guess that matched every column doesn't look like the win.
-      return `${row}${g.id === answer.id ? '✅' : '❌'}`;
+      return columns.map((col) => EMOJI[t[col.key].verdict]).join('');
     });
     const title = mode === 'unlimited' ? 'HSdle (unlimited)' : `HSdle${mode === 'classic' ? ' Classic' : ''} ${date}`;
     const text = `${title}: ${won ? `${guesses.length} guess${guesses.length === 1 ? '' : 'es'}` : 'gave up'}\n${rows.join('\n')}`;
