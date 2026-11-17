@@ -62,7 +62,9 @@ const EVENT_TRIGGER = /(?:^|[.:!]\s*)(Whenever|After)\b/g;
 /** The card's keywords, from its bold text (plus a few mechanic tags and turn triggers). */
 export function keywordsOf(rawText: string | undefined, mechanics: string[] = []): string[] {
   const out = new Set<string>();
-  const text = (rawText ?? '').split('@')[0];
+  // Raw text starts some cards with an [x] layout marker, joins words with non-breaking spaces
+  // ("Divine\u00a0Shield") and wraps lines inside bold text.
+  const text = (rawText ?? '').split('@')[0].replace(/\[x\]/gi, '').replace(/\s+/g, ' ').trim();
   for (const m of text.matchAll(/<b>(.*?)<\/b>/g)) {
     const bold = m[1].replace(/<\/?[bi]>/g, '');
     // "Battlecry and Deathrattle", "Battlecry: Discover", "Spell Damage +1", "Infuse (3)", "Choose One -"

@@ -48,6 +48,11 @@ describe('keywordsOf', () => {
   it('adds keywords from old mechanic tags', () => {
     expect(keywordsOf('<b>Enrage:</b> +3 Attack', ['ENRAGED'])).toEqual(['Enrage']);
   });
+  it('reads keywords split by non-breaking spaces or line breaks', () => {
+    expect(keywordsOf('Give a minion <b>Divine\u00a0Shield</b>.\nDraw a card.')).toEqual(['Divine Shield']);
+    expect(keywordsOf('Give adjacent\u00a0minions <b>Spell\u00a0Damage +1</b>.')).toEqual(['Spell Damage']);
+    expect(keywordsOf('[x]<b>Battlecry:</b> Choose a\nflightpath and go <b>Dormant.\n</b> Awaken')).toEqual(['Battlecry', 'Dormant']);
+  });
   it('finds start and end of turn triggers in plain text', () => {
     expect(keywordsOf('<b>Taunt</b>. At the end of your turn, restore 3 Health.')).toEqual(['End of Turn', 'Taunt']);
     expect(keywordsOf('At the start of each turn, draw a card.')).toEqual(['Start of Turn']);
@@ -56,6 +61,7 @@ describe('keywordsOf', () => {
   });
   it('finds Whenever and After triggers that start a sentence', () => {
     expect(keywordsOf('Whenever you cast a spell, gain +2 Attack.')).toEqual(['Whenever…']);
+    expect(keywordsOf('[x]After your hero attacks,\nyour Cannoneers FIRE!')).toEqual(['After…']);
     expect(keywordsOf('<b>Secret:</b> After your opponent plays a minion, summon a copy.')).toEqual(['After…', 'Secret']);
     expect(keywordsOf('<b>Taunt</b>. After a friendly minion dies, draw a card.')).toEqual(['After…', 'Taunt']);
     expect(keywordsOf('Give a minion "Whenever this attacks, draw a card."')).toEqual([]);
