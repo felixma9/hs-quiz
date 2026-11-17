@@ -11,6 +11,7 @@ import { ICON } from '../../app/icons';
 import { preloadArt } from '../../card/sunwell';
 import { TOUCH, warmMinis } from '../../card/mini';
 import { MiniCard } from './MiniCard';
+import { HoldPreview } from './HoldPreview';
 
 /**
  * CardDB: a blank card to fill in. Every part filled in narrows the list of
@@ -332,24 +333,26 @@ const HOLD_SLOP = 10;
  * re-renders just the results left and entered, not the page.
  */
 const Hit = memo(function Hit({ card: c, crop }: { card: Card; crop: ReturnType<typeof useArtCrop> }) {
-  // Under the mouse, or pressed and held on a touch screen: the icon is shown as a small card.
+  // Under the mouse: the icon is shown as a small card.
   const [peek, setPeek] = useState(false);
+  // Pressed and held on a touch screen: a big preview in the middle of the screen.
+  const [preview, setPreview] = useState(false);
   const hold = useRef<{ x: number; y: number; timer: ReturnType<typeof setTimeout>; fired: boolean } | null>(null);
   const endHold = () => {
     if (hold.current) clearTimeout(hold.current.timer);
-    setPeek(false);
+    setPreview(false);
   };
   return (
     <button
       type="button"
       className="carddb-hit"
       aria-label={c.name}
-      // Touch: press and hold to see the small card, let go to hide it. A tap still opens the full card.
+      // Touch: press and hold to preview the card, let go to hide it. A tap still opens the full card.
       onPointerDown={(e) => {
         if (e.pointerType === 'mouse') return (hold.current = null);
         const h = { x: e.clientX, y: e.clientY, fired: false, timer: setTimeout(() => {
           h.fired = true;
-          setPeek(true);
+          setPreview(true);
           navigator.vibrate?.(8);
         }, HOLD_MS) };
         hold.current = h;
@@ -385,6 +388,7 @@ const Hit = memo(function Hit({ card: c, crop }: { card: Card; crop: ReturnType<
       <span className="carddb-icon">
         <Art card={c} crop={crop} className="carddb-art" />
         {peek && <MiniCard card={c} />}
+        {preview && <HoldPreview card={c} />}
       </span>
       <span className="carddb-name">{c.name}</span>
       <span className="carddb-meta muted">{pretty('class', ATTR.class.value(c) as string)}</span>

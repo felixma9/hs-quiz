@@ -71,7 +71,7 @@ function VersionInfo({ v, next, isNow }: { v: Version; next?: Version; isNow: bo
 }
 
 /** The card's cached miniature, drawn over the space the full card will fill. */
-function MiniStandIn({ card }: { card: Card }) {
+export function MiniStandIn({ card }: { card: Card }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useLayoutEffect(() => {
     if (canvas.current && paintMini(canvas.current, card)) return;
