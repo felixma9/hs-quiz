@@ -172,9 +172,8 @@ function HsdleGame({
     const rows = guesses.map((g) => {
       const t = compare(g, answer);
       const row = columns.map((col) => EMOJI[t[col.key].verdict]).join('');
-      // A wrong guess that matched every column would look like the win: mark it.
-      const lookalike = g.id !== answer.id && columns.every((col) => t[col.key].verdict === 'correct');
-      return lookalike ? `${row}❌` : row;
+      // Every row ends in ✅ (the card) or ❌, so a wrong guess that matched every column doesn't look like the win.
+      return `${row}${g.id === answer.id ? '✅' : '❌'}`;
     });
     const title = mode === 'unlimited' ? 'HSdle (unlimited)' : `HSdle${mode === 'classic' ? ' Classic' : ''} ${date}`;
     const text = `${title}: ${won ? `${guesses.length} guess${guesses.length === 1 ? '' : 'es'}` : 'gave up'}\n${rows.join('\n')}`;
