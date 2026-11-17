@@ -5,7 +5,7 @@ import { GameCard } from '../card/GameCard';
 import { paintMini, prepareMini } from '../card/mini';
 import { monthYear, setName, wordDiff, type Version } from '../lib/history';
 import { Tilt } from './Tilt';
-import { RelatedCards } from './RelatedCards';
+import { BackTo, RelatedCards } from './RelatedCards';
 
 const NONE = new Set<never>();
 const renderUrl = (c: Card) => `https://art.hearthstonejson.com/v1/render/latest/enUS/512x/${c.id}.png`;
@@ -454,6 +454,7 @@ export function CardTimeline({
             </div>
           )}
           <RelatedCards card={card} trail={trail} />
+          {trail.length > 0 && <BackTo trail={trail} />}
           <span className={`zoom-hint ${past ? 'has-history' : ''}`}>{hint}</span>
         </>
       )}

@@ -45,3 +45,26 @@ export function RelatedCards({ card, trail }: { card: Card; trail: Card[] }) {
     </div>
   );
 }
+
+/** Under a card opened from Related, where its own Related would be: the card it was opened from, to go back to. */
+export function BackTo({ trail }: { trail: Card[] }) {
+  const crop = useArtCrop();
+  const prev = trail[trail.length - 1];
+  return (
+    <button
+      type="button"
+      className="zoom-back"
+      onClick={(e) => {
+        e.stopPropagation();
+        // Back to it as it was opened: with its history, and its own way back.
+        zoomCard(prev, undefined, { history: true, back: trail.slice(0, -1) });
+      }}
+    >
+      <span className="zoom-back-arrow" aria-hidden="true">‹</span>
+      <Art card={prev} crop={crop} className="zoom-back-art" />
+      <span>
+        <span className="zoom-back-label">Back to</span> {prev.name}
+      </span>
+    </button>
+  );
+}
