@@ -80,7 +80,8 @@ export function keywordsOf(rawText: string | undefined, mechanics: string[] = []
   for (const mech of mechanics) if (KEYWORD_MECHANICS[mech]) out.add(KEYWORD_MECHANICS[mech]);
   const plain = text.replace(/<\/?[bi]>/g, '');
   for (const m of plain.matchAll(TURN_TRIGGER)) out.add(m[1].toLowerCase() === 'start' ? 'Start of Turn' : 'End of Turn');
-  for (const m of plain.matchAll(EVENT_TRIGGER)) out.add(m[1]);
+  // Shown as "Whenever…" / "After…" so they don't read as keywords of their own.
+  for (const m of plain.matchAll(EVENT_TRIGGER)) out.add(`${m[1]}…`);
   return [...out].sort();
 }
 

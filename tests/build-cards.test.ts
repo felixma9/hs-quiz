@@ -55,9 +55,9 @@ describe('keywordsOf', () => {
     expect(keywordsOf('Gain +2 Attack until the end of this turn.')).toEqual([]);
   });
   it('finds Whenever and After triggers that start a sentence', () => {
-    expect(keywordsOf('Whenever you cast a spell, gain +2 Attack.')).toEqual(['Whenever']);
-    expect(keywordsOf('<b>Secret:</b> After your opponent plays a minion, summon a copy.')).toEqual(['After', 'Secret']);
-    expect(keywordsOf('<b>Taunt</b>. After a friendly minion dies, draw a card.')).toEqual(['After', 'Taunt']);
+    expect(keywordsOf('Whenever you cast a spell, gain +2 Attack.')).toEqual(['Whenever…']);
+    expect(keywordsOf('<b>Secret:</b> After your opponent plays a minion, summon a copy.')).toEqual(['After…', 'Secret']);
+    expect(keywordsOf('<b>Taunt</b>. After a friendly minion dies, draw a card.')).toEqual(['After…', 'Taunt']);
     expect(keywordsOf('Give a minion "Whenever this attacks, draw a card."')).toEqual([]);
   });
 });
