@@ -6,7 +6,7 @@ import type { Card } from '../src/lib/types';
 
 const base: Card = {
   id: 'X', dbfId: 1, name: 'X', type: 'MINION', cardClass: 'NEUTRAL', cost: 5, attack: 6, health: 2,
-  rarity: 'LEGENDARY', set: 'EXPERT1', keywords: ['Battlecry', 'Charge'],
+  rarity: 'LEGENDARY', set: 'EXPERT1', keywords: ['Battlecry', 'Charge'], text: '<b>Charge</b>. <b>Battlecry:</b> Win.',
 };
 
 describe('hsdle compare', () => {
@@ -18,6 +18,13 @@ describe('hsdle compare', () => {
     const t = compare({ ...base, cost: 3, attack: 8 }, base);
     expect(t.cost).toMatchObject({ verdict: 'wrong', arrow: 'up' });
     expect(t.attack).toMatchObject({ verdict: 'wrong', arrow: 'down' });
+  });
+  it('a blank card reads No text, apart from text without keywords', () => {
+    const blank = { ...base, keywords: undefined, text: undefined };
+    const plain = { ...base, keywords: undefined, text: 'Your other minions have +1/+1.' };
+    expect(compare(blank, plain).keywords).toMatchObject({ verdict: 'wrong', label: 'No text' });
+    expect(compare(plain, blank).keywords).toMatchObject({ verdict: 'wrong', label: 'No keywords' });
+    expect(compare(blank, blank).keywords.verdict).toBe('correct');
   });
   it('keyword, tribe and class overlap is yellow', () => {
     const t = compare(
