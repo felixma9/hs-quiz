@@ -56,6 +56,8 @@ const KEYWORD_MECHANICS: Record<string, string> = { ENRAGED: 'Enrage', INSPIRE: 
  * One-off delays ("at the start of your next turn", "at the end of this turn") don't count.
  */
 const TURN_TRIGGER = /\bat the (start|end) of (?:your|each|their|your opponent's) turns?\b/gi;
+/** "Whenever ..." and "After ..." triggers, when they start a sentence (mid-sentence, they're mostly given to something else). */
+const EVENT_TRIGGER = /(?:^|[.:!]\s*)(Whenever|After)\b/g;
 
 /** The card's keywords, from its bold text (plus a few mechanic tags and turn triggers). */
 export function keywordsOf(rawText: string | undefined, mechanics: string[] = []): string[] {
@@ -76,7 +78,9 @@ export function keywordsOf(rawText: string | undefined, mechanics: string[] = []
     }
   }
   for (const mech of mechanics) if (KEYWORD_MECHANICS[mech]) out.add(KEYWORD_MECHANICS[mech]);
-  for (const m of text.replace(/<\/?[bi]>/g, '').matchAll(TURN_TRIGGER)) out.add(m[1].toLowerCase() === 'start' ? 'Start of Turn' : 'End of Turn');
+  const plain = text.replace(/<\/?[bi]>/g, '');
+  for (const m of plain.matchAll(TURN_TRIGGER)) out.add(m[1].toLowerCase() === 'start' ? 'Start of Turn' : 'End of Turn');
+  for (const m of plain.matchAll(EVENT_TRIGGER)) out.add(m[1]);
   return [...out].sort();
 }
 
