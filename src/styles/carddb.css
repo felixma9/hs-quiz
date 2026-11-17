@@ -56,7 +56,9 @@
 .mini canvas { display: block; width: 100%; height: auto; }
 /* Touch: pressing and holding a result previews the card, big, in the middle of the screen, until let go (HoldPreview.tsx). */
 @media (hover: none), (pointer: coarse) {
-  .carddb-hit { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .carddb-hit { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  /* The press lands on the button, not the icon's <img>, so the browser has no image to select, drag or offer a menu for. */
+  .carddb-hit img, .carddb-hit canvas { pointer-events: none; -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
 }
 .hold-preview {
   position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; align-content: center; gap: 12px;
