@@ -94,6 +94,6 @@ export const EMOJI: Record<TileVerdict, string> = { correct: 'ðŸŸ©', close: 'ðŸŸ
 
 /** Number of wrong guesses before each clue unlocks. */
 export const CLUES = [
-  { key: 'art', label: 'Art', after: 4 },
-  { key: 'text', label: 'Card text', after: 8 },
+  { key: 'text', label: 'Card text', after: 4 },
+  { key: 'art', label: 'Art', after: 8 }, // last: the art often gives the card away
 ] as const;
