@@ -5,6 +5,7 @@ import { GameCard } from '../card/GameCard';
 import { paintMini, prepareMini } from '../card/mini';
 import { monthYear, setName, wordDiff, type Version } from '../lib/history';
 import { Tilt } from './Tilt';
+import { RelatedCards } from './RelatedCards';
 
 const NONE = new Set<never>();
 const renderUrl = (c: Card) => `https://art.hearthstonejson.com/v1/render/latest/enUS/512x/${c.id}.png`;
@@ -449,6 +450,7 @@ export function CardTimeline({
               <p className="muted small lc-none">No changes since release.</p>
             </div>
           )}
+          <RelatedCards card={card} />
           <span className={`zoom-hint ${past ? 'has-history' : ''}`}>{hint}</span>
         </>
       )}

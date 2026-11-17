@@ -152,6 +152,16 @@ footer a { color: var(--faint); }
 .zoom-note { color: var(--muted); font-size: 0.9rem; text-align: center; }
 .zoom { cursor: zoom-out; }
 .zoom-hint { color: var(--faint); font-size: 0.78rem; }
+/* Under a CardDB card: the cards the game shows with it (tokens, rewards, hero powers). */
+.related { display: grid; gap: 6px; justify-items: center; cursor: default; max-width: min(440px, 100%); }
+.related-label { color: var(--faint); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.related ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; }
+.related button {
+  display: grid; justify-items: center; gap: 4px; width: 76px; padding: 4px 2px; border: 0; border-radius: 8px;
+  background: none; color: var(--text); font: inherit; font-size: 0.72rem; line-height: 1.2; text-align: center; cursor: pointer;
+}
+.related button:hover, .related button:focus-visible { background: rgba(255, 255, 255, 0.06); }
+.related-art { width: 48px; height: 48px; }
 
 /* ---- Game icons (card-frame gems, class icons) ---- */
 .chip-class-icon { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; margin: -2px 2px -2px -4px; }

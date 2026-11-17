@@ -1,11 +1,37 @@
 import type { Card } from './types';
 import { ATTRS, enumOptions, type AttrKey } from './attributes';
 
+/** Every collectible card by id, once loaded: what related cards are looked up in, with the tokens. */
+let collectible = new Map<string, Card>();
+
 export async function loadCards(): Promise<Card[]> {
   const res = await fetch(`${import.meta.env.BASE_URL}cards.json`);
   if (!res.ok) throw new Error(`Could not load cards (${res.status})`);
-  return res.json();
+  const cards: Card[] = await res.json();
+  collectible = new Map(cards.map((c) => [c.id, c]));
+  return cards;
 }
+
+/** Cards that aren't collectible but other cards link to (tokens.json): fetched the first time one is needed. */
+let tokens: Promise<Map<string, Card>> | null = null;
+const loadTokens = () =>
+  (tokens ??= fetch(`${import.meta.env.BASE_URL}tokens.json`)
+    .then((r) => (r.ok ? r.json() : []))
+    .then((t: Card[]) => new Map(t.map((c) => [c.id, c])))
+    .catch(() => {
+      tokens = null; // try again next time
+      return new Map<string, Card>();
+    }));
+
+/** A card's related cards (Card.related), in order. */
+export async function relatedCards(card: Card): Promise<Card[]> {
+  if (!card.related?.length) return [];
+  const t = await loadTokens();
+  return card.related.map((id) => collectible.get(id) ?? t.get(id)).filter((c): c is Card => !!c);
+}
+
+/** Whether a card is one of the collectible cards (not a token). */
+export const isCollectible = (card: Card) => collectible.get(card.id) === card;
 
 /** Cards by id, built once per card list and shared by everything that looks cards up. */
 const indexes = new WeakMap<Card[], Map<string, Card>>();

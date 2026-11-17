@@ -148,6 +148,70 @@ export function slim(r: RawCard): Card {
   return c;
 }
 
+/** Game tags that name another card the game shows with this one, in the order they're listed. */
+const RELATED_TAGS = ['COLLECTION_RELATED_CARD_DATABASE_ID', 'QUEST_REWARD_DATABASE_ID', 'QUESTLINE_FINAL_REWARD_DATABASE_ID', 'HERO_POWER'];
+
+/**
+ * From the game's CardDefs.xml (HearthSim/hsdata): each card's related cards, by dbfId.
+ * A plain scan rather than an XML parser: the file is 70 MB and we read four tags.
+ */
+export function relatedFromDefs(xml: string): Map<number, number[]> {
+  const out = new Map<number, number[]>();
+  const entity = /<Entity\b[^>]*\bID="(\d+)"[^>]*>([\s\S]*?)<\/Entity>/g;
+  const tag = /<Tag\b[^>]*\bname="([A-Z_]+)"[^>]*\bvalue="(\d+)"/g;
+  for (const [, id, body] of xml.matchAll(entity)) {
+    const found: [number, number][] = [];
+    for (const [, name, value] of body.matchAll(tag)) {
+      const order = RELATED_TAGS.indexOf(name);
+      if (order >= 0 && value !== '0') found.push([order, Number(value)]);
+    }
+    if (found.length) out.set(Number(id), [...new Set(found.sort((a, b) => a[0] - b[0]).map(([, v]) => v))]);
+  }
+  return out;
+}
+
+/** Types a related card can be (enchantments, the odd quest reward, aren't cards to show). */
+const TOKEN_TYPES = new Set([...TYPES, 'HERO_POWER']);
+
+/**
+ * Give each card its related cards (from relatedFromDefs) and return the ones that aren't
+ * collectible as tokens. `all` is HearthstoneJSON's full card list (tokens included);
+ * `copies` lists, for each card, the dbfIds of every copy of it (reprints share the tag).
+ */
+export function attachRelated(cards: Card[], all: RawCard[], related: Map<number, number[]>, copies: Map<string, number[]>): Card[] {
+  const rawByDbf = new Map(all.map((r) => [r.dbfId, r]));
+  const byName = new Map(cards.map((c) => [`${c.type}|${c.name.toLowerCase()}`, c]));
+  const tokens = new Map<string, Card>();
+  for (const c of cards) {
+    const dbfs = (copies.get(c.id) ?? [c.dbfId]).map((d) => related.get(d)).find((r) => r?.length) ?? [];
+    const ids: string[] = [];
+    for (const d of dbfs) {
+      const r = rawByDbf.get(d);
+      if (!r || !TOKEN_TYPES.has(r.type)) continue;
+      // A collectible card links to our copy of it (a reprint's link may name another copy).
+      const same = byName.get(`${r.type}|${r.name.toLowerCase()}`);
+      const id = r.collectible && same ? same.id : r.id;
+      if (id === c.id || ids.includes(id)) continue;
+      if (id === r.id && !same) tokens.set(r.id, slim({ ...r, rarity: r.rarity ?? 'FREE' }));
+      ids.push(id);
+    }
+    if (ids.length) c.related = ids;
+  }
+  return [...tokens.values()].sort((a, b) => a.dbfId - b.dbfId);
+}
+
+/** Every copy of each built card, by its id: the card itself, its reprints and countAsCopyOf copies. */
+export function copiesOf(raw: RawCard[], cards: Card[]): Map<string, number[]> {
+  const byName = new Map(cards.map((c) => [`${c.type}|${c.name.toLowerCase()}`, c]));
+  const byDbf = new Map(cards.map((c) => [c.dbfId, c]));
+  const out = new Map<string, number[]>(cards.map((c) => [c.id, [c.dbfId]]));
+  for (const r of raw) {
+    const c = (r.countAsCopyOfDbfId && byDbf.get(r.countAsCopyOfDbfId)) || byName.get(`${r.type}|${r.name.toLowerCase()}`);
+    if (c && c.dbfId !== r.dbfId) out.get(c.id)!.push(r.dbfId);
+  }
+  return out;
+}
+
 /** Filter to playable collectible cards and keep one copy of each. */
 export function buildCards(raw: RawCard[]): Card[] {
   const keep = raw.filter(

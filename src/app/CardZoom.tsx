@@ -96,7 +96,7 @@ export function CardZoomHost() {
         onClick={close}
       >
         {/* Taps on the cards, rail and details stay there; anywhere else (or Escape) closes. */}
-        <CardTimeline card={z.card} from={z.from} versions={versions} open={open && !!versions} onOpen={() => setOpen(true)} onClose={() => setOpen(false)} hint={hint} />
+        <CardTimeline key={z.card.id} card={z.card} from={z.from} versions={versions} open={open && !!versions} onOpen={() => setOpen(true)} onClose={() => setOpen(false)} hint={hint} />
       </div>
     );
   return (

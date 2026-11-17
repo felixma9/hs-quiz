@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCards, cleanText, keywordsOf, type RawCard } from '../scripts/transform';
+import { attachRelated, buildCards, cleanText, copiesOf, keywordsOf, relatedFromDefs, type RawCard } from '../scripts/transform';
 
 const base = { collectible: true, rarity: 'FREE', cardClass: 'MAGE', cost: 4 };
 
@@ -65,5 +65,36 @@ describe('keywordsOf', () => {
     expect(keywordsOf('<b>Secret:</b> After your opponent plays a minion, summon a copy.')).toEqual(['After…', 'Secret']);
     expect(keywordsOf('<b>Taunt</b>. After a friendly minion dies, draw a card.')).toEqual(['After…', 'Taunt']);
     expect(keywordsOf('Give a minion "Whenever this attacks, draw a card."')).toEqual([]);
+  });
+});
+
+describe('related cards', () => {
+  const defs = `<CardDefs>
+<Entity CardID="EX1_562" ID="363" version="2"><Tag enumID="45" name="HEALTH" type="Int" value="8"/><Tag enumID="2" name="COLLECTION_RELATED_CARD_DATABASE_ID" type="Int" value="54"/></Entity>
+<Entity CardID="CORE_EX1_383" ID="69613" version="2"><Tag enumID="2" name="COLLECTION_RELATED_CARD_DATABASE_ID" type="Int" value="1730"/></Entity>
+<Entity CardID="NEW1_030" ID="474" version="2"><Tag enumID="45" name="HEALTH" type="Int" value="12"/></Entity>
+</CardDefs>`;
+  const raw = (r: Partial<RawCard>): RawCard => ({ set: 'EXPERT1', rarity: 'LEGENDARY', type: 'MINION', cost: 9, collectible: true, ...r }) as RawCard;
+  const collectible = [
+    raw({ id: 'EX1_562', dbfId: 363, name: 'Onyxia' }),
+    raw({ id: 'EX1_383', dbfId: 890, name: 'Tirion Fordring' }),
+    raw({ id: 'CORE_EX1_383', dbfId: 69613, name: 'Tirion Fordring', set: 'CORE' }),
+    raw({ id: 'NEW1_030', dbfId: 474, name: 'Deathwing' }),
+  ];
+  const all = [
+    ...collectible,
+    raw({ id: 'ds1_whelptoken', dbfId: 54, name: 'Whelp', collectible: undefined, rarity: undefined, cost: 1, attack: 1, health: 1, set: 'EXPERT1' }),
+    raw({ id: 'EX1_383t', dbfId: 1730, name: 'Ashbringer', type: 'WEAPON', collectible: undefined, cost: 5 }),
+  ];
+  it('reads the related tags from the game data', () => {
+    expect(relatedFromDefs(defs)).toEqual(new Map([[363, [54]], [69613, [1730]]]));
+  });
+  it('links cards to tokens, through a reprint when the card itself has no link', () => {
+    const cards = buildCards(collectible);
+    const tokens = attachRelated(cards, all, relatedFromDefs(defs), copiesOf(collectible, cards));
+    expect(cards.find((c) => c.name === 'Onyxia')!.related).toEqual(['ds1_whelptoken']);
+    expect(cards.find((c) => c.name === 'Tirion Fordring')!.related).toEqual(['EX1_383t']);
+    expect(cards.find((c) => c.name === 'Deathwing')!.related).toBeUndefined();
+    expect(tokens.map((t) => [t.name, t.rarity])).toEqual([['Whelp', 'FREE'], ['Ashbringer', 'LEGENDARY']]);
   });
 });
