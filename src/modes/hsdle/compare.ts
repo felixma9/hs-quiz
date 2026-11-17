@@ -60,6 +60,9 @@ function listTile(guess: string[], answer: string[], label: (v: string) => strin
   };
 }
 
+/** Keywords, with "No text" standing in for a blank card so it isn't mistaken for text without keywords. */
+const NO_TEXT = 'No text';
+const keywordsOf = (c: Card) => (c.text?.trim() ? (c.keywords ?? []) : [NO_TEXT]);
 const classesOf = (c: Card) => c.classes ?? [c.cardClass];
 /** Health, or durability for weapons (locations keep theirs in health). */
 const healthOf = (c: Card) => c.health ?? c.durability;
@@ -74,7 +77,7 @@ export function compare(guess: Card, answer: Card): Record<ColumnKey, Tile> {
     cost: numberTile(guess.cost, answer.cost),
     health: numberTile(healthOf(guess), healthOf(answer)),
     attack: numberTile(guess.attack, answer.attack),
-    keywords: listTile(guess.keywords ?? [], answer.keywords ?? [], (k) => k),
+    keywords: listTile(keywordsOf(guess), keywordsOf(answer), (k) => k, 'No keywords'),
     set: {
       verdict: guess.set === answer.set ? 'correct' : sameYear ? 'close' : 'wrong',
       arrow: guess.set === answer.set || g.rank === a.rank ? undefined : arrow(g.rank, a.rank),
