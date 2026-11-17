@@ -51,7 +51,13 @@ const KEYWORD_ALIASES: Record<string, string> = {
 /** Keywords only present as mechanic tags on older cards. */
 const KEYWORD_MECHANICS: Record<string, string> = { ENRAGED: 'Enrage', INSPIRE: 'Inspire', JADE_GOLEM: 'Jade Golem' };
 
-/** The card's keywords, from its bold text (plus a few mechanic tags). */
+/**
+ * Triggers written in plain text, not bold: "At the end of your turn", "At the start of each turn".
+ * One-off delays ("at the start of your next turn", "at the end of this turn") don't count.
+ */
+const TURN_TRIGGER = /\bat the (start|end) of (?:your|each|their|your opponent's) turns?\b/gi;
+
+/** The card's keywords, from its bold text (plus a few mechanic tags and turn triggers). */
 export function keywordsOf(rawText: string | undefined, mechanics: string[] = []): string[] {
   const out = new Set<string>();
   const text = (rawText ?? '').split('@')[0];
@@ -70,6 +76,7 @@ export function keywordsOf(rawText: string | undefined, mechanics: string[] = []
     }
   }
   for (const mech of mechanics) if (KEYWORD_MECHANICS[mech]) out.add(KEYWORD_MECHANICS[mech]);
+  for (const m of text.replace(/<\/?[bi]>/g, '').matchAll(TURN_TRIGGER)) out.add(m[1].toLowerCase() === 'start' ? 'Start of Turn' : 'End of Turn');
   return [...out].sort();
 }
 

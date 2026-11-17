@@ -48,4 +48,10 @@ describe('keywordsOf', () => {
   it('adds keywords from old mechanic tags', () => {
     expect(keywordsOf('<b>Enrage:</b> +3 Attack', ['ENRAGED'])).toEqual(['Enrage']);
   });
+  it('finds start and end of turn triggers in plain text', () => {
+    expect(keywordsOf('<b>Taunt</b>. At the end of your turn, restore 3 Health.')).toEqual(['End of Turn', 'Taunt']);
+    expect(keywordsOf('At the start of each turn, draw a card.')).toEqual(['Start of Turn']);
+    expect(keywordsOf('At the start of your next turn, draw 2.')).toEqual([]);
+    expect(keywordsOf('Gain +2 Attack until the end of this turn.')).toEqual([]);
+  });
 });
