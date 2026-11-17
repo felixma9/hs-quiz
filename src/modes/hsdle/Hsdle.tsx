@@ -171,7 +171,10 @@ function HsdleGame({
     const columns = columnsFor(answer.type);
     const rows = guesses.map((g) => {
       const t = compare(g, answer);
-      return columns.map((col) => EMOJI[t[col.key].verdict]).join('');
+      const row = columns.map((col) => EMOJI[t[col.key].verdict]).join('');
+      // A wrong guess that matched every column would look like the win: mark it.
+      const lookalike = g.id !== answer.id && columns.every((col) => t[col.key].verdict === 'correct');
+      return lookalike ? `${row}❌` : row;
     });
     const title = mode === 'unlimited' ? 'HSdle (unlimited)' : `HSdle${mode === 'classic' ? ' Classic' : ''} ${date}`;
     const text = `${title}: ${won ? `${guesses.length} guess${guesses.length === 1 ? '' : 'es'}` : 'gave up'}\n${rows.join('\n')}`;
