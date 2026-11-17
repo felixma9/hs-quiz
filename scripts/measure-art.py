@@ -1,7 +1,8 @@
 """Measure the padding bars at the edges of each card's art.
 
 A lot of card art is padded with flat bars: white, grey or black. This
-downloads the small 256px art for every card in public/cards.json, finds how
+downloads the small 256px art for every card in public/cards.json (and every
+related token in public/tokens.json, which show as icons too), finds how
 far a flat edge (a column or row that is nearly one colour end to end) runs in
 from each side, and writes the crop each card needs to public/art-crop.json as
 {card id: fraction of the width to cut per side}. Cards already measured are
@@ -20,6 +21,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 CARDS = ROOT / 'public' / 'cards.json'
+TOKENS = ROOT / 'public' / 'tokens.json'
 OUT = ROOT / 'public' / 'art-crop.json'
 URL = 'https://art.hearthstonejson.com/v1/256x/{}.jpg'
 # A line counts as padding when it is nearly one colour: at least SHARE of its
@@ -134,7 +136,7 @@ def measure(card_id: str) -> tuple[str, float | None]:
 
 
 def main() -> None:
-    cards = json.loads(CARDS.read_text())
+    cards = json.loads(CARDS.read_text()) + (json.loads(TOKENS.read_text()) if TOKENS.exists() else [])
     ids = [c['id'] for c in cards]
     fresh = '--all' in sys.argv[1:]
     known: dict[str, float] = {} if fresh or not OUT.exists() else json.loads(OUT.read_text())
